@@ -2,7 +2,7 @@ include "./vendor/premake/premake_customization/solution_items.lua"
 
 workspace "Mythos"
 	architecture "x86_64"
-	startproject "Mythos"
+	startproject "Testbed"
 
 	configurations {
 		"Debug",
@@ -25,3 +25,4 @@ group "Dependencies"
 group ""
 
 include "Mythos"
+include "Testbed"
