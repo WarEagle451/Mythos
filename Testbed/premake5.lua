@@ -17,7 +17,9 @@ project "TestBed"
 
 	includedirs {
 		"src",
-		"%{wks.location}/Mythos/src"
+		"%{wks.location}/Mythos/src",
+		"%{wks.location}/Mythos/vendor/spdlog/include",
+		"%{wks.location}/Mythos/vendor"
 	}
 
 	links {

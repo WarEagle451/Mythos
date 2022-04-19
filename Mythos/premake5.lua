@@ -13,11 +13,13 @@ project "Mythos"
 	}
 	
 	defines {
+		"MYL_EXPORT",
 		"_CRT_SECURE_NO_WARNINGS"
 	}
 
 	includedirs {
-		"src"
+		"src",
+		"vendor/spdlog/include"
 	}
 	
 	links {

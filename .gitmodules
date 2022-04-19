@@ -1,0 +1,3 @@
+[submodule "Mythos/vendor/spdlog"]
+	path = Mythos/vendor/spdlog
+	url = https://github.com/WarEagle451/spdlog
