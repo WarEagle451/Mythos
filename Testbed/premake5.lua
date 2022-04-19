@@ -1,7 +1,7 @@
 LibraryDir = {}
 LibraryDir["MythosDLL"] = ("%{wks.location}/bin/" .. outputdir .. "/Mythos")
 
-project "TestBed"
+project "Testbed"
 	kind "ConsoleApp"
 	language "C++"
 	cppdialect "C++20"
