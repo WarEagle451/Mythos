@@ -1,6 +1,7 @@
 #include <mythos/core/log.hpp>
 
 #include <mythos/core/assert.hpp>
+#include <mythos/core/window.hpp>
 
 int main() {
 	myl::core::logger_instances::init();
@@ -12,5 +13,10 @@ int main() {
 	MYL_CORE_ERROR("This is a {}", "error");
 	MYL_CORE_FATAL("This is a {}", "fatal");
 
-	MYL_CORE_ASSERT(false);
+	auto window = myl::window::create(myl::window::config{ "A window", 100, 100, 1280, 720 });
+	while (window) {
+		window->update();
+	}
+
+	return 0;
 }

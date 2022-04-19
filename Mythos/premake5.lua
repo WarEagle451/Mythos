@@ -9,7 +9,9 @@ project "Mythos"
 
 	files {
 		"src/**.hpp",
-		"src/**.cpp"
+		"src/**.cpp",
+		"src/**.h",
+		"src/**.c"
 	}
 	
 	defines {
