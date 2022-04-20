@@ -12,7 +12,7 @@ namespace myl {
 		std::unique_ptr<window> m_window;
 
 		bool m_running = true;
-		bool m_suspended = false; /// MYTodo: suspended like do nothing while minimized
+		bool m_suspended = false;
 		f64 m_last_frame_time = 0.0;
 	public:
 		struct config {

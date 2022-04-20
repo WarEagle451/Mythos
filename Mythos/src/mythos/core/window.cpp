@@ -1,7 +1,6 @@
 #include "window.hpp"
 
 #include <mythos/platform/detection.hpp>
-
 #include <mythos/platform/windows/win_window.hpp>
 
 namespace myl {

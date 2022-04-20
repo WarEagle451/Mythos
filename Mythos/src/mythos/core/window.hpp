@@ -13,12 +13,12 @@ namespace myl {
 			std::string name;
 		};
 
-		MYL_API static std::unique_ptr<window> create(const config&);
+		static std::unique_ptr<window> create(const config&);
 
-		MYL_API virtual ~window() = default;
+		virtual ~window() = default;
 
 		MYL_API virtual void* native() const = 0;
 
-		MYL_API virtual void update() = 0;
+		virtual void update() = 0;
 	};
 }

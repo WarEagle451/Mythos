@@ -1,8 +1,6 @@
 #include "testbed_layer.hpp"
 
-#include <mythos/core/app.hpp>
 #include <mythos/core/log.hpp>
-#include <mythos/core/assert.hpp>
 
 namespace tb {
 	testbed_layer::testbed_layer()

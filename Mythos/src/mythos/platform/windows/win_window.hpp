@@ -10,15 +10,15 @@ namespace myl::windows {
 		HINSTANCE m_instance;
 		HWND m_handle;
 	public:
-		MYL_API window(const config&);
-		MYL_API ~window();
+		window(const config&);
+		~window();
 
 		window(const window&) = delete;
 		window& operator=(const window&) = delete;
 
 		MYL_API void* native() const override { return static_cast<void*>(m_handle); }
 
-		MYL_API void update() override;
+		void update() override;
 	};
 }
 #endif

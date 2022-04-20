@@ -20,8 +20,8 @@ namespace myl {
 
 	struct core_runtime_error : public core_exception {
 		MYL_API explicit core_runtime_error(const char* a_message)
-			: core_exception("runtime error - ") { m_message.append(a_message); }
+			: core_exception("core runtime error - ") { m_message.append(a_message); }
 		MYL_API explicit core_runtime_error(std::string_view a_message)
-			: core_exception("runtime error - ") { m_message.append(a_message); }
+			: core_exception("core runtime error - ") { m_message.append(a_message); }
 	};
 }

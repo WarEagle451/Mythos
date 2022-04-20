@@ -6,7 +6,7 @@ namespace myl {
 	app* app::s_instance = nullptr;
 
 	app::app(const config& a_config) {
-		core::loggers::init(); // asserts contains a call to MYL_CORE_FATAL
+		core::loggers::init(); // asserts contains a call to MYL_CORE_FATAL and does not need to be exported here
 		MYL_CORE_ASSERT(s_instance == nullptr, "app has already been created");
 		s_instance = this;
 
