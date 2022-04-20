@@ -8,9 +8,9 @@ namespace myl {
 	class window {
 	public:
 		struct config {
-			std::string name;
 			i32 x, y;
 			i32 width, height;
+			std::string name;
 		};
 
 		MYL_API static std::unique_ptr<window> create(const config&);

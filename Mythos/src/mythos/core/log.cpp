@@ -6,9 +6,9 @@
 #include <vector>
 
 namespace myl::core {
-	std::shared_ptr<spdlog::logger> logger_instances::s_core = nullptr;
+	std::shared_ptr<spdlog::logger> loggers::s_core = nullptr;
 
-	void logger_instances::init() {
+	void loggers::init() {
 		std::vector<spdlog::sink_ptr> sinks;
 
 		auto color_sink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();

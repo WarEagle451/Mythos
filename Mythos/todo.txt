@@ -1,9 +1,0 @@
-Entry point, main func will be in dll
-
-try {
-	
-}
-catch(myl::core_exception& e) { MYL_CORE_FATAL(e.message()); return EXIT_FAILURE; }
-catch(std::exception& e) { std::cout << e.what() << std::endl; return EXIT_FAILURE; }
-catch(...) { std::cout << "an exception occured" << std::endl; return EXIT_FAILURE; }
-return EXIT_SUCCESS;

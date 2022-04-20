@@ -2,11 +2,10 @@
 #include <mythos/defines.hpp>
 
 #include <string>
-#include <format> /// MYTodo: Find a good way to remove this
 
 namespace myl {
 	struct core_exception {
-	private:
+	protected:
 		std::string m_message;
 	public:
 		MYL_API core_exception() noexcept
@@ -21,8 +20,8 @@ namespace myl {
 
 	struct core_runtime_error : public core_exception {
 		MYL_API explicit core_runtime_error(const char* a_message)
-			: core_exception(std::format("runtime error - {}", a_message)) {}
+			: core_exception("runtime error - ") { m_message.append(a_message); }
 		MYL_API explicit core_runtime_error(std::string_view a_message)
-			: core_exception(std::format("runtime error - {}", a_message.data())) {}
+			: core_exception("runtime error - ") { m_message.append(a_message); }
 	};
 }

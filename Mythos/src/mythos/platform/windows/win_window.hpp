@@ -5,8 +5,6 @@
 
 #	include <windows.h>
 
-/// MYTodo: Should I replace all of this with GLFW?
-
 namespace myl::windows {
 	class window : public myl::window {
 		HINSTANCE m_instance;
@@ -18,7 +16,7 @@ namespace myl::windows {
 		window(const window&) = delete;
 		window& operator=(const window&) = delete;
 
-		MYL_API void* native() const override { return static_cast<void*>(m_handle); } /// MYTodo: is this the correct one?
+		MYL_API void* native() const override { return static_cast<void*>(m_handle); }
 
 		MYL_API void update() override;
 	};

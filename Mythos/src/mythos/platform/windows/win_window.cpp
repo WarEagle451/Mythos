@@ -7,15 +7,6 @@
 #	include <windowsx.h>
 
 namespace myl {
-	static f64 s_clock_frequency; /// MYTodo: Probs should be in a diff file
-	static LARGE_INTEGER s_start_time; /// MYTodo: Probs should be in a diff file
-
-	f64 timestep::absolute() {
-		LARGE_INTEGER now;
-		QueryPerformanceCounter(&now);
-		return static_cast<f64>(now.QuadPart * s_clock_frequency);
-	}
-
 	namespace windows {
 		LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
 			switch (msg) {
@@ -138,10 +129,7 @@ namespace myl {
 			ShowWindow(m_handle, show_window_command_flags);
 
 			// clock setup
-			LARGE_INTEGER frequency;
-			QueryPerformanceCounter(&frequency);
-			s_clock_frequency = 1.0 / static_cast<f64>(frequency.QuadPart);
-			QueryPerformanceCounter(&s_start_time);
+			setup_clock();
 		}
 
 		window::~window() {
