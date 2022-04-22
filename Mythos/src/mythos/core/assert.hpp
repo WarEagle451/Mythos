@@ -4,7 +4,7 @@
 
 #include <filesystem>
 
-#ifdef MYL_DEBUG_BUILD
+#ifdef MYL_BUILD_DEBUG
 #	define MYL_ENABLE_ASSERTS
 #	if _MSC_VER
 #		define MYL_DEBUGBREAK() __debugbreak()

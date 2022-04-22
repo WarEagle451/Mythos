@@ -12,48 +12,21 @@ using i64 = signed long long;
 using f32 = float;
 using f64 = double;
 
-using b32 = int;
-using b8 = char;
+#define MYL_NO_RETURN [[noreturn]]
+#define MYL_CARRIES_DEPENDENCY [[carries_dependency]]
+#define MYL_DEPRECATED(reason) [[deprecated(reason)]]
+#define MYL_FALLTHROUGH [[fallthrough]]
+#define MYL_NO_DISCARD [[nodiscard]]
+#define MYL_NO_DISCARD_MSG(msg) [[nodiscard(msg)]]
+#define MYL_MAYBE_UNUSED [[maybe_unused]]
+#define MYL_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#define MYL_LIKELY [[likely]]
+#define MYL_UNLIKELY [[unlikely]]
 
-#ifndef MYL_NO_RETURN
-#	define MYL_NO_RETURN [[noreturn]]
-#endif
-
-#ifndef MYL_CARRIES_DEPENDENCY
-#	define MYL_CARRIES_DEPENDENCY [[carries_dependency]]
-#endif
-
-#ifndef MYL_DEPRECATED
-#	define MYL_DEPRECATED(reason) [[deprecated(reason)]]
-#endif
-
-#ifndef MYL_FALLTHROUGH
-#	define MYL_FALLTHROUGH [[fallthrough]]
-#endif
-
-#ifndef MYL_NO_DISCARD
-#	define MYL_NO_DISCARD [[nodiscard]]
-#endif
-
-#ifndef MYL_NO_DISCARD_MSG
-#	define MYL_NO_DISCARD_MSG(msg) [[nodiscard(msg)]]
-#endif
-
-#ifndef MYL_MAYBE_UNUSED
-#	define MYL_MAYBE_UNUSED [[maybe_unused]]
-#endif
-
-#ifndef MYL_NO_UNIQUE_ADDRESS
-#	define MYL_NO_UNIQUE_ADDRESS [[no_unique_address]]
-#endif
-
-#ifndef MYL_LIKELY
-#	define MYL_LIKELY [[likely]]
-#endif
-
-#ifndef MYL_UNLIKELY
-#	define MYL_UNLIKELY [[unlikely]]
-#endif
+#define MYL_VERSION_MAJOR 0
+#define MYL_VERSION_MINOR 0
+#define MYL_VERSION_PATCH 0
+#define MYL_VERSION (MYL_VERSION_MAJOR * 1000000 + MYL_VERSION_MINOR * 1000 + MYL_VERSION_PATCH)
 
 #ifdef MYL_EXPORT
 #	ifdef _MSC_VER
@@ -75,18 +48,15 @@ using b8 = char;
 #	define MYL_STATIC_ASSERT static_assert
 #endif
 
-MYL_STATIC_ASSERT(sizeof(u8) == 1, "Expected u8 to be 1 byte");
-MYL_STATIC_ASSERT(sizeof(u16) == 2, "Expected u16 to be 2 bytes");
-MYL_STATIC_ASSERT(sizeof(u32) == 4, "Expected u32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(u64) == 8, "Expected u64 to be 8 bytes");
+MYL_STATIC_ASSERT(sizeof(u8) == 1, "expected u8 to be 1 byte");
+MYL_STATIC_ASSERT(sizeof(u16) == 2, "expected u16 to be 2 bytes");
+MYL_STATIC_ASSERT(sizeof(u32) == 4, "expected u32 to be 4 bytes");
+MYL_STATIC_ASSERT(sizeof(u64) == 8, "expected u64 to be 8 bytes");
 
-MYL_STATIC_ASSERT(sizeof(i8) == 1, "Expected i8 to be 1 byte");
-MYL_STATIC_ASSERT(sizeof(i16) == 2, "Expected i16 to be 2 bytes");
-MYL_STATIC_ASSERT(sizeof(i32) == 4, "Expected i32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(i64) == 8, "Expected i64 to be 8 bytes");
+MYL_STATIC_ASSERT(sizeof(i8) == 1, "expected i8 to be 1 byte");
+MYL_STATIC_ASSERT(sizeof(i16) == 2, "expected i16 to be 2 bytes");
+MYL_STATIC_ASSERT(sizeof(i32) == 4, "expected i32 to be 4 bytes");
+MYL_STATIC_ASSERT(sizeof(i64) == 8, "expected i64 to be 8 bytes");
 
-MYL_STATIC_ASSERT(sizeof(f32) == 4, "Expected f32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");
-
-MYL_STATIC_ASSERT(sizeof(b32) == 4, "Expected b32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(b8) == 1, "Expected b8 to be 1 byte");
+MYL_STATIC_ASSERT(sizeof(f32) == 4, "expected f32 to be 4 bytes");
+MYL_STATIC_ASSERT(sizeof(f64) == 8, "expected f64 to be 8 bytes");

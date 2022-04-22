@@ -9,9 +9,7 @@ project "Mythos"
 
 	files {
 		"src/**.hpp",
-		"src/**.cpp",
-		"src/**.h",
-		"src/**.c"
+		"src/**.cpp"
 	}
 	
 	defines {
@@ -32,16 +30,16 @@ project "Mythos"
 		systemversion "latest"
 
 	filter "configurations:Debug"
-		defines "MYL_DEBUG_BUILD"
+		defines "MYL_BUILD_DEBUG"
 		runtime "Debug"
 		symbols "On"
 	
 	filter "configurations:Release"
-		defines "MYL_RELEASE_BUILD"
+		defines "MYL_BUILD_RELEASE"
 		runtime "Release"
 		optimize "On"
 
 	filter "configurations:Distribution"
-		defines "MYL_DISTRIBUTION_BUILD"
+		defines "MYL_BUILD_DISTRIBUTION"
 		runtime "Release"
 		optimize "On"

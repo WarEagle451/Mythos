@@ -1,6 +1,9 @@
 #include "app.hpp"
 #include "assert.hpp"
 #include "log.hpp"
+#include "input.hpp"
+
+#include <mythos/event/app_event.hpp>
 
 namespace myl {
 	app* app::s_instance = nullptr;
@@ -8,10 +11,16 @@ namespace myl {
 	app::app(const config& a_config) {
 		core::loggers::init(); // asserts contains a call to MYL_CORE_FATAL and does not need to be exported here
 		MYL_CORE_ASSERT(s_instance == nullptr, "app has already been created");
-		s_instance = this;
 
+		MYL_CORE_INFO("Mythos version: {}", MYL_VERSION);
+
+		s_instance = this;
 		m_running = true;
+
 		m_window = window::create(window::config{  a_config.x, a_config.y, a_config.width, a_config.height, a_config.name });
+		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event));
+
+		input::states::init(); // init key states
 	}
 
 	app::~app() {
@@ -31,6 +40,8 @@ namespace myl {
 			m_last_frame_time = time;
 
 			if (!m_suspended) {
+				input::states::update();
+
 				for (auto& l : m_layer_stack) l->update(ts);
 				for (auto& l : m_layer_stack) l->render();
 			}
@@ -45,5 +56,32 @@ namespace myl {
 
 	void app::push_overlay(layer_stack::layer_ptr a_overlay) {
 		m_layer_stack.push_overlay(std::move(a_overlay));
+	}
+
+	bool app::on_window_close(window_close_event& a_event) {
+		close();
+		return true;
+	}
+
+	bool app::on_window_resize(window_resize_event& a_event) {
+		if (a_event.width() == 0 || a_event.height() == 0) {
+			m_suspended = true;
+			return false;
+		}
+		MYL_CORE_INFO("window resized: [{}, {}]", a_event.width(), a_event.height()); /// MYTemp: for testing events
+		m_suspended = false;
+		return false;
+	}
+
+	void app::on_event(event& a_event) {
+		event_dispatcher dispatcher(a_event);
+		dispatcher.dispatch<window_close_event>(MYL_BIND_EVENT_FN(app::on_window_close));
+		dispatcher.dispatch<window_resize_event>(MYL_BIND_EVENT_FN(app::on_window_resize));
+
+		for (auto& layer : m_layer_stack) {
+			if (a_event.handled)
+				break;
+			layer->on_event(a_event);
+		}
 	}
 }

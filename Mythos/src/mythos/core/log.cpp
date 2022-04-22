@@ -29,7 +29,7 @@ namespace myl::core {
 		spdlog::register_logger(s_core);
 
 		s_core->flush_on(spdlog::level::trace);
-#ifdef MYL_DEBUG_BUILD
+#ifdef MYL_BUILD_DEBUG
 		s_core->set_level(spdlog::level::trace);
 #else
 		s_core->set_level(spdlog::level::info);	

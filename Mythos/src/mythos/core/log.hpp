@@ -15,7 +15,7 @@ namespace myl::core { /// MYTodo: Replace with custom logger
 	};
 }
 
-#ifdef MYL_DEBUG_BUILD
+#ifdef MYL_BUILD_DEBUG
 #	define MYL_CORE_TRACE(...) ::myl::core::loggers::get_core()->trace(__VA_ARGS__)
 #	define MYL_CORE_DEBUG(...) ::myl::core::loggers::get_core()->debug(__VA_ARGS__)
 #else

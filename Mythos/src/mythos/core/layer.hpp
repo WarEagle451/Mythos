@@ -1,11 +1,12 @@
 #pragma once
-#include <mythos/defines.hpp>
-
 #include "timestep.hpp"
+
+#include <mythos/defines.hpp>
+#include <mythos/event/event.hpp>
 
 #include <string>
 
-namespace myl {
+namespace myl { /// MYTodo: all layers should have a way to block events
 	class layer {
 	protected:
 		std::string m_name;
@@ -17,9 +18,9 @@ namespace myl {
 
 		MYL_API virtual void on_attach() = 0;
 		MYL_API virtual void on_detach() = 0;
+		MYL_API virtual void on_event(myl::event&) = 0;
 		MYL_API virtual void update(timestep) = 0;
 		MYL_API virtual void render() = 0;
-		/// MYTodo: on event, aka on_resize and stuff like that
 
 		MYL_API MYL_NO_DISCARD std::string_view name() const { return m_name; }
 	};
