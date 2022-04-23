@@ -14,8 +14,8 @@ namespace myl {
 			button7,
 			button8,
 
-			unknown,
 			size,
+			unknown,
 
 			left = button1,
 			right = button2,

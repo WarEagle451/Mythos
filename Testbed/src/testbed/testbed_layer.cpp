@@ -4,6 +4,10 @@
 #include <mythos/event/event.hpp>
 #include <mythos/event/mouse_event.hpp>
 
+#include <mythos/core/input.hpp>
+
+#include <mythos/core/app.hpp>
+
 namespace tb {
 	static bool mouse_moved(myl::mouse_moved_event& e) {
 		MYL_CORE_INFO("mouse cords: [{}, {}]", e.x(), e.y());
@@ -51,7 +55,12 @@ namespace tb {
 	}
 
 	void testbed_layer::update(myl::timestep ts) {
+		if (myl::input::key_down(myl::key::escape))
+			myl::app::get().close();
 
+		for (i32 key = 0; key != myl::key::size; ++key)
+			if (myl::input::key_clicked(key))
+				MYL_CORE_DEBUG("{} key typed", key);
 	}
 
 	void testbed_layer::render() {

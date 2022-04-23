@@ -16,6 +16,8 @@ namespace myl {
 		MYL_IMPL_EVENT_CATEGORY(static_cast<i32>(event_category::keyboard) | static_cast<i32>(event_category::input))
 	};
 
+	/// MYTodo: change naming to like event_key_pressed, also in other files too
+
 	class key_pressed_event : public key_event {
 		u16 m_repeat_count;
 	public:

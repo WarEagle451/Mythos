@@ -32,7 +32,7 @@ namespace myl {
 		MYL_API app(const app&) = delete;
 		MYL_API app& operator=(const app&) = delete;
 
-		MYL_API void close() { m_running = false; }
+		MYL_API void close() { m_running = false; } /// MYTodo: this should probs fire close event instead
 
 		MYL_API void run();
 

@@ -3,13 +3,10 @@
 
 #include <memory>
 #include <string>
-#include <functional>
 
 namespace myl {
 	class window {
 	public:
-		using event_callback = std::function<void(event&)>;
-
 		struct config { /// MYTodo: this can also have things like fullscreen, vsync, etc: basically anything glfw would have as window hints
 			i32 x, y;
 			i32 width, height;

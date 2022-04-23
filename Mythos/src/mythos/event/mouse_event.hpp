@@ -4,6 +4,8 @@
 #include <mythos/core/mouse_codes.hpp>
 
 namespace myl {
+	/// MYTodo: update to use vecs
+
 	class mouse_moved_event : public event {
 		f32 m_x, m_y;
 	public:

@@ -1,6 +1,8 @@
 #pragma once
 #include <mythos/defines.hpp>
 
+#include <functional>
+
 /// MYTodo: I don't like this macro
 #include <memory> /// for macro below
 #define MYL_BIND_EVENT_FN(fn) [this](auto&&... a_args) -> decltype(auto) { return this->fn(std::forward<decltype(a_args)>(a_args)...); }
@@ -80,4 +82,9 @@ namespace myl {
 			return false;
 		}
 	};
+
+	using event_callback = std::function<void(event&)>;
+
+	void set_event_callback(event_callback&);
+	MYL_API void fire_event(event&);
 }

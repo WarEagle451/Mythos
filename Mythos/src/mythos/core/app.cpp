@@ -5,26 +5,29 @@
 
 #include <mythos/event/app_event.hpp>
 
+/// MYTodo: will want to have different event handlers than just on event
+
 namespace myl {
 	app* app::s_instance = nullptr;
 
 	app::app(const config& a_config) {
-		core::loggers::init(); // asserts contains a call to MYL_CORE_FATAL and does not need to be exported here
-		MYL_CORE_ASSERT(s_instance == nullptr, "app has already been created");
+		core::loggers::init(); // asserts contain a call to MYL_CORE_FATAL
+		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
 
 		MYL_CORE_INFO("Mythos version: {}", MYL_VERSION);
 
 		s_instance = this;
 		m_running = true;
 
-		m_window = window::create(window::config{  a_config.x, a_config.y, a_config.width, a_config.height, a_config.name });
-		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event));
+		input::internal_states::init(); // init key states
 
-		input::states::init(); // init key states
+		m_window = window::create(window::config{  a_config.x, a_config.y, a_config.width, a_config.height, a_config.name });
+		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: why pass this though window? why not just set it from here?
+
 	}
 
 	app::~app() {
-
+		MYL_CORE_INFO("Shutting down application");
 	}
 
 	void app::run() {
@@ -40,10 +43,10 @@ namespace myl {
 			m_last_frame_time = time;
 
 			if (!m_suspended) {
-				input::states::update();
-
 				for (auto& l : m_layer_stack) l->update(ts);
 				for (auto& l : m_layer_stack) l->render();
+
+				input::internal_states::update();
 			}
 
 			m_window->update();
