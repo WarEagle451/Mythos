@@ -24,7 +24,7 @@ namespace myl {
 			std::string name;
 		};
 
-		MYL_API static app& get() { return *s_instance; }
+		MYL_API MYL_NO_DISCARD static app& get() { return *s_instance; }
 
 		MYL_API app(const config&);
 		MYL_API ~app();
@@ -32,15 +32,15 @@ namespace myl {
 		MYL_API app(const app&) = delete;
 		MYL_API app& operator=(const app&) = delete;
 
-		MYL_API void close() { m_running = false; } /// MYTodo: this should probs fire close event instead
+		MYL_API void close() { m_running = false; }
 
 		MYL_API void run();
 
 		MYL_API void push_layer(layer_stack::layer_ptr a_layer);
 		MYL_API void push_overlay(layer_stack::layer_ptr a_overlay);
 
-		bool on_window_close(window_close_event&);
-		bool on_window_resize(window_resize_event&);
+		bool on_window_close(event_window_close&);
+		bool on_window_resize(event_window_resize&);
 
 		void on_event(event&);
 	};

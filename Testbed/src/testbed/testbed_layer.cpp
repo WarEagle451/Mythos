@@ -9,22 +9,22 @@
 #include <mythos/core/app.hpp>
 
 namespace tb {
-	static bool mouse_moved(myl::mouse_moved_event& e) {
+	static bool mouse_moved(myl::event_mouse_moved& e) {
 		MYL_CORE_INFO("mouse cords: [{}, {}]", e.x(), e.y());
 		return true;
 	}
 
-	static bool mouse_scrolled(myl::mouse_scrolled_event& e) {
+	static bool mouse_scrolled(myl::event_mouse_scrolled& e) {
 		MYL_CORE_INFO("mouse delta: [{}, {}]", e.x_delta(), e.y_delta());
 		return true;
 	}
 
-	static bool mouse_pressed(myl::mouse_pressed_event& e) {
+	static bool mouse_pressed(myl::event_mouse_pressed& e) {
 		MYL_CORE_INFO("mouse pressed: {}", static_cast<i32>(e.button()));
 		return true;
 	}
 
-	static bool mouse_released(myl::mouse_released_event& e) {
+	static bool mouse_released(myl::event_mouse_released& e) {
 		MYL_CORE_INFO("mouse released: {}", static_cast<i32>(e.button()));
 		return true;
 	}
@@ -48,10 +48,10 @@ namespace tb {
 
 	void testbed_layer::on_event(myl::event& a_event) {
 		myl::event_dispatcher dispatcher(a_event);
-		dispatcher.dispatch<myl::mouse_moved_event>(mouse_moved);
-		dispatcher.dispatch<myl::mouse_scrolled_event>(mouse_scrolled);
-		dispatcher.dispatch<myl::mouse_pressed_event>(mouse_pressed);
-		dispatcher.dispatch<myl::mouse_released_event>(mouse_released);
+		dispatcher.dispatch<myl::event_mouse_moved>(mouse_moved);
+		dispatcher.dispatch<myl::event_mouse_scrolled>(mouse_scrolled);
+		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
+		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
 	}
 
 	void testbed_layer::update(myl::timestep ts) {

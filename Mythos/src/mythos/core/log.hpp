@@ -5,7 +5,7 @@
 
 #include <memory>
 
-namespace myl::core { /// MYTodo: Replace with custom logger
+namespace myl::core {
 	class loggers {
 		static std::shared_ptr<spdlog::logger> s_core;
 	public:

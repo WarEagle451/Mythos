@@ -94,7 +94,17 @@ namespace myl {
 	}
 
 	template<typename Type> using vec3 = math::vec<3, Type>;
-	using ivec3 = math::vec<3, int>;
-	using fvec3 = math::vec<3, float>;
-	using dvec3 = math::vec<3, double>;
+
+	using i8vec3 = vec3<i8>;
+	using i16vec3 = vec3<i16>;
+	using i32vec3 = vec3<i32>;
+	using i64vec3 = vec3<i64>;
+
+	using u8vec3 = vec3<u8>;
+	using u16vec3 = vec3<u16>;
+	using u32vec3 = vec3<u32>;
+	using u64vec3 = vec3<u64>;
+
+	using f32vec3 = vec3<f32>;
+	using f64vec3 = vec3<f64>;
 }

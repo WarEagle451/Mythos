@@ -72,7 +72,17 @@ namespace myl {
 	}
 
 	template<typename Type> using vec2 = math::vec<2, Type>;
-	using ivec2 = math::vec<2, int>;
-	using fvec2 = math::vec<2, float>;
-	using dvec2 = math::vec<2, double>;
+
+	using i8vec2 = vec2<i8>;
+	using i16vec2 = vec2<i16>;
+	using i32vec2 = vec2<i32>;
+	using i64vec2 = vec2<i64>;
+
+	using u8vec2 = vec2<u8>;
+	using u16vec2 = vec2<u16>;
+	using u32vec2 = vec2<u32>;
+	using u64vec2 = vec2<u64>;
+
+	using f32vec2 = vec2<f32>;
+	using f64vec2 = vec2<f64>;
 }

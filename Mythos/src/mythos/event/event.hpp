@@ -7,10 +7,10 @@
 #include <memory> /// for macro below
 #define MYL_BIND_EVENT_FN(fn) [this](auto&&... a_args) -> decltype(auto) { return this->fn(std::forward<decltype(a_args)>(a_args)...); }
 
-/// MYTodo:\
-This event design requires that the event be passed through everything, this is probs bad \
-a better way is too have a class that contains a listener and the callback function \
-aka maybe change from dispatcher event sysytem to listener event system
+/// MYTodo: event design
+/// This event design requires that the event be passed through everything, this is probs bad 
+/// a better way is too have a class that contains a listener and the callback function 
+/// aka maybe change from dispatcher event sysytem to listener event system
 
 namespace myl {
 	//@brief user defined event types should not conflict with the engine event types below
@@ -46,21 +46,21 @@ namespace myl {
 		mouse_button = 1 << 4
 	};
 
-#define MYL_IMPL_EVENT_CATEGORY(category) MYL_API constexpr virtual i32 category_flags() const override { return category; }
+#define MYL_IMPL_EVENT_CATEGORY(category) MYL_API MYL_NO_DISCARD constexpr virtual i32 category_flags() const override { return category; }
 #define MYL_IMPL_EVENT_TYPE(type_)\
-	MYL_API static constexpr event_type static_type() { return event_type::type_; }\
-	MYL_API constexpr virtual event_type type() const override { return static_type(); }\
-	MYL_API constexpr virtual const char* name() const override { return #type_; }
+	MYL_API MYL_NO_DISCARD static constexpr event_type static_type() { return event_type::type_; }\
+	MYL_API MYL_NO_DISCARD constexpr virtual event_type type() const override { return static_type(); }\
+	MYL_API MYL_NO_DISCARD constexpr virtual const char* name() const override { return #type_; }
 
 	class event {
 	public:
 		MYL_API constexpr virtual ~event() = default;
 
-		MYL_API constexpr virtual event_type type() const = 0;
-		MYL_API constexpr virtual const char* name() const = 0;
-		MYL_API constexpr virtual i32 category_flags() const = 0;
+		MYL_API MYL_NO_DISCARD constexpr virtual event_type type() const = 0;
+		MYL_API MYL_NO_DISCARD constexpr virtual const char* name() const = 0;
+		MYL_API MYL_NO_DISCARD constexpr virtual i32 category_flags() const = 0;
 
-		constexpr bool is_in_category(event_category a_category) { return category_flags() & static_cast<i32>(a_category); }
+		constexpr bool MYL_NO_DISCARD is_in_category(event_category a_category) { return category_flags() & static_cast<i32>(a_category); }
 
 		bool handled = false;
 	};

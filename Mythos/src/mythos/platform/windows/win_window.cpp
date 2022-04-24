@@ -12,8 +12,7 @@
 #	include <windowsx.h>
 
 namespace myl::windows {
-	/// MYTodo: this should probs go into a windows input
-	constexpr mouse_code translate_mouse_code(WPARAM w_param) {
+	MYL_NO_DISCARD constexpr mouse_code translate_mouse_code(WPARAM w_param) {
 		switch (w_param) {
 			using namespace mouse_button;
 			case MK_LBUTTON: return left;
@@ -32,8 +31,9 @@ namespace myl::windows {
 		}
 	}
 
-	/// MYTodo: this should probs go into a windows input
-	constexpr key_code translate_key_code(WPARAM w_param) {
+	/// MYBug: print screen does not work, also test all keys
+
+	MYL_NO_DISCARD constexpr key_code translate_key_code(WPARAM w_param) {
 		switch (static_cast<u16>(w_param)) { // key code it a u16 from the w_param
 			using namespace key;
 			case VK_TAB: return tab;
@@ -164,7 +164,7 @@ namespace myl::windows {
 			case WM_ERASEBKGND: // notify the OS that erasing will be handled by the app to prevent flicker
 				return 1;
 			case WM_CLOSE: {
-				window_close_event e{};
+				event_window_close e{};
 				fire_event(e);
 			} return 0;
 			case WM_DESTROY:
@@ -173,7 +173,7 @@ namespace myl::windows {
 			case WM_SIZE: { // get the updated size
 				RECT r;
 				GetClientRect(hwnd, &r);
-				window_resize_event e(static_cast<u32>(r.right - r.left), static_cast<u32>(r.bottom - r.top));
+				event_window_resize e(static_cast<u32>(r.right - r.left), static_cast<u32>(r.bottom - r.top));
 				fire_event(e);
 			} break;
 			case WM_KEYDOWN: MYL_FALLTHROUGH;
@@ -280,7 +280,7 @@ namespace myl::windows {
 		}
 
 		// show the window
-		bool should_activate = true; /// MYTodo: if the window should not acception input this should be false
+		bool should_activate = true; /// MYTodo: if the window should not accept input this should be false
 		i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
 		// if initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
 		// if initially mazimized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;

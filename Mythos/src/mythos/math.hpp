@@ -7,7 +7,6 @@
 
 /// MYTodo: Math
 ///	- quaterion
-///	- string_cast for vec, mat, qua
 ///	- trig : cos, sin, tan, acos, asin, atan, atanh, asinh, acosh
 ///	- vec :
 ///		- reflect

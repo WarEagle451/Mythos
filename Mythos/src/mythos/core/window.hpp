@@ -13,7 +13,7 @@ namespace myl {
 			std::string name;
 		};
 
-		static std::unique_ptr<window> create(const config&);
+		MYL_NO_DISCARD static std::unique_ptr<window> create(const config&);
 
 		virtual ~window() = default;
 

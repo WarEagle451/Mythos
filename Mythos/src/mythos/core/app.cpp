@@ -5,7 +5,7 @@
 
 #include <mythos/event/app_event.hpp>
 
-/// MYTodo: will want to have different event handlers than just on event
+/// MYTodo: will want to have different event callbacks than just on_event
 
 namespace myl {
 	app* app::s_instance = nullptr;
@@ -61,12 +61,12 @@ namespace myl {
 		m_layer_stack.push_overlay(std::move(a_overlay));
 	}
 
-	bool app::on_window_close(window_close_event& a_event) {
+	bool app::on_window_close(event_window_close& a_event) {
 		close();
 		return true;
 	}
 
-	bool app::on_window_resize(window_resize_event& a_event) {
+	bool app::on_window_resize(event_window_resize& a_event) {
 		if (a_event.width() == 0 || a_event.height() == 0) {
 			m_suspended = true;
 			return false;
@@ -78,8 +78,8 @@ namespace myl {
 
 	void app::on_event(event& a_event) {
 		event_dispatcher dispatcher(a_event);
-		dispatcher.dispatch<window_close_event>(MYL_BIND_EVENT_FN(app::on_window_close));
-		dispatcher.dispatch<window_resize_event>(MYL_BIND_EVENT_FN(app::on_window_resize));
+		dispatcher.dispatch<event_window_close>(MYL_BIND_EVENT_FN(app::on_window_close));
+		dispatcher.dispatch<event_window_resize>(MYL_BIND_EVENT_FN(app::on_window_resize));
 
 		for (auto& layer : m_layer_stack) {
 			if (a_event.handled)

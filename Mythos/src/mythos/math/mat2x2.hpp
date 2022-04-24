@@ -80,7 +80,17 @@ namespace myl {
 	}
 
 	template<typename Type> using mat2x2 = math::mat<2, 2, Type>;
-	using imat2x2 = math::mat<2, 2, int>;
-	using fmat2x2 = math::mat<2, 2, float>;
-	using dmat2x2 = math::mat<2, 2, double>;
+
+	using i8mat2x2 = mat2x2<i8>;
+	using i16mat2x2 = mat2x2<i16>;
+	using i32mat2x2 = mat2x2<i32>;
+	using i64mat2x2 = mat2x2<i64>;
+
+	using u8mat2x2 = mat2x2<u8>;
+	using u16mat2x2 = mat2x2<u16>;
+	using u32mat2x2 = mat2x2<u32>;
+	using u64mat2x2 = mat2x2<u64>;
+
+	using f32mat2x2 = mat2x2<f32>;
+	using f64mat2x2 = mat2x2<f64>;
 }

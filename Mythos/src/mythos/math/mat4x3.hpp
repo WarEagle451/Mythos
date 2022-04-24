@@ -69,7 +69,17 @@ namespace myl {
 	}
 
 	template<typename Type> using mat4x3 = math::mat<4, 3, Type>;
-	using imat4x3 = math::mat<4, 3, int>;
-	using fmat4x3 = math::mat<4, 3, float>;
-	using dmat4x3 = math::mat<4, 3, double>;
+
+	using i8mat4x3 = mat4x3<i8>;
+	using i16mat4x3 = mat4x3<i16>;
+	using i32mat4x3 = mat4x3<i32>;
+	using i64mat4x3 = mat4x3<i64>;
+
+	using u8mat4x3 = mat4x3<u8>;
+	using u16mat4x3 = mat4x3<u16>;
+	using u32mat4x3 = mat4x3<u32>;
+	using u64mat4x3 = mat4x3<u64>;
+
+	using f32mat4x3 = mat4x3<f32>;
+	using f64mat4x3 = mat4x3<f64>;
 }

@@ -2,7 +2,7 @@
 #include "app.hpp"
 
 namespace myl {
-	MYL_API extern std::unique_ptr<app> create(); // to be defined in client
+	MYL_API MYL_NO_DISCARD extern std::unique_ptr<app> create(); // to be defined in client
 }
 
 #include "except.hpp"
