@@ -244,8 +244,8 @@ namespace myl::windows {
 		}
 
 		// create window
-		u32 client_x = a_config.x;
-		u32 client_y = a_config.y;
+		u32 client_x = a_config.postion.x;
+		u32 client_y = a_config.postion.y;
 		u32 client_width = a_config.width;
 		u32 client_height = a_config.height;
 

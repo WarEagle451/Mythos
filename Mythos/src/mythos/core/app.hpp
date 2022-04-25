@@ -19,9 +19,7 @@ namespace myl {
 		f64 m_last_frame_time = 0.0;
 	public:
 		struct config {
-			i16 x, y;
-			i16 width, height;
-			std::string name;
+			window::config window;
 		};
 
 		MYL_API MYL_NO_DISCARD static app& get() { return *s_instance; }

@@ -3,6 +3,8 @@
 
 #include <mythos/math/vec2.hpp>
 
+/// Window minimize, window maximize
+
 namespace myl {
 	class event_window_resize : public event {
 		u32vec2 m_dimensions;

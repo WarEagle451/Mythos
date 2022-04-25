@@ -4,7 +4,10 @@
 
 namespace myl {
 	std::unique_ptr<app> create() {
-		auto application = std::make_unique<app>(app::config{ 100, 100, 1280, 720, "Testbed" });
+		app::config config;
+		config.window.name = "Testbed";
+
+		auto application = std::make_unique<app>(config);
 		application->push_layer(new tb::testbed_layer());
 		return application;
 	}

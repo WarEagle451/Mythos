@@ -21,9 +21,11 @@ namespace myl {
 
 		input::internal_states::init(); // init key states
 
-		m_window = window::create(window::config{  a_config.x, a_config.y, a_config.width, a_config.height, a_config.name });
+		m_window = window::create(a_config.window);
 		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: why pass this though window? why not just set it from here?
 
+		/// MYTodo: Init renderer
+		/// MYTodo: Init audio
 	}
 
 	app::~app() {

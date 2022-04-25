@@ -1,5 +1,6 @@
 #pragma once
 #include <mythos/event/event.hpp>
+#include <mythos/math/vec2.hpp>
 
 #include <memory>
 #include <string>
@@ -8,9 +9,10 @@ namespace myl {
 	class window {
 	public:
 		struct config { /// MYTodo: this can also have things like fullscreen, vsync, etc: basically anything glfw would have as window hints
-			i32 x, y;
-			i32 width, height;
-			std::string name;
+			i32vec2 postion = { 0, 0 };
+			i32 width = 1280;
+			i32 height = 720;
+			std::string name = "Mythos Application";
 		};
 
 		MYL_NO_DISCARD static std::unique_ptr<window> create(const config&);
