@@ -1,5 +1,8 @@
 # Mythos
 
+![MythosLogo](https://github.com/WarEagle451/Mythos-DLL/blob/main/Mythos/resources/branding/logo.png)
+_<center>Mythos Logo
+
 Mythos is a game engine :)
 
 ## Requirements
