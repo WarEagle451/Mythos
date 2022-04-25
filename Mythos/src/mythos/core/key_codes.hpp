@@ -5,79 +5,95 @@ namespace myl {
 	using key_code = u16;
 	namespace key {
 		enum : key_code {
-			tab = 9,
-			enter = 13,
-			escape = 27,
-			space = 32,
-			apostrophe = 39,
-			comma = 44,
-			dash = 45,
-			period = 46,
-			slash = 47,
+			n0, // 0
+			n1, // 1
+			n2, // 2
+			n3, // 3
+			n4, // 4
+			n5, // 5
+			n6, // 6
+			n7, // 7
+			n8, // 8
+			n9, // 9
 
-			n0 = 48, // 0
-			n1 = 49, // 1
-			n2 = 50, // 2
-			n3 = 51, // 3
-			n4 = 52, // 4
-			n5 = 53, // 5
-			n6 = 54, // 6
-			n7 = 55, // 7
-			n8 = 56, // 8
-			n9 = 57, // 9
+			a,
+			b,
+			c,
+			d,
+			e,
+			f,
+			g,
+			h,
+			i,
+			j,
+			k,
+			l,
+			m,
+			n,
+			o,
+			p,
+			q,
+			r,
+			s,
+			t,
+			u,
+			v,
+			w,
+			x,
+			y,
+			z,
 
-			semicolon = 59,
-			equal = 61,
+			kp0, // keypad 0
+			kp1, // keypad 1
+			kp2, // keypad 2
+			kp3, // keypad 3
+			kp4, // keypad 4
+			kp5, // keypad 5
+			kp6, // keypad 6
+			kp7, // keypad 7
+			kp8, // keypad 8
+			kp9, // keypad 9
+			decimal,
+			divide,
+			multiply,
+			subtract,
+			add,
+			kp_enter,
+			kp_equal,
 
-			a = 65,
-			b = 66,
-			c = 67,
-			d = 68,
-			e = 69,
-			f = 70,
-			g = 71,
-			h = 72,
-			i = 73,
-			j = 74,
-			k = 75,
-			l = 76,
-			m = 77,
-			n = 78,
-			o = 79,
-			p = 80,
-			q = 81,
-			r = 82,
-			s = 83,
-			t = 84,
-			u = 85,
-			v = 86,
-			w = 87,
-			x = 88,
-			y = 89,
-			z = 90,
+			space,
+			apostrophe,
+			comma,
+			dash,
+			period,
+			slash,
+			semicolon,
+			equal,
+			left_bracket,
+			right_bracket,
+			backslash,
+			grave_accent,
 
-			left_bracket = 91,
-			backslash = 92,
-			right_bracket = 93,
-			grave_accent = 96,
+			backspace,
+			tab,
+			enter,
 
-			backspace = 127,
-
-			// keys below 128 should line up with ansii standards
-
-			world1,
-			world2,
-
-			insert,
-			delete_key,
 			right,
 			left,
 			down,
 			up,
+
+			escape,
+			insert,
+			delete_key,
 			page_up,
 			page_down,
 			home,
 			end,
+			menu,
+
+			world1,
+			world2,
 
 			caps_lock,
 			scroll_lock,
@@ -110,24 +126,6 @@ namespace myl {
 			f23,
 			f24,
 
-			kp0, // keypad 0
-			kp1, // keypad 1
-			kp2, // keypad 2
-			kp3, // keypad 3
-			kp4, // keypad 4
-			kp5, // keypad 5
-			kp6, // keypad 6
-			kp7, // keypad 7
-			kp8, // keypad 8
-			kp9, // keypad 9
-			decimal,
-			divide,
-			multiply,
-			subtract,
-			add,
-			kp_enter,
-			kp_equal,
-
 			left_shift,
 			left_control,
 			left_alt,
@@ -137,8 +135,6 @@ namespace myl {
 			right_control,
 			right_alt,
 			right_super,
-
-			menu,
 
 			size,
 			unknown
