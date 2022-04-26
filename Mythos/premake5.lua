@@ -24,7 +24,7 @@ project "Mythos"
 	}
 	
 	links {
-		premake.detoken.expand("%{Library.Vulkan}", Library, Library) -- HACK %{Library.Vulkan}" is not working
+		premake.detoken.expand("%{Library.Vulkan}", Library, Library) -- MYHack: %{Library.Vulkan}" is not working
 		--"%{Library.Vulkan}"
 	}
 

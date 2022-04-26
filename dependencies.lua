@@ -10,5 +10,3 @@ LibraryDir["VulkanSDK_DebugDLL"] = "%{wks.location}/Mythos/vendor/VulkanSDK/Bin"
 
 Library = {}
 Library["Vulkan"] = "%{LibraryDir.VulkanSDK}/vulkan-1.lib"
-
-print(premake.detoken.expand("%{Library.Vulkan}", Library, Library))
