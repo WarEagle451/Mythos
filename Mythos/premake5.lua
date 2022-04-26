@@ -19,11 +19,13 @@ project "Mythos"
 
 	includedirs {
 		"src",
-		"vendor/spdlog/include"
+		"vendor/spdlog/include",
+		"%{IncludeDir.VulkanSDK}"
 	}
 	
 	links {
-	
+		premake.detoken.expand("%{Library.Vulkan}", Library, Library) -- HACK %{Library.Vulkan}" is not working
+		--"%{Library.Vulkan}"
 	}
 
 	filter "system:windows"

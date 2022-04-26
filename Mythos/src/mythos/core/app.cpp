@@ -4,6 +4,7 @@
 #include "input.hpp"
 
 #include <mythos/event/app_event.hpp>
+#include <mythos/render/renderer.hpp>
 
 /// MYTodo: will want to have different event callbacks than just on_event
 
@@ -24,34 +25,37 @@ namespace myl {
 		m_window = window::create(a_config.window);
 		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: why pass this though window? why not just set it from here?
 
-		/// MYTodo: Init renderer
+		render::renderer::init();
 		/// MYTodo: Init audio
 	}
 
 	app::~app() {
 		MYL_CORE_INFO("Shutting down application");
+		render::renderer::shutdown();
 	}
 
 	void app::run() {
 		while (m_running) {
 			f64 time = get_time();
 			timestep ts = time - m_last_frame_time;
-
-			while (ts < 1.0 / 60.0) { /// MYHack: do vsync the right way
-				time = get_time();
-				ts = time - m_last_frame_time;
-			}
-
 			m_last_frame_time = time;
 
 			if (!m_suspended) {
 				for (auto& l : m_layer_stack) l->update(ts);
 				for (auto& l : m_layer_stack) l->render();
 
+				render::renderer::draw_frame();
 				input::internal_states::update();
 			}
 
 			m_window->update();
+
+			if (!m_suspended) {
+				static constexpr f64 target_time = 1.0 / 60.0; // 60 fps
+				f64 elapsed_time = get_time() - m_last_frame_time;
+				while (elapsed_time < target_time) /// MYHack: do vsync the right way
+					elapsed_time = get_time() - m_last_frame_time;
+			}
 		}
 	}
 
