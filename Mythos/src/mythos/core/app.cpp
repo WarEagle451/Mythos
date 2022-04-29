@@ -11,13 +11,13 @@
 namespace myl {
 	app* app::s_instance = nullptr;
 
-	app::app(const config& a_config) {
+	app::app(const info& a_info, const config& a_config) {
 		core::loggers::init(); // asserts contain a call to MYL_CORE_FATAL
 		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
+		s_instance = this;
 
 		MYL_CORE_INFO("Mythos version: {}", MYL_VERSION);
 
-		s_instance = this;
 		m_running = true;
 
 		input::internal_states::init(); // init key states
@@ -25,8 +25,7 @@ namespace myl {
 		m_window = window::create(a_config.window);
 		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: why pass this though window? why not just set it from here?
 
-		render::renderer::init();
-		/// MYTodo: Init audio
+		render::renderer::init(a_info);
 	}
 
 	app::~app() {

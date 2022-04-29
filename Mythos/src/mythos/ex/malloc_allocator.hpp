@@ -33,7 +33,5 @@ namespace myl {
 			free(ptr);
 			ptr = NULL;
 		}
-
-		/// MYTodo: rebind?
 	};
 }

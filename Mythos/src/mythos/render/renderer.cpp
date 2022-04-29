@@ -4,8 +4,8 @@ namespace myl::render {
 	std::unique_ptr<backend> renderer::s_backend = nullptr;
 	api renderer::s_api = api::vulkan; /// MYTodo: make this get passed through as a config in start up
 
-	void renderer::init() {
-		s_backend = backend::create(s_api);
+	void renderer::init(const app::info& a_info) {
+		s_backend = backend::create(s_api, a_info);
 	}
 
 	void renderer::shutdown() {

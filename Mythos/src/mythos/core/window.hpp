@@ -12,13 +12,14 @@ namespace myl {
 			i32vec2 postion = { 0, 0 };
 			i32 width = 1280;
 			i32 height = 720;
-			std::string name = "Mythos Application";
+			std::string name = "Mythos Application"; // same default in app::info
 		};
 
 		MYL_NO_DISCARD static std::unique_ptr<window> create(const config&);
 
 		virtual ~window() = default;
 
+		//@return a pointer to the instance handle of a window
 		MYL_API virtual void* native() const = 0;
 
 		virtual void set_event_callback(const event_callback&) = 0;

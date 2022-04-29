@@ -24,7 +24,7 @@ namespace myl::windows {
 				/// middle + left = 17
 				/// middle + right = 18
 				/// middle + left + right = 19
-				/// MYBug: when 2 buttons are pressed at the same time it puts the values together, no way to handle that
+				/// MYBug: when 2 buttons are pressed at the same time windows puts the values together, no way to handle that
 				/// left = 0001; right = 0010; same time = 0011
 				
 				/// MYTodo: buttons on the sides on mouse
@@ -88,8 +88,6 @@ namespace myl::windows {
 			case VK_OEM_6: return right_bracket;
 			case VK_OEM_3: return grave_accent;
 			case VK_BACK: return backspace;
-			///MYTodo:case : return world1;
-			///MYTodo:case : return world2;
 			case VK_INSERT: return insert;
 			case VK_DELETE: return delete_key;
 			case VK_RIGHT: return right;
@@ -144,8 +142,8 @@ namespace myl::windows {
 			case VK_MULTIPLY: return multiply;
 			case VK_SUBTRACT: return subtract;
 			case VK_ADD: return add;
-			///MYTodo: case : return kp_enter;
-			///MYTodo: case : return kp_equal; 
+			///case: return kp_enter;
+			///case: return kp_equal; 
 			case VK_LSHIFT: return left_shift;
 			case VK_LCONTROL: return left_control;
 			case VK_LMENU: return left_alt;
@@ -238,10 +236,8 @@ namespace myl::windows {
 		wc.hbrBackground = NULL;
 		wc.lpszClassName = window_class_name;
 
-		if (!RegisterClassA(&wc)) {
-			MessageBoxA(0, "Window registration failed", "Error", MB_ICONEXCLAMATION | MB_OK); /// MYTodo: replace this with exception that will do this at main
-			throw core_runtime_error("window registration failed");
-		}
+		if (!RegisterClassA(&wc))
+			throw core_runtime_error("Windows window registration failed");
 
 		// create window
 		u32 client_x = a_config.postion.x;
@@ -274,10 +270,8 @@ namespace myl::windows {
 		window_height += border_rect.bottom - border_rect.top;
 
 		m_handle = CreateWindowExA(window_ex_style, window_class_name, a_config.name.c_str(), window_style, window_x, window_y, window_width, window_height, 0, 0, m_instance, 0);
-		if (!m_handle) {
-			MessageBoxA(NULL, "Window creation failed", "Error!", MB_ICONEXCLAMATION | MB_OK); /// MYTodo: replace this with exception that will do this at main
-			throw core_runtime_error("window creation failed");
-		}
+		if (!m_handle)
+			throw core_runtime_error("Windows window creation failed");
 
 		// show the window
 		bool should_activate = true; /// MYTodo: if the window should not accept input this should be false

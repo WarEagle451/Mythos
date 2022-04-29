@@ -1,7 +1,6 @@
 #include <mythos/platform/detection.hpp>
 #ifdef MYL_PLATFORM_WINDOWS
 #	include <mythos/core/timestep.hpp>
-#	include <mythos/platform/vulkan/vulkan_platform.hpp>
 
 #	include <windows.h>
 
@@ -20,12 +19,6 @@ namespace myl {
 		QueryPerformanceFrequency(&frequency);
 		s_clock_frequency = 1.0 / static_cast<f64>(frequency.QuadPart);
 		QueryPerformanceCounter(&s_start_time);
-	}
-
-	namespace vulkan {
-		void platform_required_extension_names(std::vector<const char*>* a_extensions) {
-			a_extensions->push_back("VK_KHR_win32_surface");
-		}
 	}
 }
 #endif

@@ -2,6 +2,7 @@
 #include "backend.hpp"
 
 #include <mythos/defines.hpp>
+#include <mythos/core/app.hpp>
 
 namespace myl::render {
 	struct statistics {
@@ -13,7 +14,7 @@ namespace myl::render {
 		static api s_api;
 		static statistics s_stats;
 	public:
-		static void init();
+		static void init(const app::info&);
 		static void shutdown();
 
 		static std::unique_ptr<backend>& backend() { return s_backend; }
@@ -21,8 +22,6 @@ namespace myl::render {
 		static const statistics& stats() { return s_stats; }
 
 		static void draw_frame();
-
-		/// MYTodo: submit data?
 
 		static void on_resize(u32 a_width, u32 a_height);
 	};

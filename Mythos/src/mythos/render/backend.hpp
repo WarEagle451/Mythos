@@ -2,13 +2,14 @@
 #include "common.hpp"
 
 #include <mythos/defines.hpp>
+#include <mythos/core/app.hpp>
 
 #include <memory>
 
 namespace myl::render {
 	class backend {
 	public:
-		static std::unique_ptr<backend> create(api);
+		static std::unique_ptr<backend> create(api, const app::info&);
 
 		virtual ~backend() = default;
 

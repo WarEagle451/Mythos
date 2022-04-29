@@ -3,12 +3,17 @@
 
 #include <mythos/render/backend.hpp>
 
+/// MYTodo: switch to the C++ bindings maybe
+
 namespace myl::vulkan {
 	class backend : public render::backend {
 		context m_context;
 	public:
-		backend();
+		backend(const app::info&);
 		~backend();
+
+		backend(const backend&) = delete;
+		backend& operator=(const backend&) = delete;
 
 		bool begin() override;
 		void end() override;
