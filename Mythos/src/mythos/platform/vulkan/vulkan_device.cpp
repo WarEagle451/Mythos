@@ -39,26 +39,6 @@ namespace myl::vulkan {
 		u32 transfer_family_index;
 	};
 
-	static void query_swapchain_support(VkPhysicalDevice a_physical_device, VkSurfaceKHR a_surface, swapchain_support_info* a_out_support_info) {
-		// surface capabilities
-		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(a_physical_device, a_surface, &a_out_support_info->capabilites) == VK_SUCCESS);
-		// surface formats
-		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(a_physical_device, a_surface, &a_out_support_info->format_count, nullptr) == VK_SUCCESS);
-		if (a_out_support_info->format_count != 0) {
-			if (a_out_support_info->formats.size() == 0)
-				a_out_support_info->formats.resize(a_out_support_info->format_count);
-			MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(a_physical_device, a_surface, &a_out_support_info->format_count, a_out_support_info->formats.data()) == VK_SUCCESS);
-		}
-
-		// present modes
-		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(a_physical_device, a_surface, &a_out_support_info->present_mode_count, nullptr) == VK_SUCCESS);
-		if (a_out_support_info->present_mode_count != 0) {
-			if (a_out_support_info->present_modes.size() == 0)
-				a_out_support_info->present_modes.resize(a_out_support_info->present_mode_count);
-			MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(a_physical_device, a_surface, &a_out_support_info->present_mode_count, a_out_support_info->present_modes.data()) == VK_SUCCESS);
-		}
-	}
-
 	static bool physical_device_meets_requirements(
 		VkPhysicalDevice a_device,
 		VkSurfaceKHR a_surface,
@@ -281,7 +261,7 @@ namespace myl::vulkan {
 			queue_create_infos[i].pNext = nullptr;
 			queue_create_infos[i].flags = 0;
 
-			if (indices[i] == m_graphics_queue_index) {
+			if (indices[i] == m_graphics_queue_index) { /// MYTodo: apperently this causes issues on some computers?
 				queue_create_infos[i].queueCount = 2;
 				f32 queue_priority[2]{ 1.f, 1.f };
 				queue_create_infos[i].pQueuePriorities = queue_priority;
@@ -297,14 +277,15 @@ namespace myl::vulkan {
 		VkPhysicalDeviceFeatures device_features{}; /// MYTodo: should be config driven
 		device_features.samplerAnisotropy = VK_TRUE;
 
-		VkDeviceCreateInfo device_create_info{};
-		device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-		device_create_info.queueCreateInfoCount = index_count;
-		device_create_info.pQueueCreateInfos = queue_create_infos.data();
-		device_create_info.pEnabledFeatures = &device_features;
-		device_create_info.enabledExtensionCount = 1;
 		const char* extension_names = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
-		device_create_info.ppEnabledExtensionNames = &extension_names;
+		VkDeviceCreateInfo device_create_info{
+			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+			.queueCreateInfoCount = index_count,
+			.pQueueCreateInfos = queue_create_infos.data(),
+			.enabledExtensionCount = 1,
+			.ppEnabledExtensionNames = &extension_names,
+			.pEnabledFeatures = &device_features
+		};
 
 		MYL_CORE_ASSERT(vkCreateDevice(m_physical_device, &device_create_info, nullptr, &m_logical_device) == VK_SUCCESS);
 		MYL_CORE_INFO("Logical device created");
@@ -315,5 +296,51 @@ namespace myl::vulkan {
 		vkGetDeviceQueue(m_logical_device, m_present_queue_index, 0, &m_present_queue); // 0 because it's the first queue being requested, might need to keep track of this later
 		vkGetDeviceQueue(m_logical_device, m_transfer_queue_index, 0, &m_transfer_queue); // 0 because it's the first queue being requested, might need to keep track of this later
 		MYL_CORE_INFO("Queues obtained");
+	}
+
+	bool device::detect_depth_format() {
+		// format canidates
+		VkFormat candidates[3]{
+			VK_FORMAT_D32_SFLOAT,
+			VK_FORMAT_D32_SFLOAT_S8_UINT,
+			VK_FORMAT_D24_UNORM_S8_UINT
+		};
+
+		u32 flags = VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT;
+		for (auto& candidate : candidates) {
+			VkFormatProperties properties{};
+			vkGetPhysicalDeviceFormatProperties(m_physical_device, candidate, &properties);
+
+			if ((properties.linearTilingFeatures & flags) == flags) {
+				m_depth_format = candidate;
+				return true;
+			}
+			else if ((properties.optimalTilingFeatures & flags) == flags) {
+				m_depth_format = candidate;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	void query_swapchain_support(VkPhysicalDevice a_physical_device, VkSurfaceKHR a_surface, swapchain_support_info* a_out_support_info) {
+		// surface capabilities
+		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(a_physical_device, a_surface, &a_out_support_info->capabilites) == VK_SUCCESS);
+		// surface formats
+		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(a_physical_device, a_surface, &a_out_support_info->format_count, nullptr) == VK_SUCCESS);
+		if (a_out_support_info->format_count != 0) {
+			if (a_out_support_info->formats.size() == 0)
+				a_out_support_info->formats.resize(a_out_support_info->format_count);
+			MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(a_physical_device, a_surface, &a_out_support_info->format_count, a_out_support_info->formats.data()) == VK_SUCCESS);
+		}
+
+		// present modes
+		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(a_physical_device, a_surface, &a_out_support_info->present_mode_count, nullptr) == VK_SUCCESS);
+		if (a_out_support_info->present_mode_count != 0) {
+			if (a_out_support_info->present_modes.size() == 0)
+				a_out_support_info->present_modes.resize(a_out_support_info->present_mode_count);
+			MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(a_physical_device, a_surface, &a_out_support_info->present_mode_count, a_out_support_info->present_modes.data()) == VK_SUCCESS);
+		}
 	}
 }

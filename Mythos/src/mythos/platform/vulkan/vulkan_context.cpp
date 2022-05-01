@@ -69,34 +69,37 @@ namespace myl::vulkan {
 #endif
 	context::context(const app::info& a_info) {
 		// VkInstance setup
-		VkApplicationInfo app_info{};
-		app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		app_info.apiVersion = VK_API_VERSION_1_3;
-		app_info.pApplicationName = a_info.name.c_str(); /// MYTodo: instead of passing everything through, have a function set_app_info, this is be optional, to be done before creating app and before pushing layer
-		app_info.applicationVersion = VK_MAKE_VERSION(a_info.major, a_info.minor, a_info.patch);
-		app_info.pEngineName = "Mythos Engine";
-		app_info.engineVersion = VK_MAKE_VERSION(MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH);
+		VkApplicationInfo app_info{
+			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
+			.pApplicationName = a_info.name.c_str(), /// MYTodo: instead of passing everything through, have a function set_app_info, this is be optional, to be done before creating app and before pushing layer
+			.applicationVersion = VK_MAKE_VERSION(a_info.major, a_info.minor, a_info.patch),
+			.pEngineName = "Mythos Engine",
+			.engineVersion = VK_MAKE_VERSION(MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH),
+			.apiVersion = VK_API_VERSION_1_3
+		};
 
 		auto required_extensions = get_required_extensions();
 		auto required_validation_layers = get_required_validation_layers();
 
-		VkInstanceCreateInfo create_info{};
-		create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		create_info.pApplicationInfo = &app_info; // safe because when VkInstance is created &app_info is not needed
-		create_info.enabledExtensionCount = static_cast<u32>(required_extensions.size());
-		create_info.ppEnabledExtensionNames = required_extensions.data();
-		create_info.enabledLayerCount = static_cast<u32>(required_validation_layers.size());
-		create_info.ppEnabledLayerNames = required_validation_layers.data();
+		VkInstanceCreateInfo create_info{
+			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+			.pApplicationInfo = &app_info, // safe because when VkInstance is created &app_info is not needed
+			.enabledLayerCount = static_cast<u32>(required_validation_layers.size()),
+			.ppEnabledLayerNames = required_validation_layers.data(),
+			.enabledExtensionCount = static_cast<u32>(required_extensions.size()),
+			.ppEnabledExtensionNames = required_extensions.data()
+		};
 
 		// debugger
 #ifdef MYL_BUILD_DEBUG
 		MYL_CORE_DEBUG("Creating Vulkan debug messenger");
-		VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
-		debug_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		debug_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;// | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
-		debug_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-		debug_create_info.pfnUserCallback = debug_callback;
-		debug_create_info.pUserData = nullptr;  // Optional
+		VkDebugUtilsMessengerCreateInfoEXT debug_create_info{
+			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, // | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+			.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
+			.pfnUserCallback = debug_callback,
+			.pUserData = nullptr  // Optional
+		};
 
 		create_info.pNext = &debug_create_info; // this will give messages during vkCreateInstance
 #endif
@@ -112,16 +115,33 @@ namespace myl::vulkan {
 #endif
 		m_surface = platform_create_surface(m_instance);
 		m_device = std::make_unique<vulkan::device>(*this);
-		/// MYTodo: command pool
+
+		m_swapchain = std::make_unique<swapchain>(*this, m_framebuffer_width, m_framebuffer_height);
 	}
 
 	context::~context() {
-		m_device.reset(); // must destory in opposite order of creation
-		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+		// must destory in opposite order of creation
+		m_swapchain.reset();
+		m_device.reset();
+		if (m_surface)
+			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 #ifdef MYL_BUILD_DEBUG
 		PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 		func(m_instance, m_debug_messenger, nullptr);
 #endif
 		vkDestroyInstance(m_instance, nullptr);
+	}
+
+	i32 context::find_memory_index(u32 a_type_filter, u32 a_property_flags) {
+		VkPhysicalDeviceMemoryProperties mem_properties{};
+		vkGetPhysicalDeviceMemoryProperties(m_device->physical_device(), &mem_properties);
+
+		for (u32 i = 0; i != mem_properties.memoryTypeCount; ++i)
+			// check each memory type to see if its bit is set
+			if ((a_type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & a_property_flags) == a_property_flags)
+				return i;
+
+		MYL_CORE_WARN("Unable to find suitable memory type");
+		return -1;
 	}
 }

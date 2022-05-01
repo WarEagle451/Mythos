@@ -1,5 +1,6 @@
 #pragma once
 #include "vulkan_device.hpp"
+#include "vulkan_swapchain.hpp"
 
 #include <mythos/defines.hpp>
 #include <mythos/core/app.hpp>
@@ -8,12 +9,18 @@
 
 namespace myl::vulkan {
 	class context {
+		u32 m_framebuffer_width, m_framebuffer_height;
 		VkInstance m_instance;
 		VkSurfaceKHR m_surface;
 #ifdef MYL_BUILD_DEBUG
 		VkDebugUtilsMessengerEXT m_debug_messenger;
 #endif
-		std::unique_ptr<device> m_device; /// MYTodo: maybe put into backend instead
+		std::unique_ptr<device> m_device;
+
+		std::unique_ptr<swapchain> m_swapchain; /// MYTodo: This should probs be in backend
+		u32 m_image_index;
+		u32 m_current_frame;
+		bool recreate_swapchain;
 	public:
 		context(const app::info&);
 		~context();
@@ -25,8 +32,15 @@ namespace myl::vulkan {
 		VkSurfaceKHR& surface() { return m_surface; }
 		device& device() { return *m_device.get(); }
 
-#ifdef MYL_BUILD_DEBUG
-		VkDebugUtilsMessengerEXT& debug_messenger() { return m_debug_messenger; };
+		u32 framebuffer_width() const { return m_framebuffer_width; }
+		u32 framebuffer_height() const { return m_framebuffer_height; }
+
+		u32& current_frame() { return m_current_frame; }
+
+		i32 find_memory_index(u32 a_type_filter, u32 a_property_flags);
+
+#ifdef MYL_BUILD_DEBUG /// MYBug: remove
+		///VkDebugUtilsMessengerEXT& debug_messenger() { return m_debug_messenger; };
 #endif
 	};
 }

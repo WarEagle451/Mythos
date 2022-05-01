@@ -8,14 +8,18 @@
 
 namespace myl {
 	std::unique_ptr<app> create() {
-		app::config config{};
-		config.window.name = "Testbed";
+		app::config config{
+			.window = {
+				.name = "Testbed"
+			}
+		};
 
-		app::info info{};
-		info.name = "Testbed";
-		info.major = TESTBED_MAJOR;
-		info.minor = TESTBED_MINOR;
-		info.patch = TESTBED_PATCH;
+		app::info info{
+			.name = "Testbed",
+			.major = TESTBED_MAJOR,
+			.minor = TESTBED_MINOR,
+			.patch = TESTBED_PATCH
+		};
 
 		auto application = std::make_unique<app>(info, config);
 		application->push_layer(new tb::testbed_layer());

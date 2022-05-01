@@ -7,10 +7,7 @@
 #include <memory> /// for macro below
 #define MYL_BIND_EVENT_FN(fn) [this](auto&&... a_args) -> decltype(auto) { return this->fn(std::forward<decltype(a_args)>(a_args)...); }
 
-/// MYTodo: event design
-/// This event design requires that the event be passed through everything, this is probs bad 
-/// a better way is too have a class that contains a listener and the callback function 
-/// aka maybe change from dispatcher event sysytem to listener event system
+/// MYTodo: event design: Need ability to register and unregister events
 
 namespace myl {
 	//@brief user defined event types should not conflict with the engine event types below

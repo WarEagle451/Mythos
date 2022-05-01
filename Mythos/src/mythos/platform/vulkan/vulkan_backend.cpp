@@ -5,6 +5,10 @@
 namespace myl::vulkan {
 	backend::backend(const app::info& a_info)
 		: m_context(a_info) {
+		// Order of creation:
+		// context: Instance, *debugger, surface, ->
+		//	- device: select physical device, logical device
+		//	- swapchain:
 		MYL_CORE_INFO("Vulkan backend initialized");
 	}
 
