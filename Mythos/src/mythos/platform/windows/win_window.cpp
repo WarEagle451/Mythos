@@ -164,7 +164,7 @@ namespace myl::windows {
 			case WM_CLOSE: {
 				event_window_close e{};
 				fire_event(e);
-			} return 0;
+			} return 1;
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;
