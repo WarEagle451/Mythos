@@ -13,9 +13,12 @@ namespace myl::vulkan {
 		select_physical_device();
 		create_logical_device();
 		get_device_queues();
+		create_command_pool();
 	}
 
 	device::~device() {
+		vkDestroyCommandPool(m_logical_device, m_graphics_command_pool, nullptr);
+
 		if (m_logical_device)
 			vkDestroyDevice(m_logical_device, nullptr);
 		// physical devices are not destroyed
@@ -314,5 +317,16 @@ namespace myl::vulkan {
 		vkGetDeviceQueue(m_logical_device, m_queue_indices.present, 0, &m_present_queue); // 0 because it's the first queue being requested, might need to keep track of this later
 		vkGetDeviceQueue(m_logical_device, m_queue_indices.transfer, 0, &m_transfer_queue); // 0 because it's the first queue being requested, might need to keep track of this later
 		MYL_CORE_INFO("Queues obtained");
+	}
+
+	void device::create_command_pool() {
+		VkCommandPoolCreateInfo info{
+			.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+			.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+			.queueFamilyIndex = m_queue_indices.graphics
+		};
+
+		MYL_VK_CHECK(vkCreateCommandPool, m_logical_device, &info, nullptr, &m_graphics_command_pool);
+		MYL_CORE_INFO("Graphics command pool created");
 	}
 }

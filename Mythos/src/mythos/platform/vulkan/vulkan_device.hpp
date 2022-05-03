@@ -45,6 +45,8 @@ namespace myl::vulkan {
 		VkQueue m_present_queue;
 		VkQueue m_transfer_queue;
 
+		VkCommandPool m_graphics_command_pool;
+
 		VkPhysicalDeviceProperties m_properties;
 		VkPhysicalDeviceFeatures m_features;
 		VkPhysicalDeviceMemoryProperties m_memory_properties;
@@ -66,11 +68,13 @@ namespace myl::vulkan {
 		swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
 		queue_family_indices& queue_indices() { return m_queue_indices; }
 		VkFormat& depth_format() { return m_depth_format; }
+		VkCommandPool& graphics_command_pool() { return m_graphics_command_pool; }
 	private:
 		bool physical_device_meets_requirements(VkPhysicalDevice, const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures&, const device_requirements&, queue_family_indices*);
 
 		void select_physical_device();
 		void create_logical_device();
 		void get_device_queues();
+		void create_command_pool();
 	};
 }

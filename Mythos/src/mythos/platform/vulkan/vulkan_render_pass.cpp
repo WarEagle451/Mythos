@@ -24,6 +24,7 @@ namespace myl::vulkan {
 		/// MYTodo: make render_pass attachments configurable
 		u32 attachment_description_count = 2;
 		std::vector<VkAttachmentDescription> attachment_description{};
+		attachment_description.reserve(attachment_description_count);
 
 		// color attachment
 		attachment_description.push_back(VkAttachmentDescription{

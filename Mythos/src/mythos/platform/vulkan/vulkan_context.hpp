@@ -2,11 +2,13 @@
 #include "vulkan_device.hpp"
 #include "vulkan_swapchain.hpp"
 #include "vulkan_render_pass.hpp"
+#include "vulkan_command_buffer.hpp"
 
 #include <mythos/defines.hpp>
 #include <mythos/core/app.hpp>
 
 #include <memory>
+#include <vector>
 
 namespace myl::vulkan {
 	class context {
@@ -19,6 +21,8 @@ namespace myl::vulkan {
 		std::unique_ptr<device> m_device;
 		std::unique_ptr<swapchain> m_swapchain; /// MYTodo: Should this be in backend?
 		std::unique_ptr<render_pass> m_main_render_pass;
+
+		std::vector<command_buffer> m_graphics_command_buffers;
 
 		u32 m_image_index; /// MYTodo: what are these for?
 		u32 m_current_frame; /// MYTodo: what are these for?
@@ -40,5 +44,7 @@ namespace myl::vulkan {
 		u32& current_frame() { return m_current_frame; }
 
 		i32 find_memory_index(u32 a_type_filter, u32 a_property_flags);
+
+		void create_command_buffers();
 	};
 }

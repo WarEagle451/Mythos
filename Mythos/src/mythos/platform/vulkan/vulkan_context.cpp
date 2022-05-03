@@ -100,14 +100,12 @@ namespace myl::vulkan {
 			.pfnUserCallback = debug_callback,
 			.pUserData = nullptr  // Optional
 		};
-
 		create_info.pNext = &debug_create_info; // this will give messages during vkCreateInstance
 #endif
 		if (vkCreateInstance(&create_info, nullptr, &m_instance) != VK_SUCCESS)
 			throw core_runtime_error("Failed to create Vulkan instance");
 		MYL_CORE_INFO("Vulkan instance created");
-		// creating the debugger
-#ifdef MYL_BUILD_DEBUG
+#ifdef MYL_BUILD_DEBUG // creating the debugger
 		PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
 		MYL_CORE_ASSERT(func, "Failed to create debug messenger");
 		if (func(m_instance, &debug_create_info, nullptr, &m_debug_messenger) != VK_SUCCESS)
@@ -119,9 +117,15 @@ namespace myl::vulkan {
 
 		/// MYTodo: {} should work, shouldn't have to do f32vec4{}
 		m_main_render_pass = std::make_unique<render_pass>(*this, 0.f, 0.f, static_cast<f32>(m_framebuffer_width), static_cast<f32>(m_framebuffer_height), f32vec4{ .1f, .1f, .1f, 1.f }, 1.f, 0);
+		create_command_buffers();
 	}
 
 	context::~context() { // must destory in opposite order of creation
+		for (auto& buffer : m_graphics_command_buffers)
+			if (buffer.handle() == nullptr)
+				buffer.deallocate();
+		m_graphics_command_buffers.clear();
+
 		m_main_render_pass.reset();
 		m_swapchain.reset();
 		m_device.reset();
@@ -145,5 +149,21 @@ namespace myl::vulkan {
 
 		MYL_CORE_WARN("Unable to find suitable memory type");
 		return -1;
+	}
+
+	void context::create_command_buffers() {
+		if (m_graphics_command_buffers.empty()) {
+			m_graphics_command_buffers.reserve(m_swapchain->image_count());
+			for (u32 i = 0; i != m_swapchain->image_count(); ++i)
+				m_graphics_command_buffers.emplace_back(*this, m_device->graphics_command_pool());
+		}
+
+		for (auto& buffer : m_graphics_command_buffers) {
+			if (buffer.handle() == nullptr) // has a null handle if unallocated
+				buffer.deallocate();
+			buffer.allocate(true);
+		}
+
+		MYL_CORE_INFO("Vulkan command buffers created");
 	}
 }
