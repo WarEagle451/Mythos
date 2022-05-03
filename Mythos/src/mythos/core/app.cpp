@@ -76,7 +76,8 @@ namespace myl {
 			m_suspended = true;
 			return false;
 		}
-		MYL_CORE_INFO("window resized: [{}, {}]", a_event.width(), a_event.height()); /// MYTemp: for testing events
+
+		render::renderer::backend()->on_window_resize(a_event.width(), a_event.height());
 		m_suspended = false;
 		return false;
 	}

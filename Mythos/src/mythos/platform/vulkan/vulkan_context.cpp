@@ -115,13 +115,10 @@ namespace myl::vulkan {
 #endif
 		m_surface = platform_create_surface(m_instance);
 		m_device = std::make_unique<vulkan::device>(*this);
-
-		m_swapchain = std::make_unique<swapchain>(*this, m_framebuffer_width, m_framebuffer_height);
 	}
 
 	context::~context() {
 		// must destory in opposite order of creation
-		m_swapchain.reset();
 		m_device.reset();
 		if (m_surface)
 			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
@@ -134,7 +131,7 @@ namespace myl::vulkan {
 
 	i32 context::find_memory_index(u32 a_type_filter, u32 a_property_flags) {
 		VkPhysicalDeviceMemoryProperties mem_properties{};
-		vkGetPhysicalDeviceMemoryProperties(m_device->physical_device(), &mem_properties);
+		vkGetPhysicalDeviceMemoryProperties(m_device->physical(), &mem_properties);
 
 		for (u32 i = 0; i != mem_properties.memoryTypeCount; ++i)
 			// check each memory type to see if its bit is set

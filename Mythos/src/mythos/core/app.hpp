@@ -37,13 +37,13 @@ namespace myl {
 		MYL_API app(const app&) = delete;
 		MYL_API app& operator=(const app&) = delete;
 
-		MYL_API std::unique_ptr<window>& window() { return m_window; }
+		MYL_API window* window() { return m_window.get(); }
 		MYL_API void close() { m_running = false; }
 
 		MYL_API void run();
 
-		MYL_API void push_layer(layer_stack::layer_ptr a_layer);
-		MYL_API void push_overlay(layer_stack::layer_ptr a_overlay);
+		MYL_API void push_layer(layer_stack::layer_ptr);
+		MYL_API void push_overlay(layer_stack::layer_ptr);
 
 		bool on_window_close(event_window_close&);
 		bool on_window_resize(event_window_resize&);

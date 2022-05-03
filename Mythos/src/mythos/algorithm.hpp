@@ -1,7 +1,7 @@
 #pragma once
 #include <mythos/defines.hpp>
 
-namespace myl::math { /// MYTodo: shouldn't this be in alorgithms or just use std's
+namespace myl::math {
 	template<typename T>
 	MYL_NO_DISCARD constexpr T min(const T a, const T b) {
 		return a > b ? b : a;

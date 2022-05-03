@@ -14,7 +14,6 @@ namespace myl::render {
 
 	void renderer::draw_frame() { /// MYTodo: this should draw all of the submited data using the draw functions, aka make it a batch renderer
 		if (s_backend->begin()) {
-
 			s_backend->end();
 		}
 	}

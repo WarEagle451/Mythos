@@ -24,11 +24,11 @@ namespace myl::vulkan {
 			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 		};
 
-		MYL_CORE_ASSERT(vkCreateImage(m_context.device().logical_device(), &image_create_info, nullptr, &m_handle) == VK_SUCCESS);
+		MYL_CORE_ASSERT(vkCreateImage(m_context.device().logical(), &image_create_info, nullptr, &m_handle) == VK_SUCCESS);
 
 		// query memory requirements
 		VkMemoryRequirements memory_requirements{};
-		vkGetImageMemoryRequirements(m_context.device().logical_device(), m_handle, &memory_requirements);
+		vkGetImageMemoryRequirements(m_context.device().logical(), m_handle, &memory_requirements);
 
 		i32 memory_type = m_context.find_memory_index(memory_requirements.memoryTypeBits, a_memory_flags);
 		if (memory_type == -1)
@@ -40,10 +40,10 @@ namespace myl::vulkan {
 			.allocationSize = memory_requirements.size,
 			.memoryTypeIndex = static_cast<u32>(memory_type)
 		};
-		MYL_CORE_ASSERT(vkAllocateMemory(m_context.device().logical_device(), &memory_alloc_info, nullptr, &m_memory) == VK_SUCCESS); /// MYTodo: maybe replace with something like: m_context.device().allocate_memory(&memory_alloc_info, &m_memory);
+		MYL_CORE_ASSERT(vkAllocateMemory(m_context.device().logical(), &memory_alloc_info, nullptr, &m_memory) == VK_SUCCESS); /// MYTodo: maybe replace with something like: m_context.device().allocate_memory(&memory_alloc_info, &m_memory);
 
 		// bind the memory
-		MYL_CORE_ASSERT(vkBindImageMemory(m_context.device().logical_device(), m_handle, m_memory, 0) == VK_SUCCESS); /// MYTodo: configureable memory offset
+		MYL_CORE_ASSERT(vkBindImageMemory(m_context.device().logical(), m_handle, m_memory, 0) == VK_SUCCESS); /// MYTodo: configureable memory offset
 
 		// create view
 		if (a_create_view) {
@@ -53,9 +53,9 @@ namespace myl::vulkan {
 	}
 
 	image::~image() {
-		if (m_view) vkDestroyImageView(m_context.device().logical_device(), m_view, nullptr);
-		if (m_memory) vkFreeMemory(m_context.device().logical_device(), m_memory, nullptr);
-		if (m_handle) vkDestroyImage(m_context.device().logical_device(), m_handle, nullptr);
+		if (m_view) vkDestroyImageView(m_context.device().logical(), m_view, nullptr);
+		if (m_memory) vkFreeMemory(m_context.device().logical(), m_memory, nullptr);
+		if (m_handle) vkDestroyImage(m_context.device().logical(), m_handle, nullptr);
 	}
 
 	void image::create_view(VkFormat a_format, VkImageAspectFlags a_aspect_flags) {
@@ -73,6 +73,6 @@ namespace myl::vulkan {
 			}
 		};
 
-		MYL_CORE_ASSERT(vkCreateImageView(m_context.device().logical_device(), &info, nullptr, &m_view) == VK_SUCCESS);
+		MYL_CORE_ASSERT(vkCreateImageView(m_context.device().logical(), &info, nullptr, &m_view) == VK_SUCCESS);
 	}
 }

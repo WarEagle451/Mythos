@@ -1,5 +1,4 @@
 #pragma once
-#include "math/common.hpp"
 #include "math/trigonometry.hpp"
 #include "math/vec.hpp"
 #include "math/geometric.hpp"
