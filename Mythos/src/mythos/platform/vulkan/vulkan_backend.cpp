@@ -4,12 +4,11 @@
 
 namespace myl::vulkan {
 	backend::backend(const app::info& a_info)
-		: m_context(a_info)
-		, m_swapchain(m_context, m_context.framebuffer_width(), m_context.framebuffer_height()) {
+		: m_context(a_info) {
 		// Order of creation:
 		// context: Instance, *debugger, surface, ->
 		//	- device: physical device, logical device
-		// swapchain:
+		//	- swapchain:
 		MYL_CORE_INFO("Vulkan backend initialized");
 	}
 
@@ -27,6 +26,6 @@ namespace myl::vulkan {
 	}
 
 	void backend::on_window_resize(u32 a_width, u32 a_height) {
-		m_swapchain.recreate(a_width, a_height);
+		m_context.swapchain().recreate(a_width, a_height);
 	}
 }

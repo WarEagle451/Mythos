@@ -77,7 +77,7 @@ namespace myl::vulkan {
 			}
 
 			VkBool32 supports_present = VK_FALSE;
-			//MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
+			MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
 			if (supports_present)
 				indices.present = i;
 		}

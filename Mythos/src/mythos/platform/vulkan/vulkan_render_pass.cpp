@@ -1,0 +1,140 @@
+#include "vulkan_render_pass.hpp"
+#include "vulkan_context.hpp"
+#include "vulkan_common.hpp"
+
+#include <vector>
+
+namespace myl::vulkan {
+	render_pass::render_pass(context& a_context, f32 a_x, f32 a_y, f32 a_w, f32 a_h, const f32vec4& a_color, f32 a_depth, u32 a_stencil)
+		: m_context(a_context)
+		, m_x(a_x)
+		, m_y(a_y)
+		, m_w(a_w)
+		, m_h(a_h)
+		, m_color(a_color)
+		, m_depth(a_depth)
+		, m_stencil(a_stencil) {
+
+		// main subpass
+		VkSubpassDescription subpass{
+			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS
+		};
+
+		// attachments
+		/// MYTodo: make render_pass attachments configurable
+		u32 attachment_description_count = 2;
+		std::vector<VkAttachmentDescription> attachment_description{};
+
+		// color attachment
+		attachment_description.push_back(VkAttachmentDescription{
+				.flags = 0,
+				.format = m_context.swapchain().image_format().format, /// MYTodo: configurable
+				.samples = VK_SAMPLE_COUNT_1_BIT,
+				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+				.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED, // do not expect any particular layout before render_pass starts
+				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR // transitioned tp after render_pass
+			});
+
+		VkAttachmentReference color_attachment_ref{
+			.attachment = 0, // attachment array index
+			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+		};
+
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &color_attachment_ref;
+
+		// depth attachment
+		attachment_description.push_back(VkAttachmentDescription{
+				.flags = 0,
+				.format = m_context.device().depth_format(),
+				.samples = VK_SAMPLE_COUNT_1_BIT,
+				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+				.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+				.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+			});
+
+		VkAttachmentReference depth_attachment_ref{
+			.attachment = 1, // attachment array index
+			.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+		};
+
+		subpass.pDepthStencilAttachment = &depth_attachment_ref;
+
+		/// MYTodo: other attachment types, input, resolve, preserve
+
+		// input from a shader
+		subpass.inputAttachmentCount = 0;
+		subpass.pInputAttachments = nullptr;
+
+		// attachments used for multisampling color attachments
+		subpass.pResolveAttachments = nullptr;
+
+		// attachments not used in this subpass but used in the next subpass
+		subpass.preserveAttachmentCount = 0;
+		subpass.pPreserveAttachments = nullptr;
+
+		// render_pass dependencies
+		/// MYTodo: configurable
+		VkSubpassDependency dependency{
+			.srcSubpass = VK_SUBPASS_EXTERNAL,
+			.dstSubpass = 0,
+			.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+			.srcAccessMask = 0,
+			.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+			.dependencyFlags = 0
+		};
+
+		VkRenderPassCreateInfo create_info{
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+			.pNext = nullptr,
+			.flags = 0,
+			.attachmentCount = attachment_description_count,
+			.pAttachments = attachment_description.data(),
+			.subpassCount = 1,
+			.pSubpasses = &subpass,
+			.dependencyCount = 1,
+			.pDependencies = &dependency
+		};
+
+		MYL_VK_CHECK(vkCreateRenderPass, m_context.device().logical(), &create_info, nullptr, &m_handle);
+	}
+
+	render_pass::~render_pass() {
+		if (m_handle)
+			vkDestroyRenderPass(m_context.device().logical(), m_handle, nullptr);
+	}
+
+	void render_pass::begin(command_buffer& a_command_buffer, VkFramebuffer a_framebuffer) {
+		VkClearValue clear_values[2]{};
+		*clear_values[0].color.float32 = *m_color.data; /// MYTodo: Make sure this works over doing each color
+		clear_values[1].depthStencil.depth = m_depth;
+		clear_values[2].depthStencil.stencil = m_stencil;
+
+		VkRenderPassBeginInfo info{
+			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+			.renderPass = m_handle,
+			.framebuffer = a_framebuffer,
+			.renderArea = {
+				.offset = { static_cast<i32>(m_x), static_cast<i32>(m_y) }, /// MYTodo: why don't these just stay i32s
+				.extent = { static_cast<u32>(m_w), static_cast<u32>(m_h) } /// MYTodo: why don't these just stay u32s
+			},
+			.clearValueCount = 2,
+			.pClearValues = clear_values
+		};
+
+		vkCmdBeginRenderPass(a_command_buffer.handle(), &info, VK_SUBPASS_CONTENTS_INLINE);
+		a_command_buffer.set_state(command_buffer_state::in_render_pass);
+	}
+
+	void render_pass::end(command_buffer& a_command_buffer) {
+		vkCmdEndRenderPass(a_command_buffer.handle());
+		a_command_buffer.set_state(command_buffer_state::recording);
+	}
+}

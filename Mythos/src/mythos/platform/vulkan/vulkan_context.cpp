@@ -115,10 +115,15 @@ namespace myl::vulkan {
 #endif
 		m_surface = platform_create_surface(m_instance);
 		m_device = std::make_unique<vulkan::device>(*this);
+		m_swapchain = std::make_unique<vulkan::swapchain>(*this, m_framebuffer_width, m_framebuffer_height);
+
+		/// MYTodo: {} should work, shouldn't have to do f32vec4{}
+		m_main_render_pass = std::make_unique<render_pass>(*this, 0.f, 0.f, static_cast<f32>(m_framebuffer_width), static_cast<f32>(m_framebuffer_height), f32vec4{ .1f, .1f, .1f, 1.f }, 1.f, 0);
 	}
 
-	context::~context() {
-		// must destory in opposite order of creation
+	context::~context() { // must destory in opposite order of creation
+		m_main_render_pass.reset();
+		m_swapchain.reset();
 		m_device.reset();
 		if (m_surface)
 			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
