@@ -4,6 +4,8 @@
 #include <mythos/defines.hpp>
 #include <mythos/core/app.hpp>
 
+/// MYTodo: Make renderer call backend and submit data to backend, this would prevent having to implement a custom renderer per backend
+
 namespace myl::render {
 	struct statistics {
 		u64 draw_calls = 0;

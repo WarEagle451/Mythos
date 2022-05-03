@@ -1,7 +1,7 @@
 #include "vulkan_swapchain.hpp"
 #include "vulkan_context.hpp"
+#include "vulkan_common.hpp"
 
-#include <mythos/core/assert.hpp>
 #include <mythos/core/except.hpp>
 #include <mythos/algorithm.hpp>
 
@@ -137,9 +137,9 @@ namespace myl::vulkan {
 
 		// images
 		u32 image_amount = 0;
-		MYL_CORE_ASSERT(vkGetSwapchainImagesKHR(m_context.device().logical(), m_handle, &image_amount, nullptr) == VK_SUCCESS);
+		MYL_VK_CHECK(vkGetSwapchainImagesKHR, m_context.device().logical(), m_handle, &image_amount, nullptr);
 		m_images.resize(image_amount);
-		MYL_CORE_ASSERT(vkGetSwapchainImagesKHR(m_context.device().logical(), m_handle, &image_amount, m_images.data()) == VK_SUCCESS);
+		MYL_VK_CHECK(vkGetSwapchainImagesKHR, m_context.device().logical(), m_handle, &image_amount, m_images.data());
 
 		// views
 		m_views.resize(image_amount);

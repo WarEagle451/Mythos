@@ -1,7 +1,7 @@
 #include "vulkan_context.hpp"
 #include "vulkan_platform.hpp"
+#include "vulkan_common.hpp"
 
-#include <mythos/core/assert.hpp>
 #include <mythos/core/except.hpp>
 
 #include <string.h>
@@ -30,9 +30,9 @@ namespace myl::vulkan {
 		required_layers.push_back("VK_LAYER_KHRONOS_validation");
 
 		u32 available_layer_count{};
-		MYL_CORE_ASSERT(vkEnumerateInstanceLayerProperties(&available_layer_count, nullptr) == VK_SUCCESS);
+		MYL_VK_CHECK(vkEnumerateInstanceLayerProperties, &available_layer_count, nullptr);
 		std::vector<VkLayerProperties> available_layers(available_layer_count);
-		MYL_CORE_ASSERT(vkEnumerateInstanceLayerProperties(&available_layer_count, available_layers.data()) == VK_SUCCESS);
+		MYL_VK_CHECK(vkEnumerateInstanceLayerProperties, &available_layer_count, available_layers.data());
 
 		MYL_CORE_DEBUG("{} available validation layers:", available_layer_count);
 		for (auto& layer : available_layers)

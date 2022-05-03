@@ -1,7 +1,7 @@
 #include "vulkan_device.hpp"
 #include "vulkan_context.hpp"
+#include "vulkan_common.hpp"
 
-#include <mythos/core/assert.hpp>
 #include <mythos/core/except.hpp>
 
 #include <string>
@@ -24,23 +24,23 @@ namespace myl::vulkan {
 	swapchain_support_info device::query_swapchain_support(VkPhysicalDevice a_device) {
 		vulkan::swapchain_support_info info{};
 		// surface capabilities
-		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(a_device, m_context.surface(), &info.capabilites) == VK_SUCCESS);
+		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_context.surface(), &info.capabilites);
 		// surface formats
 		u32 format_count = 0;
-		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(a_device, m_context.surface(), &format_count, nullptr) == VK_SUCCESS);
+		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, nullptr);
 		if (format_count != 0) {
 			if (info.formats.size() == 0)
 				info.formats.resize(format_count);
-			MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR(a_device, m_context.surface(), &format_count, info.formats.data()) == VK_SUCCESS);
+			MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, info.formats.data());
 		}
 
 		// present modes
 		u32 present_mode_count = 0;
-		MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(a_device, m_context.surface(), &present_mode_count, nullptr) == VK_SUCCESS);
+		MYL_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, nullptr);
 		if (present_mode_count != 0) {
 			if (info.present_modes.size() == 0)
 				info.present_modes.resize(present_mode_count);
-			MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR(a_device, m_context.surface(), &present_mode_count, info.present_modes.data()) == VK_SUCCESS);
+			MYL_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, info.present_modes.data());
 		}
 
 		return info;
@@ -77,7 +77,7 @@ namespace myl::vulkan {
 			}
 
 			VkBool32 supports_present = VK_FALSE;
-			MYL_CORE_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR(a_device, i, m_context.surface(), &supports_present) == VK_SUCCESS);
+			//MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
 			if (supports_present)
 				indices.present = i;
 		}
@@ -139,10 +139,10 @@ namespace myl::vulkan {
 			// device extensions
 			if (!a_requirements.device_extension_names.empty()) {
 				u32 available_extension_count = 0;
-				MYL_CORE_ASSERT(vkEnumerateDeviceExtensionProperties(a_device, nullptr, &available_extension_count, nullptr) == VK_SUCCESS);
+				MYL_VK_CHECK(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, nullptr);
 				if (available_extension_count != 0) {
 					std::vector<VkExtensionProperties> available_extensions(available_extension_count);
-					MYL_CORE_ASSERT(vkEnumerateDeviceExtensionProperties(a_device, nullptr, &available_extension_count, available_extensions.data()) == VK_SUCCESS);
+					MYL_VK_CHECK(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, available_extensions.data());
 
 					u32 required_extension_count = static_cast<u32>(a_requirements.device_extension_names.size());
 					for (auto& required : a_requirements.device_extension_names) {
@@ -175,13 +175,13 @@ namespace myl::vulkan {
 
 	void device::select_physical_device() {
 		u32 count = 0;
-		MYL_CORE_ASSERT(vkEnumeratePhysicalDevices(m_context.instance(), &count, nullptr) == VK_SUCCESS);
+		MYL_VK_CHECK(vkEnumeratePhysicalDevices, m_context.instance(), &count, nullptr);
 		MYL_CORE_DEBUG("{} device{} available", count, count > 1 ? "s" : "");
 		if (count == 0)
 			throw core_runtime_error("No devices with Vulkan support found");
 
 		std::vector<VkPhysicalDevice> physical_devices(count);
-		MYL_CORE_ASSERT(vkEnumeratePhysicalDevices(m_context.instance(), &count, physical_devices.data()) == VK_SUCCESS);
+		MYL_VK_CHECK(vkEnumeratePhysicalDevices, m_context.instance(), &count, physical_devices.data());
 
 		for (auto& device : physical_devices) {
 			VkPhysicalDeviceProperties properties{};
@@ -305,7 +305,7 @@ namespace myl::vulkan {
 			.pEnabledFeatures = &device_features
 		};
 
-		MYL_CORE_ASSERT(vkCreateDevice(m_physical_device, &device_create_info, nullptr, &m_logical_device) == VK_SUCCESS);
+		MYL_VK_CHECK(vkCreateDevice, m_physical_device, &device_create_info, nullptr, &m_logical_device);
 		MYL_CORE_INFO("Logical device created");
 	}
 
