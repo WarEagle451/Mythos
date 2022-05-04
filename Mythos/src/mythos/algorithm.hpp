@@ -1,7 +1,7 @@
 #pragma once
 #include <mythos/defines.hpp>
 
-namespace myl::math {
+namespace myl {
 	template<typename T>
 	MYL_NO_DISCARD constexpr T min(const T a, const T b) {
 		return a > b ? b : a;

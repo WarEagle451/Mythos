@@ -9,7 +9,7 @@
 namespace myl::render {
 	class backend {
 	public:
-		static std::unique_ptr<backend> create(api, const app::info&);
+		static MYL_NO_DISCARD std::unique_ptr<backend> create(api, const app::info&);
 
 		virtual ~backend() = default;
 

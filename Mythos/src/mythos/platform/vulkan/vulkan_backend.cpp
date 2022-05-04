@@ -14,7 +14,7 @@ namespace myl::vulkan {
 
 	backend::~backend() {
 		// C++ standard has members desructors called in opposite order of creation
-		MYL_CORE_DEBUG("Destorying Vulkan backend");
+		MYL_CORE_INFO("Destorying Vulkan backend");
 	}
 
 	bool backend::begin() {

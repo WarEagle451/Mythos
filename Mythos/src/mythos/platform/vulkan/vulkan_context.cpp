@@ -7,21 +7,21 @@
 #include <string.h>
 
 namespace myl::vulkan {
-	static std::vector<const char*> get_required_extensions() {
-		std::vector<const char*> extensions{};
+	static MYL_NO_DISCARD std::vector<const char*> get_required_extensions() {
+		std::vector<const char*> extensions;
 		platform_required_extension_names(&extensions);
 		extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME); // generic surface extension
 #ifdef MYL_BUILD_DEBUG
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
 		MYL_CORE_DEBUG("Required Vulkan extensions:");
-		for (auto name : extensions)
+		for (auto& name : extensions)
 			MYL_CORE_DEBUG("\t- {}", name);
 #endif
 		return extensions;
 	}
 
-	static std::vector<const char*> get_required_validation_layers() {
+	static MYL_NO_DISCARD std::vector<const char*> get_required_validation_layers() {
 		std::vector<const char*> required_layers{};
 #ifdef MYL_BUILD_DEBUG
 		MYL_CORE_INFO("Validation layers enabled");
@@ -29,7 +29,7 @@ namespace myl::vulkan {
 		// required validation layers
 		required_layers.push_back("VK_LAYER_KHRONOS_validation");
 
-		u32 available_layer_count{};
+		u32 available_layer_count = 0;
 		MYL_VK_CHECK(vkEnumerateInstanceLayerProperties, &available_layer_count, nullptr);
 		std::vector<VkLayerProperties> available_layers(available_layer_count);
 		MYL_VK_CHECK(vkEnumerateInstanceLayerProperties, &available_layer_count, available_layers.data());
@@ -68,7 +68,6 @@ namespace myl::vulkan {
 	}
 #endif
 	context::context(const app::info& a_info) {
-		// VkInstance setup
 		VkApplicationInfo app_info{
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pApplicationName = a_info.name.c_str(), /// MYTodo: instead of passing everything through, have a function set_app_info, this is be optional, to be done before creating app and before pushing layer
@@ -83,15 +82,14 @@ namespace myl::vulkan {
 
 		VkInstanceCreateInfo create_info{
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-			.pApplicationInfo = &app_info, // safe because when VkInstance is created &app_info is not needed
+			.pApplicationInfo = &app_info,
 			.enabledLayerCount = static_cast<u32>(required_validation_layers.size()),
 			.ppEnabledLayerNames = required_validation_layers.data(),
 			.enabledExtensionCount = static_cast<u32>(required_extensions.size()),
 			.ppEnabledExtensionNames = required_extensions.data()
 		};
 
-		// debugger
-#ifdef MYL_BUILD_DEBUG
+#ifdef MYL_BUILD_DEBUG // debugger
 		MYL_CORE_DEBUG("Creating Vulkan debug messenger");
 		VkDebugUtilsMessengerCreateInfoEXT debug_create_info{
 			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
@@ -112,11 +110,14 @@ namespace myl::vulkan {
 			throw core_runtime_error("Failed to create debug messenger");
 #endif
 		m_surface = platform_create_surface(m_instance);
+		MYL_CORE_INFO("Vulkan surface created");
 		m_device = std::make_unique<vulkan::device>(*this);
 		m_swapchain = std::make_unique<vulkan::swapchain>(*this, m_framebuffer_width, m_framebuffer_height);
+		MYL_CORE_INFO("Vulkan swapchain created");
 
 		/// MYTodo: {} should work, shouldn't have to do f32vec4{}
 		m_main_render_pass = std::make_unique<render_pass>(*this, 0.f, 0.f, static_cast<f32>(m_framebuffer_width), static_cast<f32>(m_framebuffer_height), f32vec4{ .1f, .1f, .1f, 1.f }, 1.f, 0);
+		MYL_CORE_INFO("Main Vulkan render pass created");
 		create_command_buffers();
 	}
 
@@ -125,17 +126,23 @@ namespace myl::vulkan {
 			if (buffer.handle() == nullptr)
 				buffer.deallocate();
 		m_graphics_command_buffers.clear();
+		MYL_CORE_INFO("Vulkan command buffers destroyed");
 
 		m_main_render_pass.reset();
+		MYL_CORE_INFO("Main Vulkan render pass destroyed");
 		m_swapchain.reset();
+		MYL_CORE_INFO("Vulkan swapchain destroyed");
 		m_device.reset();
 		if (m_surface)
 			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+		MYL_CORE_INFO("Vulkan surface destroyed");
 #ifdef MYL_BUILD_DEBUG
 		PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 		func(m_instance, m_debug_messenger, nullptr);
+		MYL_CORE_DEBUG("Vulkan debug messenger destroyed");
 #endif
 		vkDestroyInstance(m_instance, nullptr);
+		MYL_CORE_INFO("Vulkan instance destroyed");
 	}
 
 	i32 context::find_memory_index(u32 a_type_filter, u32 a_property_flags) {

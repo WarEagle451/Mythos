@@ -33,18 +33,18 @@ namespace myl::vulkan {
 		context(const context&) = delete;
 		context& operator=(const context&) = delete;
 
-		VkInstance& instance() { return m_instance; }
-		VkSurfaceKHR& surface() { return m_surface; }
-		device& device() { return *m_device.get(); }
-		swapchain& swapchain() { return *m_swapchain.get(); }
+		MYL_NO_DISCARD VkInstance& instance() { return m_instance; }
+		MYL_NO_DISCARD VkSurfaceKHR& surface() { return m_surface; }
+		MYL_NO_DISCARD device& device() { return *m_device.get(); }
+		MYL_NO_DISCARD swapchain& swapchain() { return *m_swapchain.get(); }
 
-		u32 framebuffer_width() const { return m_framebuffer_width; }
-		u32 framebuffer_height() const { return m_framebuffer_height; }
+		MYL_NO_DISCARD u32 framebuffer_width() const { return m_framebuffer_width; }
+		MYL_NO_DISCARD u32 framebuffer_height() const { return m_framebuffer_height; }
 
-		u32& current_frame() { return m_current_frame; }
+		MYL_NO_DISCARD u32& current_frame() { return m_current_frame; }
 
-		i32 find_memory_index(u32 a_type_filter, u32 a_property_flags);
-
+		MYL_NO_DISCARD i32 find_memory_index(u32 a_type_filter, u32 a_property_flags);
+	private:
 		void create_command_buffers();
 	};
 }

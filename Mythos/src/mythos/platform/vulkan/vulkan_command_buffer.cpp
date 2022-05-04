@@ -27,7 +27,8 @@ namespace myl::vulkan {
 	command_buffer::command_buffer(context& a_context, VkCommandPool a_command_pool) 
 		: m_context(a_context)
 		, m_pool(a_command_pool)
-		, m_state(command_buffer_state::not_allocated) {}
+		, m_state(command_buffer_state::not_allocated)
+		, m_handle(VK_NULL_HANDLE) {}
 
 	command_buffer::~command_buffer() {
 		if (m_state != command_buffer_state::not_allocated)

@@ -18,9 +18,11 @@ namespace myl::vulkan {
 
 	device::~device() {
 		vkDestroyCommandPool(m_logical_device, m_graphics_command_pool, nullptr);
+		MYL_CORE_INFO("Vulkan command pool destroyed");
 
 		if (m_logical_device)
 			vkDestroyDevice(m_logical_device, nullptr);
+		MYL_CORE_INFO("Vulkan device destroyed");
 		// physical devices are not destroyed
 	}
 
@@ -103,9 +105,9 @@ namespace myl::vulkan {
 		return VK_FORMAT_UNDEFINED;
 	}
 
-	static bool meets_requirements(const device_requirements& a_requirements, const queue_family_indices& a_queue_indices) {
-		return
-			(!a_requirements.graphics || (a_requirements.graphics && a_queue_indices.graphics != std::numeric_limits<u32>::max())) && // isn't a requirement or it is a requirement and there's a index, therefore meets requirements
+	static MYL_NO_DISCARD bool meets_requirements(const device_requirements& a_requirements, const queue_family_indices& a_queue_indices) {
+		return // isn't a requirement or it is a requirement and there's a index, therefore meets requirements
+			(!a_requirements.graphics || (a_requirements.graphics && a_queue_indices.graphics != std::numeric_limits<u32>::max())) &&
 			(!a_requirements.present || (a_requirements.present && a_queue_indices.present != std::numeric_limits<u32>::max())) &&
 			(!a_requirements.compute || (a_requirements.compute && a_queue_indices.compute != std::numeric_limits<u32>::max())) &&
 			(!a_requirements.transfer || (a_requirements.transfer && a_queue_indices.transfer != std::numeric_limits<u32>::max()));
@@ -128,14 +130,12 @@ namespace myl::vulkan {
 
 		if (meets_requirements(a_requirements, *a_queue_indices)) {
 			MYL_CORE_INFO("{} meets requirements", std::string(a_properties.deviceName));
-			MYL_CORE_TRACE("Graphics family index: {}", a_queue_indices->graphics);
-			MYL_CORE_TRACE("Present family index: {}", a_queue_indices->present);
-			MYL_CORE_TRACE("Transfer family index: {}", a_queue_indices->transfer);
-			MYL_CORE_TRACE("Compute family index: {}", a_queue_indices->compute);
+			MYL_CORE_TRACE("Indices: Graphics | Present | Compute | Transfer | Name");
+			MYL_CORE_TRACE("         {:<8} | {:<7} | {:<7} | {:<8} | {}", a_queue_indices->graphics, a_queue_indices->present, a_queue_indices->compute, a_queue_indices->transfer, std::string(a_properties.deviceName));
 
 			m_swapchain_support_info = query_swapchain_support(a_device);
 			if (m_swapchain_support_info.formats.size() < 1 || m_swapchain_support_info.present_modes.size() < 1) {
-				MYL_CORE_INFO("Required swapchain support not present");
+				MYL_CORE_WARN("'{}' does not meet swapchain support requirements", std::string(a_properties.deviceName));
 				return false;
 			}
 
@@ -157,7 +157,7 @@ namespace myl::vulkan {
 							}
 
 						if (!found) {
-							MYL_CORE_INFO("Required extension not found: {}", required);
+							MYL_CORE_WARN("Required extension not found: {}", required);
 							return false;
 						}
 					}
@@ -166,7 +166,7 @@ namespace myl::vulkan {
 
 			// sampler anisotropy
 			if (a_requirements.sampler_anisotropy && !a_features.samplerAnisotropy) {
-				MYL_CORE_INFO("Device does not support samplerAnisotropy");
+				MYL_CORE_WARN("Device does not support samplerAnisotropy");
 				return false;
 			}
 
@@ -177,6 +177,7 @@ namespace myl::vulkan {
 	}
 
 	void device::select_physical_device() {
+		MYL_CORE_INFO("Selecting physical device");
 		u32 count = 0;
 		MYL_VK_CHECK(vkEnumeratePhysicalDevices, m_context.instance(), &count, nullptr);
 		MYL_CORE_DEBUG("{} device{} available", count, count > 1 ? "s" : "");
@@ -232,7 +233,7 @@ namespace myl::vulkan {
 				MYL_CORE_INFO("\t- Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
 
 				// memory information
-				for (u32 i = 0; i != memory_properties.memoryHeapCount; ++i) {// not a range because memory_properties.memoryHeaps is a c array
+				for (u32 i = 0; i != memory_properties.memoryHeapCount; ++i) { // not a range because memory_properties.memoryHeaps is a c array
 					f32 mem_size_gib = static_cast<f32>(memory_properties.memoryHeaps[i].size) / 1024.f / 1024.f / 1024.f; // bytes to GiB
 					(memory_properties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ?
 						MYL_CORE_INFO("\t- Heap {} - Local GPU memory: {:.2f} GiB", i, mem_size_gib) :
@@ -242,7 +243,7 @@ namespace myl::vulkan {
 				m_physical_device = device;
 				m_queue_indices = queue_info;
 
-				// keeps a copy of properties, features and memory info for later use
+				// keep a copy of properties, features and memory info for later use
 				m_properties = properties;
 				m_features = features;
 				m_memory_properties = memory_properties;
@@ -258,8 +259,8 @@ namespace myl::vulkan {
 	void device::create_logical_device() {
 		MYL_CORE_INFO("Creating logical device");
 		// do not create additional queues for shared indices
-		bool present_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.present;
-		bool transfer_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.transfer;
+		const bool present_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.present;
+		const bool transfer_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.transfer;
 		u32 index_count = 1;
 
 		if (!present_shares_graphics_queue)
@@ -282,7 +283,7 @@ namespace myl::vulkan {
 			queue_create_infos[i].pNext = nullptr;
 			queue_create_infos[i].flags = 0;
 
-			if (indices[i] == m_queue_indices.graphics) { /// MYTodo: apperently this causes issues on some computers?
+			if (indices[i] == m_queue_indices.graphics) {
 				queue_create_infos[i].queueCount = 2;
 				f32 queue_priority[2]{ 1.f, 1.f };
 				queue_create_infos[i].pQueuePriorities = queue_priority;

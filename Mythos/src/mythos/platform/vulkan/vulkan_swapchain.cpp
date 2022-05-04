@@ -51,32 +51,32 @@ namespace myl::vulkan {
 			MYL_CORE_FATAL("Failed to present swapchain image");
 	}
 
-	void swapchain::recreate(u32 a_width, u32 a_height) { /// MYTodo: do it proper where oldSwapchain gets passed
+	void swapchain::recreate(u32 a_width, u32 a_height) {
 		destroy();
 		create(a_width, a_height);
 	}
 
-	static VkSurfaceFormatKHR choose_surface_format(std::vector<VkSurfaceFormatKHR>& formats) {
+	static MYL_NO_DISCARD VkSurfaceFormatKHR choose_surface_format(std::vector<VkSurfaceFormatKHR>& formats) {
 		for (const auto& format : formats)
 			if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // preferred formats
 				return format;
 		return formats[0];
 	}
 
-	static VkPresentModeKHR choose_present_mode(std::vector<VkPresentModeKHR>& available_modes) {
+	static MYL_NO_DISCARD VkPresentModeKHR choose_present_mode(std::vector<VkPresentModeKHR>& available_modes) {
 		for (const auto& mode : available_modes)
 			if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
 				return mode;
 		return VK_PRESENT_MODE_FIFO_KHR;
 	}
 
-	static VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height) {
+	static MYL_NO_DISCARD VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height) {
 		if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
 			return capabilities.currentExtent;
 		else // clamp to the value allowed by the gpu
 			return VkExtent2D{
-				.width = math::clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-				.height = math::clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+				.width = clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+				.height = clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
 			};
 	}
 

@@ -18,6 +18,8 @@ namespace myl {
 		layer_stack() = default;
 		~layer_stack();
 
+		void clear();
+
 		void push_layer(layer_ptr a_layer);
 		void push_overlay(layer_ptr a_overlay);
 		void pop_layer(layer_ptr a_layer);

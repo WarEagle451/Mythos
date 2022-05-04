@@ -31,13 +31,13 @@ namespace myl {
 
 		MYL_API MYL_NO_DISCARD static app& get() { return *s_instance; }
 
-		MYL_API app(const info&, const config&);
+		MYL_API app(const info& = info{}, const config& = config{});
 		MYL_API ~app();
 
 		MYL_API app(const app&) = delete;
 		MYL_API app& operator=(const app&) = delete;
 
-		MYL_API window* window() { return m_window.get(); }
+		MYL_API MYL_NO_DISCARD window* window() { return m_window.get(); }
 		MYL_API void close() { m_running = false; }
 
 		MYL_API void run();

@@ -9,7 +9,8 @@ namespace myl::vulkan {
 	image::image(context& a_context, VkImageType a_image_type, u32 a_width, u32 a_height, VkFormat a_format, VkImageTiling a_tiling, VkImageUsageFlags a_usage, VkMemoryPropertyFlags a_memory_flags, bool a_create_view, VkImageAspectFlags a_view_aspect_flags)
 		: m_context(a_context)
 		, m_width(a_width)
-		, m_height(a_height) {
+		, m_height(a_height)
+		, m_view(VK_NULL_HANDLE) {
 		VkImageCreateInfo image_create_info{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.imageType = VK_IMAGE_TYPE_2D,
@@ -40,16 +41,14 @@ namespace myl::vulkan {
 			.allocationSize = memory_requirements.size,
 			.memoryTypeIndex = static_cast<u32>(memory_type)
 		};
-		MYL_VK_CHECK(vkAllocateMemory, m_context.device().logical(), &memory_alloc_info, nullptr, &m_memory); /// MYTodo: maybe replace with something like: m_context.device().allocate_memory(&memory_alloc_info, &m_memory);
+		MYL_VK_CHECK(vkAllocateMemory, m_context.device().logical(), &memory_alloc_info, nullptr, &m_memory);
 
 		// bind the memory
-		MYL_VK_CHECK(vkBindImageMemory, m_context.device().logical(), m_handle, m_memory, 0); /// MYTodo: configureable memory offset
+		MYL_VK_CHECK(vkBindImageMemory, m_context.device().logical(), m_handle, m_memory, 0); /// MYTodo: configurable memory offset
 
 		// create view
-		if (a_create_view) {
-			m_view = 0;
+		if (a_create_view)
 			create_view(a_format, a_view_aspect_flags);
-		}
 	}
 
 	image::~image() {

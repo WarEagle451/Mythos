@@ -2,10 +2,19 @@
 
 namespace myl {
 	layer_stack::~layer_stack() {
-		for (auto& l : m_layers) {
+		for (auto& l : m_layers) { // safe guard incase shutdown fails somehow
 			l->on_detach();
 			delete l;
 			l = nullptr;
+		}
+	}
+
+	void layer_stack::clear() {
+		m_insert_index = 0;
+		while (!m_layers.empty()) {
+			m_layers.back()->on_detach();
+			delete m_layers.back();
+			m_layers.pop_back();
 		}
 	}
 

@@ -12,6 +12,8 @@ using i64 = signed long long;
 using f32 = float;
 using f64 = double;
 
+using size = u64;
+
 #define MYL_NO_RETURN [[noreturn]]
 #define MYL_CARRIES_DEPENDENCY [[carries_dependency]]
 #define MYL_DEPRECATED(reason) [[deprecated(reason)]]

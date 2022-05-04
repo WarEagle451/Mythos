@@ -19,9 +19,9 @@ namespace myl::render {
 		static void init(const app::info&);
 		static void shutdown();
 
-		static backend* backend() { return s_backend.get(); }
-		static api api() { return s_api; }
-		static const statistics& stats() { return s_stats; }
+		static MYL_NO_DISCARD backend* backend() { return s_backend.get(); }
+		static MYL_NO_DISCARD api api() { return s_api; }
+		static MYL_NO_DISCARD const statistics& stats() { return s_stats; }
 
 		static void draw_frame();
 

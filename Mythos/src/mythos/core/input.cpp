@@ -33,10 +33,12 @@ namespace myl::input {
 	}
 
 	void process_key(key_code a_code, state a_state) {
+		if (a_code == key::unknown)
+			return;
+
 		if (internal_states::s_key_states[a_code] != a_state) { // only update when they change state
 			internal_states::s_key_states[a_code] = a_state;
 
-			// fire event to process it
 			if (a_state == state::up) {
 				event_key_released e(a_code);
 				fire_event(e);
@@ -49,10 +51,12 @@ namespace myl::input {
 	}
 
 	void process_mouse_button(mouse_code a_code, state a_state) {
+		if (a_code == mouse_button::unknown)
+			return;
+
 		if (internal_states::s_mouse_button_states[a_code] != a_state) { // only update when they change state
 			internal_states::s_mouse_button_states[a_code] = a_state;
 
-			// fire event to process it
 			if (a_state == state::up) {
 				event_mouse_released e(a_code);
 				fire_event(e);
@@ -94,7 +98,7 @@ namespace myl::input {
 		return internal_states::s_key_states[a_code] == state::up;
 	}
 
-	bool key_clicked(key_code a_code) {
+	bool key_pressed(key_code a_code) {
 		return
 			internal_states::s_previous_key_states[a_code] == state::up && /// MYBug: why does this seem to only detect when its pressed down ; maybe have to send on key typed event in process stuff ; is the mouse version broken too?
 			internal_states::s_key_states[a_code] == state::down; /// this works right in kohi 10 @ ~ 17:00
@@ -122,7 +126,7 @@ namespace myl::input {
 		return internal_states::s_mouse_button_states[a_code] == state::up;
 	}
 
-	bool mouse_button_clicked(mouse_code a_code) {
+	bool mouse_button_pressed(mouse_code a_code) {
 		return
 			internal_states::s_previous_mouse_button_states[a_code] == state::up &&
 			internal_states::s_mouse_button_states[a_code] == state::down;

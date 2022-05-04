@@ -10,40 +10,40 @@
 
 namespace tb {
 	static bool mouse_moved(myl::event_mouse_moved& e) {
-		MYL_CORE_INFO("mouse cords: [{}, {}]", e.x(), e.y());
+		MYL_CORE_TRACE("mouse cords: [{}, {}]", e.x(), e.y());
 		return true;
 	}
 
 	static bool mouse_scrolled(myl::event_mouse_scrolled& e) {
-		MYL_CORE_INFO("mouse delta: [{}, {}]", e.x_delta(), e.y_delta());
+		MYL_CORE_TRACE("mouse delta: [{}, {}]", e.x_delta(), e.y_delta());
 		return true;
 	}
 
 	static bool mouse_pressed(myl::event_mouse_pressed& e) {
-		MYL_CORE_INFO("mouse pressed: {}", static_cast<i32>(e.button()));
+		MYL_CORE_TRACE("mouse pressed: {}", static_cast<i32>(e.button()));
 		return true;
 	}
 
 	static bool mouse_released(myl::event_mouse_released& e) {
-		MYL_CORE_INFO("mouse released: {}", static_cast<i32>(e.button()));
+		MYL_CORE_TRACE("mouse released: {}", static_cast<i32>(e.button()));
 		return true;
 	}
 
 	testbed_layer::testbed_layer()
 		: myl::layer("Testbed") {
-		MYL_CORE_INFO("Testbed layer created");
+		MYL_CORE_TRACE("Testbed layer created");
 	}
 
 	testbed_layer::~testbed_layer() {
-		MYL_CORE_INFO("Testbed layer destroyed");
+		MYL_CORE_TRACE("Testbed layer destroyed");
 	}
 
 	void testbed_layer::on_attach() {
-		MYL_CORE_INFO("Testbed layer on_attach");
+		MYL_CORE_TRACE("Testbed layer on_attach");
 	}
 
 	void testbed_layer::on_detach() {
-		MYL_CORE_INFO("Testbed layer on_detach");
+		MYL_CORE_TRACE("Testbed layer on_detach");
 	}
 
 	void testbed_layer::on_event(myl::event& a_event) {
@@ -59,8 +59,8 @@ namespace tb {
 			myl::app::get().close();
 
 		for (i32 key = 0; key != myl::key::size; ++key)
-			if (myl::input::key_clicked(key))
-				MYL_CORE_DEBUG("{} key typed", key);
+			if (myl::input::key_pressed(key))
+				MYL_CORE_TRACE("{} key typed", key);
 	}
 
 	void testbed_layer::render() {

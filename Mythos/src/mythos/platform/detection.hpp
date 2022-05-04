@@ -20,12 +20,12 @@
 #	else
 #		error "Unknown Apple platform"
 #	endif
-#elif defined(__linux__) || defined(__gnu_lineux__)
-#	error "Linux is not supported!"
-#	define MYL_PLATFORM_LINUX
 #elif defined(__ANDROID__)
 #	error "Android is not supported!"
 #	define MYL_PLATFORM_ANDROID
+#elif defined(__linux__) || defined(__gnu_lineux__)
+#	error "Linux is not supported!"
+#	define MYL_PLATFORM_LINUX
 #elif defined(__unix__)
 #	error "Unix is not supported!"
 #	define MYL_PLATFORM_UNIX

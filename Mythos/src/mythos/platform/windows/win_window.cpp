@@ -5,9 +5,8 @@
 #	include <mythos/core/timestep.hpp>
 #	include <mythos/core/key_codes.hpp>
 #	include <mythos/core/mouse_codes.hpp>
-
-#	include <mythos/event/app_event.hpp>
 #	include <mythos/core/input.hpp>
+#	include <mythos/event/app_event.hpp>
 
 #	include <windowsx.h>
 
@@ -16,8 +15,10 @@ namespace myl::windows {
 		switch (w_param) {
 			using namespace mouse_button;
 			case MK_LBUTTON: return left;
-			case MK_MBUTTON: return middle;
 			case MK_RBUTTON: return right;
+			case MK_MBUTTON: return middle;
+			case MK_XBUTTON1: return button4;
+			case MK_XBUTTON2: return button5;
 			default: return unknown;
 
 				/// left + right = 3
@@ -26,8 +27,6 @@ namespace myl::windows {
 				/// middle + left + right = 19
 				/// MYBug: when 2 buttons are pressed at the same time windows puts the values together, no way to handle that
 				/// left = 0001; right = 0010; same time = 0011
-				
-				/// MYTodo: buttons on the sides on mouse
 		}
 	}
 
@@ -199,18 +198,19 @@ namespace myl::windows {
 			} break;
 			case WM_LBUTTONDOWN: MYL_FALLTHROUGH;
 			case WM_MBUTTONDOWN: MYL_FALLTHROUGH;
-			case WM_RBUTTONDOWN:
-				input::process_mouse_button(translate_mouse_code(w_param), input::state::down);
-				break;
-			case WM_LBUTTONUP: /// MYBug: for some reason w_param is always 0 when a button is released. Can't do stuff like above
-				input::process_mouse_button(mouse_button::left, input::state::up);
-				break;
-			case WM_MBUTTONUP: /// MYBug: for some reason w_param is always 0 when a button is released. Can't do stuff like above
-				input::process_mouse_button(mouse_button::middle, input::state::up);
-				break;
-			case WM_RBUTTONUP: /// MYBug: for some reason w_param is always 0 when a button is released. Can't do stuff like above
-				input::process_mouse_button(mouse_button::right, input::state::up);
-				break;
+			case WM_RBUTTONDOWN: input::process_mouse_button(translate_mouse_code(w_param), input::state::down); break;
+			case WM_XBUTTONDOWN: input::process_mouse_button(translate_mouse_code(LOWORD(w_param)), input::state::down); break; // LOWORD contains the button
+#if 0 /// MYBug: for some reason w_param is always 0 when a button is released. Can't do stuff like block below
+			case WM_LBUTTONUP: MYL_FALLTHROUGH;
+			case WM_MBUTTONUP: MYL_FALLTHROUGH;
+			case WM_RBUTTONUP: input::process_mouse_button(translate_mouse_code(w_param), input::state::up); break;
+			case WM_XBUTTONUP: input::process_mouse_button(translate_mouse_code(LOWORD(w_param)), input::state::up); break; // LOWORD contains the button
+#else /// MYHack: See bug note above
+			case WM_LBUTTONUP: input::process_mouse_button(mouse_button::left, input::state::up); break;
+			case WM_MBUTTONUP: input::process_mouse_button(mouse_button::middle, input::state::up); break;
+			case WM_RBUTTONUP: input::process_mouse_button(mouse_button::right, input::state::up); break;
+			case WM_XBUTTONUP: input::process_mouse_button(HIWORD(w_param) == XBUTTON1 ? mouse_button::button4 : mouse_button::button5, input::state::up); break;
+#endif
 		}
 	
 		return DefWindowProcA(hwnd, msg, w_param, l_param);
@@ -255,6 +255,7 @@ namespace myl::windows {
 
 		window_style |= WS_MAXIMIZE;
 		window_style |= WS_MINIMIZEBOX;
+		window_style |= WS_MAXIMIZEBOX;
 		window_style |= WS_THICKFRAME;
 
 		// obtain size of the border

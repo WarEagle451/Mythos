@@ -13,7 +13,8 @@ namespace myl::vulkan {
 		, m_h(a_h)
 		, m_color(a_color)
 		, m_depth(a_depth)
-		, m_stencil(a_stencil) {
+		, m_stencil(a_stencil)
+		, m_state(render_pass_state::not_allocated) {
 
 		// main subpass
 		VkSubpassDescription subpass{
@@ -105,6 +106,7 @@ namespace myl::vulkan {
 		};
 
 		MYL_VK_CHECK(vkCreateRenderPass, m_context.device().logical(), &create_info, nullptr, &m_handle);
+		m_state = render_pass_state::ready;
 	}
 
 	render_pass::~render_pass() {
@@ -116,15 +118,15 @@ namespace myl::vulkan {
 		VkClearValue clear_values[2]{};
 		*clear_values[0].color.float32 = *m_color.data; /// MYTodo: Make sure this works over doing each color
 		clear_values[1].depthStencil.depth = m_depth;
-		clear_values[2].depthStencil.stencil = m_stencil;
+		clear_values[1].depthStencil.stencil = m_stencil;
 
 		VkRenderPassBeginInfo info{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
 			.renderPass = m_handle,
 			.framebuffer = a_framebuffer,
 			.renderArea = {
-				.offset = { static_cast<i32>(m_x), static_cast<i32>(m_y) }, /// MYTodo: why don't these just stay i32s
-				.extent = { static_cast<u32>(m_w), static_cast<u32>(m_h) } /// MYTodo: why don't these just stay u32s
+				.offset = { static_cast<i32>(m_x), static_cast<i32>(m_y) },
+				.extent = { static_cast<u32>(m_w), static_cast<u32>(m_h) }
 			},
 			.clearValueCount = 2,
 			.pClearValues = clear_values

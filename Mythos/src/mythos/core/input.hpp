@@ -5,7 +5,6 @@
 #include <mythos/math/vec2.hpp>
 
 /// MYTodo: Should this really be in core?
-
 /// MYTodo: key mods
 
 namespace myl::input {
@@ -36,19 +35,19 @@ namespace myl::input {
 
 	MYL_API MYL_NO_DISCARD state get_key_state(key_code);
 	MYL_API MYL_NO_DISCARD state get_previous_key_state(key_code);
-	MYL_API bool key_down(key_code);
-	MYL_API bool key_up(key_code);
-	MYL_API bool key_clicked(key_code);
-	MYL_API bool key_released(key_code);
+	MYL_API MYL_NO_DISCARD bool key_down(key_code);
+	MYL_API MYL_NO_DISCARD bool key_up(key_code);
+	MYL_API MYL_NO_DISCARD bool key_pressed(key_code);
+	MYL_API MYL_NO_DISCARD bool key_released(key_code);
 
 	MYL_API MYL_NO_DISCARD state get_mouse_button_state(mouse_code);
 	MYL_API MYL_NO_DISCARD state get_previous_mouse_button_state(mouse_code);
-	MYL_API bool mouse_button_down(mouse_code);
-	MYL_API bool mouse_button_up(mouse_code);
-	MYL_API bool mouse_button_clicked(mouse_code);
-	MYL_API bool mouse_button_released(mouse_code);
+	MYL_API MYL_NO_DISCARD bool mouse_button_down(mouse_code);
+	MYL_API MYL_NO_DISCARD bool mouse_button_up(mouse_code);
+	MYL_API MYL_NO_DISCARD bool mouse_button_pressed(mouse_code);
+	MYL_API MYL_NO_DISCARD bool mouse_button_released(mouse_code);
 
-	MYL_API f32vec2 MYL_NO_DISCARD cursor_position();
-	MYL_API f32vec2 MYL_NO_DISCARD previous_cursor_position();
-	MYL_API f32vec2 MYL_NO_DISCARD cursor_delta();
+	MYL_API MYL_NO_DISCARD f32vec2 cursor_position();
+	MYL_API MYL_NO_DISCARD f32vec2 previous_cursor_position();
+	MYL_API MYL_NO_DISCARD f32vec2 cursor_delta();
 }

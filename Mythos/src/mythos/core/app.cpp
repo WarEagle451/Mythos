@@ -6,13 +6,12 @@
 #include <mythos/event/app_event.hpp>
 #include <mythos/render/renderer.hpp>
 
-/// MYTodo: will want to have different event callbacks than just on_event
-
 namespace myl {
 	app* app::s_instance = nullptr;
 
 	app::app(const info& a_info, const config& a_config) {
 		core::loggers::init(); // asserts contain a call to MYL_CORE_FATAL
+		MYL_CORE_INFO("Creating application");
 		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
 		s_instance = this;
 
@@ -26,11 +25,16 @@ namespace myl {
 		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: why pass this though window? why not just set it from here?
 
 		render::renderer::init(a_info);
+		MYL_CORE_INFO("Application initialized");
 	}
 
 	app::~app() {
-		MYL_CORE_INFO("Shutting down application");
+		MYL_CORE_INFO("Terminating application");
+		m_layer_stack.clear(); // client layers are destroyed before any internal systems are shutdown
+
 		render::renderer::shutdown();
+		m_window.reset();
+		MYL_CORE_INFO("Application terminated");
 	}
 
 	void app::run() {

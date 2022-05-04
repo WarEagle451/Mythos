@@ -8,7 +8,7 @@ namespace myl {
 	static f64 s_clock_frequency;
 	static LARGE_INTEGER s_start_time;
 
-	f64 get_time() { /// MYTodo: replace this stuff with c++ code
+	f64 get_time() {
 		LARGE_INTEGER now;
 		QueryPerformanceCounter(&now);
 		return static_cast<f64>(now.QuadPart - s_start_time.QuadPart) * s_clock_frequency;

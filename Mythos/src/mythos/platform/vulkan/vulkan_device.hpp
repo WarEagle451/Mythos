@@ -10,7 +10,7 @@ namespace myl::vulkan {
 	class context; // fwd declaration
 
 	struct swapchain_support_info {
-		VkSurfaceCapabilitiesKHR capabilites;
+		VkSurfaceCapabilitiesKHR capabilites{};
 		std::vector<VkSurfaceFormatKHR> formats;
 		std::vector<VkPresentModeKHR> present_modes;
 	};
@@ -59,18 +59,18 @@ namespace myl::vulkan {
 		device(const device&) = delete;
 		device& operator=(const device&) = delete;
 
-		swapchain_support_info query_swapchain_support(VkPhysicalDevice);
-		queue_family_indices find_queue_family_indices(VkPhysicalDevice);
-		VkFormat find_supported_format(const std::vector<VkFormat>&, VkFormatFeatureFlags);
+		MYL_NO_DISCARD swapchain_support_info query_swapchain_support(VkPhysicalDevice);
+		MYL_NO_DISCARD queue_family_indices find_queue_family_indices(VkPhysicalDevice);
+		MYL_NO_DISCARD VkFormat find_supported_format(const std::vector<VkFormat>&, VkFormatFeatureFlags);
 
-		VkDevice& logical() { return m_logical_device; }
-		VkPhysicalDevice& physical() { return m_physical_device; }
-		swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
-		queue_family_indices& queue_indices() { return m_queue_indices; }
-		VkFormat& depth_format() { return m_depth_format; }
-		VkCommandPool& graphics_command_pool() { return m_graphics_command_pool; }
+		MYL_NO_DISCARD VkDevice& logical() { return m_logical_device; }
+		MYL_NO_DISCARD VkPhysicalDevice& physical() { return m_physical_device; }
+		MYL_NO_DISCARD swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
+		MYL_NO_DISCARD queue_family_indices& queue_indices() { return m_queue_indices; }
+		MYL_NO_DISCARD VkFormat& depth_format() { return m_depth_format; }
+		MYL_NO_DISCARD VkCommandPool& graphics_command_pool() { return m_graphics_command_pool; }
 	private:
-		bool physical_device_meets_requirements(VkPhysicalDevice, const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures&, const device_requirements&, queue_family_indices*);
+		MYL_NO_DISCARD bool physical_device_meets_requirements(VkPhysicalDevice, const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures&, const device_requirements&, queue_family_indices*);
 
 		void select_physical_device();
 		void create_logical_device();
