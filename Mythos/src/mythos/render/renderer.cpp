@@ -18,7 +18,7 @@ namespace myl::render {
 		}
 	}
 
-	void renderer::on_resize(u32 a_width, u32 a_height) {
+	void renderer::on_window_resize(u32 a_width, u32 a_height) {
 		s_backend->on_window_resize(a_width, a_height);
 	}
 }

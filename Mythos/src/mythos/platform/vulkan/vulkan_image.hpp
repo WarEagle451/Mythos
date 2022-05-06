@@ -17,6 +17,8 @@ namespace myl::vulkan {
 	public:
 		image(context& a_context, VkImageType a_image_type, u32 a_width, u32 a_height, VkFormat a_format, VkImageTiling a_tiling, VkImageUsageFlags a_usage, VkMemoryPropertyFlags a_memory_flags, bool a_create_view, VkImageAspectFlags a_view_aspect_flags);
 		~image();
+
+		VkImageView view() { return m_view; }
 	private:
 		void create_view(VkFormat, VkImageAspectFlags);
 	};

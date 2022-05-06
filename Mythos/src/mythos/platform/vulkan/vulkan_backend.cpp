@@ -27,5 +27,7 @@ namespace myl::vulkan {
 
 	void backend::on_window_resize(u32 a_width, u32 a_height) {
 		m_context.swapchain().recreate(a_width, a_height);
+		m_context.framebuffer_width() = a_width;
+		m_context.framebuffer_height() = a_height;
 	}
 }

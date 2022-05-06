@@ -81,8 +81,8 @@ namespace myl {
 			return false;
 		}
 
-		render::renderer::backend()->on_window_resize(a_event.width(), a_event.height());
 		m_suspended = false;
+		render::renderer::on_window_resize(a_event.width(), a_event.height());
 		return false;
 	}
 

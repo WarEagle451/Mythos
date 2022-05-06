@@ -42,13 +42,15 @@ namespace myl::vulkan {
 			.pImageIndices = &a_present_image_index,
 			.pResults = nullptr
 		};
-
+		
 		VkResult result = vkQueuePresentKHR(a_present_queue, &present_info);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 			// swapchain is out of date, suboptimal or a framebuffer resize has occurred. recreate swapchain
 			recreate(m_context.framebuffer_width(), m_context.framebuffer_height());
 		else if (result != VK_SUCCESS)
 			MYL_CORE_FATAL("Failed to present swapchain image");
+
+		m_context.current_frame() = (m_context.current_frame() + 1) % m_max_frames_in_flight;
 	}
 
 	void swapchain::recreate(u32 a_width, u32 a_height) {

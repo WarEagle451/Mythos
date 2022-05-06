@@ -24,7 +24,7 @@ namespace myl::vulkan {
 	static MYL_NO_DISCARD std::vector<const char*> get_required_validation_layers() {
 		std::vector<const char*> required_layers{};
 #ifdef MYL_BUILD_DEBUG
-		MYL_CORE_INFO("Validation layers enabled");
+		MYL_CORE_DEBUG("Validation layers enabled");
 
 		// required validation layers
 		required_layers.push_back("VK_LAYER_KHRONOS_validation");
@@ -68,6 +68,9 @@ namespace myl::vulkan {
 	}
 #endif
 	context::context(const app::info& a_info) {
+		m_framebuffer_width = 800; /// MYHack: On initialization these are not set to the apps default width and height
+		m_framebuffer_height = 600; /// MYHack: On initialization these are not set to the apps default width and height
+
 		VkApplicationInfo app_info{
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pApplicationName = a_info.name.c_str(), /// MYTodo: instead of passing everything through, have a function set_app_info, this is be optional, to be done before creating app and before pushing layer
@@ -90,7 +93,7 @@ namespace myl::vulkan {
 		};
 
 #ifdef MYL_BUILD_DEBUG // debugger
-		MYL_CORE_DEBUG("Creating Vulkan debug messenger");
+		MYL_CORE_INFO("Creating Vulkan debug messenger");
 		VkDebugUtilsMessengerCreateInfoEXT debug_create_info{
 			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, // | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
@@ -118,28 +121,46 @@ namespace myl::vulkan {
 		/// MYTodo: {} should work, shouldn't have to do f32vec4{}
 		m_main_render_pass = std::make_unique<render_pass>(*this, 0.f, 0.f, static_cast<f32>(m_framebuffer_width), static_cast<f32>(m_framebuffer_height), f32vec4{ .1f, .1f, .1f, 1.f }, 1.f, 0);
 		MYL_CORE_INFO("Main Vulkan render pass created");
+		regenerate_framebuffers();
+		MYL_CORE_INFO("Vulkan framebuffers created");
 		create_command_buffers();
+		create_sync_objects();
 	}
 
 	context::~context() { // must destory in opposite order of creation
+		vkDeviceWaitIdle(m_device->logical()); // waits for all graphics operations to cease
+
+		for (u32 i = 0; i != m_swapchain->max_frames_in_flight(); ++i) {
+			vkDestroySemaphore(m_device->logical(), m_image_available_semaphore[i], nullptr);
+			vkDestroySemaphore(m_device->logical(), m_queue_complete_semaphore[i], nullptr);
+		}
+		m_images_in_flight.clear();
+		m_in_flight_fences.clear();
+
 		for (auto& buffer : m_graphics_command_buffers)
 			if (buffer.handle() == nullptr)
 				buffer.deallocate();
 		m_graphics_command_buffers.clear();
 		MYL_CORE_INFO("Vulkan command buffers destroyed");
 
+		m_swapchain->framebuffers().clear();
+		MYL_CORE_INFO("Vulkan framebuffers destroyed");
+
 		m_main_render_pass.reset();
 		MYL_CORE_INFO("Main Vulkan render pass destroyed");
+
 		m_swapchain.reset();
 		MYL_CORE_INFO("Vulkan swapchain destroyed");
+
 		m_device.reset();
-		if (m_surface)
+		if (m_surface) {
 			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-		MYL_CORE_INFO("Vulkan surface destroyed");
+			MYL_CORE_INFO("Vulkan surface destroyed");
+		}
 #ifdef MYL_BUILD_DEBUG
 		PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 		func(m_instance, m_debug_messenger, nullptr);
-		MYL_CORE_DEBUG("Vulkan debug messenger destroyed");
+		MYL_CORE_INFO("Vulkan debug messenger destroyed");
 #endif
 		vkDestroyInstance(m_instance, nullptr);
 		MYL_CORE_INFO("Vulkan instance destroyed");
@@ -172,5 +193,38 @@ namespace myl::vulkan {
 		}
 
 		MYL_CORE_INFO("Vulkan command buffers created");
+	}
+
+	void context::regenerate_framebuffers() {
+		m_swapchain->framebuffers().clear();
+		for (int i = 0; i != m_swapchain->image_count(); ++i) {
+			/// MYTodo: make this dynamic based on current configured attachments
+			std::vector<VkImageView> attachments{
+				m_swapchain->views()[i], // color attachment
+				m_swapchain->depth_attachment()->view()
+			};
+
+			m_swapchain->framebuffers().emplace_back(std::make_unique<framebuffer>(*this, *m_main_render_pass, u32vec2{ m_framebuffer_width, m_framebuffer_height }, attachments));
+		}
+	}
+
+	void context::create_sync_objects() {
+		m_image_available_semaphore.resize(m_swapchain->max_frames_in_flight());
+		m_queue_complete_semaphore.resize(m_swapchain->max_frames_in_flight());
+		for (u32 i = 0; i != m_swapchain->max_frames_in_flight(); ++i) {
+			VkSemaphoreCreateInfo info{
+				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+			};
+			
+			vkCreateSemaphore(m_device->logical(), &info, nullptr, &m_image_available_semaphore[i]);
+			vkCreateSemaphore(m_device->logical(), &info, nullptr, &m_queue_complete_semaphore[i]);
+			
+			// create a fence in a signaled state, indicating that the first frame has already been rendered
+			// this will prevent the app from waiting forever for the first frame to render
+			// cannot be rendered until a frame is "rendered" before it
+			m_in_flight_fences.emplace_back(std::make_shared<fence>(*this, true));
+		}
+
+		MYL_CORE_INFO("Vulkan sync objects created");
 	}
 }

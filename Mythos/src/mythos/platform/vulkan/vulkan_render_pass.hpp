@@ -33,6 +33,8 @@ namespace myl::vulkan {
 		render_pass(context&, f32 a_x, f32 a_y, f32 a_w, f32 a_h, const f32vec4& a_color, f32 a_depth, u32 a_stencil);
 		~render_pass();
 
+		VkRenderPass handle() { return m_handle; }
+
 		void begin(command_buffer&, VkFramebuffer);
 		void end(command_buffer&);
 	};

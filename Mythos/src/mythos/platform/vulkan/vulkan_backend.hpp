@@ -3,6 +3,8 @@
 
 #include <mythos/render/backend.hpp>
 
+/// MYBug: Vulkan crashes if the window starts minimized
+
 namespace myl::vulkan {
 	class backend : public render::backend {
 		context m_context;
