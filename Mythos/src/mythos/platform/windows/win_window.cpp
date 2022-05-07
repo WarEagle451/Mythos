@@ -32,6 +32,9 @@ namespace myl::windows {
 
 	/// MYBug: print screen does not work, also test all keys
 
+	/// MYTodo: Figure out event_key_typed and event_key_pressed with repeats
+	/// MYTodo: When resizing the window as long as the window resize has not been let go things can go black, continously update this to allow it to clear the screen everytime
+
 	MYL_NO_DISCARD constexpr key_code translate_key_code(WPARAM w_param) {
 		switch (static_cast<u16>(w_param)) { // key code it a u16 from the w_param
 			using namespace key;

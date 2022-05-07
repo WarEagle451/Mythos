@@ -1,5 +1,5 @@
 #pragma once
-#include "vulkan_common.hpp"
+#include "vulkan_utils.hpp"
 #include "vulkan_render_pass.hpp"
 
 #include <mythos/math/vec2.hpp>
@@ -21,5 +21,7 @@ namespace myl::vulkan {
 
 		framebuffer(const framebuffer&) = delete;
 		framebuffer& operator=(const framebuffer&) = delete;
+
+		VkFramebuffer handle() { return m_handle; }
 	};
 }

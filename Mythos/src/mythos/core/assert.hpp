@@ -16,6 +16,7 @@
 #endif
 
 /// MYTodo: Add assert that can be called like MYL_CORE_ASSERT(false, "{}{}", 1, 2)
+/// MYBug: Why are asserts not logging before breaking?
 
 #ifdef MYL_ENABLE_ASSERTS
 #	define MYL_INTERNAL_ASSERT_IMPL(check, msg, ...) { if(!(check)) { MYL_CORE_FATAL(msg, __VA_ARGS__); MYL_DEBUGBREAK(); } }

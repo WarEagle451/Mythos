@@ -1,7 +1,7 @@
 #include "vulkan_image.hpp"
 #include "vulkan_context.hpp"
 #include "vulkan_device.hpp"
-#include "vulkan_common.hpp"
+#include "vulkan_utils.hpp"
 
 #include <mythos/core/log.hpp>
 

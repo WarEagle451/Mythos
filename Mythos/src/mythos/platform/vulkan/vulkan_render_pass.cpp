@@ -1,6 +1,6 @@
 #include "vulkan_render_pass.hpp"
 #include "vulkan_context.hpp"
-#include "vulkan_common.hpp"
+#include "vulkan_utils.hpp"
 #include "vulkan_swapchain.hpp"
 
 #include <vector>
@@ -117,7 +117,10 @@ namespace myl::vulkan {
 
 	void render_pass::begin(command_buffer& a_command_buffer, VkFramebuffer a_framebuffer) {
 		VkClearValue clear_values[2]{};
-		*clear_values[0].color.float32 = *m_color.data; /// MYTodo: Make sure this works over doing each color
+		clear_values[0].color.float32[0] = m_color.r;
+		clear_values[0].color.float32[1] = m_color.g;
+		clear_values[0].color.float32[2] = m_color.b;
+		clear_values[0].color.float32[3] = m_color.a;
 		clear_values[1].depthStencil.depth = m_depth;
 		clear_values[1].depthStencil.stencil = m_stencil;
 

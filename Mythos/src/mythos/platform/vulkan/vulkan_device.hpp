@@ -41,7 +41,7 @@ namespace myl::vulkan {
 		swapchain_support_info m_swapchain_support_info;
 
 		queue_family_indices m_queue_indices;
-		VkQueue m_graphics_queue;
+		VkQueue m_graphics_queue; /// MYBug: Apparently Something funky goes on with AMD cards; Refer to comments in Kohi 21
 		VkQueue m_present_queue;
 		VkQueue m_transfer_queue;
 
@@ -61,10 +61,16 @@ namespace myl::vulkan {
 		MYL_NO_DISCARD VkPhysicalDevice physical() { return m_physical_device; }
 
 		MYL_NO_DISCARD const swapchain_support_info& swapchain_support_info() const { return m_swapchain_support_info; }
-		const queue_family_indices& queue_indices() const { return m_queue_indices; }
-		VkCommandPool graphics_command_pool() { return m_graphics_command_pool; }
+		MYL_NO_DISCARD const queue_family_indices& queue_indices() const { return m_queue_indices; }
+		MYL_NO_DISCARD VkCommandPool graphics_command_pool() { return m_graphics_command_pool; }
+		MYL_NO_DISCARD VkQueue graphics_queue() { return m_graphics_queue; }
+		MYL_NO_DISCARD VkQueue present_queue() { return m_present_queue; }
+		MYL_NO_DISCARD VkQueue transfer_queue() { return m_transfer_queue; }
 
-		const vulkan::swapchain_support_info& query_swapchain_support(VkPhysicalDevice);
+		//@return Swapchain support info for a given device
+		const vulkan::swapchain_support_info query_swapchain_support(VkPhysicalDevice);
+		//@brief Updates the selcted device's swapchain support info
+		void query_swapchain_support();
 		MYL_NO_DISCARD VkFormat find_supported_format(const std::vector<VkFormat>&, VkFormatFeatureFlags);
 	private:
 		MYL_NO_DISCARD queue_family_indices find_queue_family_indices(VkPhysicalDevice);

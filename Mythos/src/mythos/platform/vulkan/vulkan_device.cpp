@@ -1,6 +1,6 @@
 #include "vulkan_device.hpp"
 #include "vulkan_context.hpp"
-#include "vulkan_common.hpp"
+#include "vulkan_utils.hpp"
 
 #include <mythos/core/except.hpp>
 
@@ -18,15 +18,15 @@ namespace myl::vulkan {
 
 	device::~device() {
 		vkDestroyCommandPool(m_logical_device, m_graphics_command_pool, nullptr);
-		MYL_CORE_INFO("Command pool destroyed");
+		MYL_CORE_INFO("Destroyed command pool");
 
 		if (m_logical_device)
 			vkDestroyDevice(m_logical_device, nullptr);
-		MYL_CORE_INFO("Device destroyed");
+		MYL_CORE_INFO("Destroyed logical device");
 		// physical devices are not destroyed
 	}
 
-	const swapchain_support_info& device::query_swapchain_support(VkPhysicalDevice a_device) {
+	const swapchain_support_info device::query_swapchain_support(VkPhysicalDevice a_device) {
 		vulkan::swapchain_support_info info{};
 		// surface capabilities
 		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_context.surface(), &info.capabilites);
@@ -48,8 +48,11 @@ namespace myl::vulkan {
 			MYL_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, info.present_modes.data());
 		}
 
-		m_swapchain_support_info = info;
-		return m_swapchain_support_info;
+		return info;
+	}
+
+	void device::query_swapchain_support() {
+		m_swapchain_support_info = query_swapchain_support(m_context.device().physical());
 	}
 
 	VkFormat device::find_supported_format(const std::vector<VkFormat>& a_candidates, VkFormatFeatureFlags a_flags) {
@@ -134,8 +137,8 @@ namespace myl::vulkan {
 			MYL_CORE_TRACE("Indices: Graphics | Present | Compute | Transfer | Name");
 			MYL_CORE_TRACE("         {:<8} | {:<7} | {:<7} | {:<8} | {}", a_queue_indices->graphics, a_queue_indices->present, a_queue_indices->compute, a_queue_indices->transfer, std::string(a_properties.deviceName));
 
-			query_swapchain_support(a_device);
-			if (m_swapchain_support_info.formats.size() < 1 || m_swapchain_support_info.present_modes.size() < 1) {
+			auto device_swapchain_support = query_swapchain_support(a_device);
+			if (device_swapchain_support.formats.size() < 1 || device_swapchain_support.present_modes.size() < 1) {
 				MYL_CORE_WARN("'{}' does not meet swapchain support requirements", std::string(a_properties.deviceName));
 				return false;
 			}
@@ -171,10 +174,22 @@ namespace myl::vulkan {
 				return false;
 			}
 
+			m_swapchain_support_info = device_swapchain_support;
 			return true;
 		}
 
 		return false;
+	}
+
+	static std::string VkPhysicalDeviceType_to_string(VkPhysicalDeviceType type) {
+		switch (type) {
+			case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: return "Integrated";
+			case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: return "Discrete";
+			case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: return "Virtual";
+			case VK_PHYSICAL_DEVICE_TYPE_CPU: return "CPU";
+			case VK_PHYSICAL_DEVICE_TYPE_OTHER: MYL_FALLTHROUGH;
+			default: return "Unknown";
+		}
 	}
 
 	void device::select_physical_device() {
@@ -210,26 +225,8 @@ namespace myl::vulkan {
 
 			queue_family_indices queue_info{};
 			if (device_meets_requirements(device, properties, features, requirements, &queue_info)) {
-				MYL_CORE_INFO("Selected device: {}", std::string(properties.deviceName));
-				switch (properties.deviceType) {
-					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-						MYL_CORE_INFO("\t- GPU type: Integrated");
-						break;
-					case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-						MYL_CORE_INFO("\t- GPU type: Discrete");
-						break;
-					case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-						MYL_CORE_INFO("\t- GPU type: Virtual");
-						break;
-					case VK_PHYSICAL_DEVICE_TYPE_CPU:
-						MYL_CORE_INFO("\t- GPU type: CPU");
-						break;
-					case VK_PHYSICAL_DEVICE_TYPE_OTHER: MYL_FALLTHROUGH;
-					default:
-						MYL_CORE_INFO("\t- GPU type: Unknown");
-						break;
-				}
-
+				MYL_CORE_INFO(std::string(properties.deviceName));
+				MYL_CORE_INFO("\t- GPU type: {}", VkPhysicalDeviceType_to_string(properties.deviceType));
 				MYL_CORE_INFO("\t- GPU driver version: {}.{}.{}", VK_VERSION_MAJOR(properties.driverVersion), VK_VERSION_MINOR(properties.driverVersion), VK_VERSION_PATCH(properties.driverVersion));
 				MYL_CORE_INFO("\t- Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
 
@@ -309,7 +306,7 @@ namespace myl::vulkan {
 		};
 
 		MYL_VK_CHECK(vkCreateDevice, m_physical_device, &device_create_info, nullptr, &m_logical_device);
-		MYL_CORE_INFO("Logical device created");
+		MYL_CORE_INFO("Created logical device");
 	}
 
 	void device::get_device_queues() {
@@ -327,6 +324,6 @@ namespace myl::vulkan {
 		};
 
 		MYL_VK_CHECK(vkCreateCommandPool, m_logical_device, &info, nullptr, &m_graphics_command_pool);
-		MYL_CORE_INFO("Graphics command pool created");
+		MYL_CORE_INFO("Created graphics command pool");
 	}
 }

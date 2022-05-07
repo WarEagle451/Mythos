@@ -1,6 +1,6 @@
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_context.hpp"
-#include "vulkan_common.hpp"
+#include "vulkan_utils.hpp"
 
 namespace myl::vulkan {
 	void command_buffer::allocate_and_begin_single_use(command_buffer& a_command_buffer) {

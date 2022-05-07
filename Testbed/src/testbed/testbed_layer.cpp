@@ -3,22 +3,13 @@
 #include <mythos/core/log.hpp>
 #include <mythos/event/event.hpp>
 #include <mythos/event/mouse_event.hpp>
+#include <mythos/event/key_event.hpp>
 
 #include <mythos/core/input.hpp>
 
 #include <mythos/core/app.hpp>
 
 namespace tb {
-	static bool mouse_moved(myl::event_mouse_moved& e) {
-		MYL_CORE_TRACE("mouse cords: [{}, {}]", e.x(), e.y());
-		return true;
-	}
-
-	static bool mouse_scrolled(myl::event_mouse_scrolled& e) {
-		MYL_CORE_TRACE("mouse delta: [{}, {}]", e.x_delta(), e.y_delta());
-		return true;
-	}
-
 	static bool mouse_pressed(myl::event_mouse_pressed& e) {
 		MYL_CORE_TRACE("mouse pressed: {}", static_cast<i32>(e.button()));
 		return true;
@@ -26,6 +17,21 @@ namespace tb {
 
 	static bool mouse_released(myl::event_mouse_released& e) {
 		MYL_CORE_TRACE("mouse released: {}", static_cast<i32>(e.button()));
+		return true;
+	}
+
+	static bool key_pressed(myl::event_key_pressed& e) {
+		MYL_CORE_TRACE("Key {} pressed, count {}", e.key(), e.repeat_count());
+		return true;
+	}
+
+	static bool key_released(myl::event_key_released& e) {
+		MYL_CORE_TRACE("Key {} released", e.key());
+		return true;
+	}
+
+	static bool key_typed(myl::event_key_typed& e) {
+		MYL_CORE_TRACE("Key {} typed", e.key());
 		return true;
 	}
 
@@ -48,19 +54,16 @@ namespace tb {
 
 	void testbed_layer::on_event(myl::event& a_event) {
 		myl::event_dispatcher dispatcher(a_event);
-		dispatcher.dispatch<myl::event_mouse_moved>(mouse_moved);
-		dispatcher.dispatch<myl::event_mouse_scrolled>(mouse_scrolled);
 		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
 		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
+		dispatcher.dispatch<myl::event_key_pressed>(key_pressed);
+		dispatcher.dispatch<myl::event_key_released>(key_released);
+		dispatcher.dispatch<myl::event_key_typed>(key_typed);
 	}
 
 	void testbed_layer::update(myl::timestep ts) {
 		if (myl::input::key_down(myl::key::escape))
 			myl::app::get().close();
-
-		for (i32 key = 0; key != myl::key::size; ++key)
-			if (myl::input::key_pressed(key))
-				MYL_CORE_TRACE("{} key typed", key);
 	}
 
 	void testbed_layer::render() {

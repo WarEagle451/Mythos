@@ -57,7 +57,7 @@ namespace myl {
 			if (!m_suspended) {
 				static constexpr f64 target_time = 1.0 / 60.0; // 60 fps
 				f64 elapsed_time = get_time() - m_last_frame_time;
-				while (elapsed_time < target_time) /// MYHack: do vsync the right way
+				while (elapsed_time < target_time) /// MYHack: Do vsync the right way, This way to do v_sync also still uses the computer resources
 					elapsed_time = get_time() - m_last_frame_time;
 			}
 		}
@@ -77,7 +77,8 @@ namespace myl {
 	}
 
 	bool app::on_window_resize(event_window_resize& a_event) {
-		if (a_event.width() == 0 || a_event.height() == 0) {
+		/// MYTodo: This should return true if somehow the width and height don't actually change
+		if (a_event.width() == 0 || a_event.height() == 0) { // minimization
 			m_suspended = true;
 			return false;
 		}

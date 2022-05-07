@@ -35,6 +35,8 @@ namespace myl::vulkan {
 		~render_pass();
 
 		VkRenderPass handle() { return m_handle; }
+		void set_width(f32 a_width) { m_w = a_width; }
+		void set_height(f32 a_height) { m_h = a_height; }
 
 		void begin(command_buffer&, VkFramebuffer);
 		void end(command_buffer&);

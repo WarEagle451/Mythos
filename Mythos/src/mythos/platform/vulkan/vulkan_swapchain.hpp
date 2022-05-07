@@ -25,8 +25,8 @@ namespace myl::vulkan {
 
 		std::vector<std::unique_ptr<framebuffer>> m_framebuffers;
 
-		std::vector<VkSemaphore> m_image_available_semaphore;
-		std::vector<VkSemaphore> m_queue_complete_semaphore;
+		std::vector<VkSemaphore> m_image_available_semaphores;
+		std::vector<VkSemaphore> m_queue_complete_semaphores;
 
 		std::vector<std::shared_ptr<fence>> m_in_flight_fences;
 		std::vector<std::weak_ptr<fence>> m_images_in_flight;
@@ -34,7 +34,9 @@ namespace myl::vulkan {
 		VkExtent2D m_swapchain_extent;
 
 		u8 m_max_frames_in_flight;
-		u8 m_current_frame;
+		u32 m_current_frame;
+
+		bool m_recreating = false;
 	public:
 		swapchain(context&, u32 a_width, u32 a_height);
 		~swapchain();
@@ -42,12 +44,22 @@ namespace myl::vulkan {
 		swapchain(const swapchain&) = delete;
 		swapchain& operator=(const swapchain&) = delete;
 
-		std::vector<VkImage>& images() { return m_images; }
-		VkFormat depth_format() const { return m_depth_format; }
-		VkSurfaceFormatKHR image_format() const { return m_image_format; }
+		MYL_NO_DISCARD std::vector<VkImage>& images() { return m_images; }
+		MYL_NO_DISCARD VkFormat depth_format() const { return m_depth_format; }
+		MYL_NO_DISCARD VkSurfaceFormatKHR image_format() const { return m_image_format; }
+
+		MYL_NO_DISCARD bool recreating() const { return m_recreating; }
+		MYL_NO_DISCARD u8 current_frame() const { return m_current_frame; }
+		MYL_NO_DISCARD std::vector<std::shared_ptr<fence>>& in_flight_fences() { return m_in_flight_fences; }
+		MYL_NO_DISCARD std::vector<VkSemaphore>& image_available_semaphores() { return m_image_available_semaphores; }
+		MYL_NO_DISCARD std::vector<VkSemaphore>& queue_complete_semaphores() { return m_queue_complete_semaphores; }
+		MYL_NO_DISCARD std::vector<std::unique_ptr<framebuffer>>& framebuffers() { return m_framebuffers; }
+		MYL_NO_DISCARD const VkExtent2D& swapchain_extent() const { return m_swapchain_extent; }
+		MYL_NO_DISCARD render_pass& render_pass() { return *m_render_pass; }
+		MYL_NO_DISCARD std::vector<std::weak_ptr<fence>>& images_in_flight() { return m_images_in_flight; }
 
 		void recreate(u32 a_width, u32 a_height);
-		bool acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index);
+		MYL_NO_DISCARD bool acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index);
 		void present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index);
 	private:
 		void create_swapchain(u32 a_width, u32 a_height);

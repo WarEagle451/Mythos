@@ -1,5 +1,5 @@
 #include "vulkan_context.hpp"
-#include "vulkan_common.hpp"
+#include "vulkan_utils.hpp"
 #include "vulkan_platform.hpp"
 #include "vulkan_swapchain.hpp"
 
@@ -12,7 +12,7 @@ namespace myl::vulkan {
 		create_debug_messenger();
 #endif
 		m_surface = platform_create_surface(m_instance);
-		MYL_CORE_INFO("Vulkan surface created");
+		MYL_CORE_INFO("Created Vulkan surface");
 		
 		m_device = std::make_unique<vulkan::device>(*this);
 	}
@@ -24,7 +24,7 @@ namespace myl::vulkan {
 
 		if (m_surface) {
 			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-			MYL_CORE_INFO("Vulkan surface destroyed");
+			MYL_CORE_INFO("Destroyed Vulkan surface");
 		}
 
 		destroy_debug_messenger();
@@ -128,8 +128,6 @@ namespace myl::vulkan {
 				buffer.deallocate();
 			buffer.allocate(true);
 		}
-
-		MYL_CORE_INFO("Created command buffers");
 	}
 
 	void context::destroy_instance() {

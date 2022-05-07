@@ -1,6 +1,6 @@
 #include "vulkan_swapchain.hpp"
 #include "vulkan_context.hpp"
-#include "vulkan_common.hpp"
+#include "vulkan_utils.hpp"
 
 #include <mythos/algorithm.hpp>
 
@@ -10,20 +10,23 @@ namespace myl::vulkan {
 		, m_max_frames_in_flight(2) // triple buffering
 		, m_current_frame(0) {
 		create_swapchain(a_width, a_height);
-		MYL_CORE_INFO("Vulkan Swapchain created");
+		MYL_CORE_INFO("Created Vulkan Swapchain");
 		create_image_views();
 		create_depth_resources();
 		create_render_pass();
-		MYL_CORE_INFO("Created render pass"); /// MYTodo: Does this have to come before create_depth_resources?
+		MYL_CORE_INFO("Created render pass");
 		regenerate_framebuffers();
+		MYL_CORE_INFO("Created framebuffers");
 		create_sync_objects();
-		MYL_CORE_INFO("Vulkan sync objects created");
+		MYL_CORE_INFO("Created Vulkan sync objects");
 	}
 
 	swapchain::~swapchain() {
+		vkDeviceWaitIdle(m_context.device().logical());
+
 		for (u32 i = 0; i != m_max_frames_in_flight; ++i) {
-			vkDestroySemaphore(m_context.device().logical(), m_image_available_semaphore[i], nullptr);
-			vkDestroySemaphore(m_context.device().logical(), m_queue_complete_semaphore[i], nullptr);
+			vkDestroySemaphore(m_context.device().logical(), m_image_available_semaphores[i], nullptr);
+			vkDestroySemaphore(m_context.device().logical(), m_queue_complete_semaphores[i], nullptr);
 		}
 
 		m_framebuffers.clear();
@@ -33,18 +36,46 @@ namespace myl::vulkan {
 		vkDestroySwapchainKHR(m_context.device().logical(), m_handle, nullptr);
 	}
 
-	void swapchain::recreate(u32 a_width, u32 a_height) {
-		vkDeviceWaitIdle(m_context.device().logical());
+	static VkFormat detect_depth_format(device& device) {
+		VkFormat format = device.find_supported_format(
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+		if (format == VK_FORMAT_UNDEFINED)
+			MYL_CORE_FATAL("Failed to find a supported depth format");
+		return format;
+	}
 
+	void swapchain::recreate(u32 a_width, u32 a_height) {
+		if (m_recreating)
+			return; // Already recreating swapchain
+		if (a_width == 0 || a_height == 0)
+			return; // Cannot recreate swapchain when width or height is 0
+
+		vkDeviceWaitIdle(m_context.device().logical());
+		m_recreating = true;
+
+		// Clearing just in case
+		m_images_in_flight.clear();
+
+		m_context.graphics_command_buffers().clear();
 		m_framebuffers.clear();
 		m_render_pass.reset();
 		destroy_image_views();
 		vkDestroySwapchainKHR(m_context.device().logical(), m_handle, nullptr);
 
-		create_swapchain(a_width, a_height);
+		m_context.device().query_swapchain_support(); // In case things have changed
+		m_depth_format = detect_depth_format(m_context.device()); // In case somehow this changes
+
+		/// MYTodo: Pass the old swapchain. Figure out what it does
+		create_swapchain(a_width, a_height); // Sets m_swapchain_extent
 		create_image_views();
 		create_render_pass();
 		regenerate_framebuffers();
+		m_context.create_command_buffers(*this);
+
+		m_images_in_flight.resize(m_images.size());
+
+		m_recreating = false;
 	}
 
 	bool swapchain::acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index) {
@@ -185,17 +216,12 @@ namespace myl::vulkan {
 	}
 
 	void swapchain::create_depth_resources() {
-		m_depth_format = m_context.device().find_supported_format(
-			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-		if (m_depth_format == VK_FORMAT_UNDEFINED)
-			MYL_CORE_FATAL("Failed to find a supported depth format");
-
+		m_depth_format = detect_depth_format(m_context.device());
 		m_depth_attachment = std::make_unique<image>(m_context, VK_IMAGE_TYPE_2D, m_swapchain_extent.width, m_swapchain_extent.height, m_depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true, VK_IMAGE_ASPECT_DEPTH_BIT);
 	}
 
 	void swapchain::create_render_pass() {
-		m_render_pass = std::make_unique<render_pass>(*this, m_context, 0.f, 0.f, static_cast<f32>(m_swapchain_extent.width), static_cast<f32>(m_swapchain_extent.height), f32vec4{ .1f, .1f, .1f, 1.f }, 1.f, 0);
+		m_render_pass = std::make_unique<vulkan::render_pass>(*this, m_context, 0.f, 0.f, static_cast<f32>(m_swapchain_extent.width), static_cast<f32>(m_swapchain_extent.height), f32vec4{ .1f, .1f, .1f, 1.f }, 1.f, 0); /// MYTodo: This is a temp clear color
 	}
 
 	void swapchain::regenerate_framebuffers() {
@@ -211,25 +237,28 @@ namespace myl::vulkan {
 	}
 
 	void swapchain::create_sync_objects() {
-		m_image_available_semaphore.resize(m_max_frames_in_flight);
-		m_queue_complete_semaphore.resize(m_max_frames_in_flight);
+		m_image_available_semaphores.resize(m_max_frames_in_flight);
+		m_queue_complete_semaphores.resize(m_max_frames_in_flight);
 		for (u32 i = 0; i != m_max_frames_in_flight; ++i) {
 			VkSemaphoreCreateInfo create_info{
 				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
 			};
 
-			vkCreateSemaphore(m_context.device().logical(), &create_info, nullptr, &m_image_available_semaphore[i]);
-			vkCreateSemaphore(m_context.device().logical(), &create_info, nullptr, &m_queue_complete_semaphore[i]);
+			vkCreateSemaphore(m_context.device().logical(), &create_info, nullptr, &m_image_available_semaphores[i]);
+			vkCreateSemaphore(m_context.device().logical(), &create_info, nullptr, &m_queue_complete_semaphores[i]);
 
-			// create a fence in a signaled state, indicating that the first frame has already been rendered
+			// Create a fence in a signaled state, indicating that the first frame has already been rendered
 			// this will prevent the app from waiting forever for the first frame to render
 			// cannot be rendered until a frame is "rendered" before it
 			m_in_flight_fences.emplace_back(std::make_shared<fence>(m_context, true));
 		}
+
+		// In flight fences should not yet exist at this point.
+		m_images_in_flight.resize(m_images.size());
 	}
 
 	void swapchain::destroy_image_views() {
-		// only destory the views, not the images, since those are owned by the swapchain and are destroyed when it is
+		// Only destory the views, not the images, since those are owned by the swapchain and are destroyed when it is
 		for (auto& view : m_views) /// MYTodo: how does above make any sense?
 			vkDestroyImageView(m_context.device().logical(), view, nullptr);
 	}
