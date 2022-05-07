@@ -1,6 +1,7 @@
-#pragma once
 #include "vulkan_image.hpp"
+#include "vulkan_render_pass.hpp"
 #include "vulkan_framebuffer.hpp"
+#include "vulkan_fence.hpp"
 
 #include <vector>
 #include <memory>
@@ -11,17 +12,29 @@ namespace myl::vulkan {
 	class swapchain {
 		context& m_context; // context must outlive swapchain
 
-		u32 m_max_frames_in_flight;
-
 		VkSwapchainKHR m_handle;
 		VkSurfaceFormatKHR m_image_format;
 
 		std::vector<VkImage> m_images;
 		std::vector<VkImageView> m_views;
 
+		VkFormat m_depth_format;
 		std::unique_ptr<image> m_depth_attachment;
-		// used for on-screen rendering
-		std::vector<std::unique_ptr<framebuffer>> m_framebuffers; /// MYBug: Have to use uniques because for some reason non-pointers cause vulkan errors, maybe the handle is null and it's trying to kill itself
+
+		std::unique_ptr<render_pass> m_render_pass;
+
+		std::vector<std::unique_ptr<framebuffer>> m_framebuffers;
+
+		std::vector<VkSemaphore> m_image_available_semaphore;
+		std::vector<VkSemaphore> m_queue_complete_semaphore;
+
+		std::vector<std::shared_ptr<fence>> m_in_flight_fences;
+		std::vector<std::weak_ptr<fence>> m_images_in_flight;
+
+		VkExtent2D m_swapchain_extent;
+
+		u8 m_max_frames_in_flight;
+		u8 m_current_frame;
 	public:
 		swapchain(context&, u32 a_width, u32 a_height);
 		~swapchain();
@@ -29,18 +42,21 @@ namespace myl::vulkan {
 		swapchain(const swapchain&) = delete;
 		swapchain& operator=(const swapchain&) = delete;
 
-		MYL_NO_DISCARD const VkSurfaceFormatKHR& image_format() const { return m_image_format; }
-		MYL_NO_DISCARD u64 image_count() const { return m_images.size(); }
-		MYL_NO_DISCARD std::vector<std::unique_ptr<framebuffer>>& framebuffers() { return m_framebuffers; }
-		MYL_NO_DISCARD std::vector<VkImageView>& views() { return m_views; }
-		MYL_NO_DISCARD image* depth_attachment() { return m_depth_attachment.get(); }
-		MYL_NO_DISCARD u32 max_frames_in_flight() const { return m_max_frames_in_flight; }
+		std::vector<VkImage>& images() { return m_images; }
+		VkFormat depth_format() const { return m_depth_format; }
+		VkSurfaceFormatKHR image_format() const { return m_image_format; }
 
-		MYL_NO_DISCARD bool acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index);
-		void present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index);
 		void recreate(u32 a_width, u32 a_height);
+		bool acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index);
+		void present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index);
 	private:
-		void create(u32 a_width, u32 a_height);
-		void destroy();
+		void create_swapchain(u32 a_width, u32 a_height);
+		void create_image_views();
+		void create_depth_resources();
+		void create_render_pass();
+		void regenerate_framebuffers();
+		void create_sync_objects();
+
+		void destroy_image_views();
 	};
 }

@@ -14,7 +14,7 @@ namespace myl {
 			}
 		};
 
-		app::info info{
+		app_info info{
 			.name = "Testbed",
 			.major = TESTBED_MAJOR,
 			.minor = TESTBED_MINOR,

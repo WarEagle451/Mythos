@@ -16,7 +16,7 @@ namespace myl::render {
 		static api s_api;
 		static statistics s_stats;
 	public:
-		static void init(const app::info&);
+		static void init();
 		static void shutdown();
 
 		static MYL_NO_DISCARD backend* backend() { return s_backend.get(); }

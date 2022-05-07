@@ -8,7 +8,7 @@
 #include <string.h>
 
 namespace myl::vulkan {
-	device::device(context& a_context) 
+	device::device(context& a_context)
 		: m_context(a_context) {
 		select_physical_device();
 		create_logical_device();
@@ -18,15 +18,15 @@ namespace myl::vulkan {
 
 	device::~device() {
 		vkDestroyCommandPool(m_logical_device, m_graphics_command_pool, nullptr);
-		MYL_CORE_INFO("Vulkan command pool destroyed");
+		MYL_CORE_INFO("Command pool destroyed");
 
 		if (m_logical_device)
 			vkDestroyDevice(m_logical_device, nullptr);
-		MYL_CORE_INFO("Vulkan device destroyed");
+		MYL_CORE_INFO("Device destroyed");
 		// physical devices are not destroyed
 	}
 
-	swapchain_support_info device::query_swapchain_support(VkPhysicalDevice a_device) {
+	const swapchain_support_info& device::query_swapchain_support(VkPhysicalDevice a_device) {
 		vulkan::swapchain_support_info info{};
 		// surface capabilities
 		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_context.surface(), &info.capabilites);
@@ -48,7 +48,23 @@ namespace myl::vulkan {
 			MYL_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, info.present_modes.data());
 		}
 
-		return info;
+		m_swapchain_support_info = info;
+		return m_swapchain_support_info;
+	}
+
+	VkFormat device::find_supported_format(const std::vector<VkFormat>& a_candidates, VkFormatFeatureFlags a_flags) {
+		for (auto& format : a_candidates) {
+			VkFormatProperties properties{};
+			vkGetPhysicalDeviceFormatProperties(m_physical_device, format, &properties);
+
+			if ((properties.linearTilingFeatures & a_flags) == a_flags)
+				return format;
+			else if ((properties.optimalTilingFeatures & a_flags) == a_flags)
+				return format;
+		}
+
+		MYL_CORE_FATAL("Failed to find supported format");
+		return VK_FORMAT_UNDEFINED;
 	}
 
 	queue_family_indices device::find_queue_family_indices(VkPhysicalDevice a_device) {
@@ -90,30 +106,15 @@ namespace myl::vulkan {
 		return indices;
 	}
 
-	VkFormat device::find_supported_format(const std::vector<VkFormat>& a_candidates, VkFormatFeatureFlags a_flags) {
-		for (auto& format : a_candidates) {
-			VkFormatProperties properties{};
-			vkGetPhysicalDeviceFormatProperties(m_physical_device, format, &properties);
-
-			if ((properties.linearTilingFeatures & a_flags) == a_flags)
-				return format;
-			else if ((properties.optimalTilingFeatures & a_flags) == a_flags)
-				return format;
-		}
-
-		MYL_CORE_FATAL("Failed to find supported format");
-		return VK_FORMAT_UNDEFINED;
-	}
-
-	static MYL_NO_DISCARD bool meets_requirements(const device_requirements& a_requirements, const queue_family_indices& a_queue_indices) {
+	static MYL_NO_DISCARD bool meets_requirements(const device_requirements& requirements, const queue_family_indices& indices) {
 		return // isn't a requirement or it is a requirement and there's a index, therefore meets requirements
-			(!a_requirements.graphics || (a_requirements.graphics && a_queue_indices.graphics != std::numeric_limits<u32>::max())) &&
-			(!a_requirements.present || (a_requirements.present && a_queue_indices.present != std::numeric_limits<u32>::max())) &&
-			(!a_requirements.compute || (a_requirements.compute && a_queue_indices.compute != std::numeric_limits<u32>::max())) &&
-			(!a_requirements.transfer || (a_requirements.transfer && a_queue_indices.transfer != std::numeric_limits<u32>::max()));
+			(!requirements.graphics || (requirements.graphics && indices.graphics != std::numeric_limits<u32>::max())) &&
+			(!requirements.present || (requirements.present && indices.present != std::numeric_limits<u32>::max())) &&
+			(!requirements.compute || (requirements.compute && indices.compute != std::numeric_limits<u32>::max())) &&
+			(!requirements.transfer || (requirements.transfer && indices.transfer != std::numeric_limits<u32>::max()));
 	}
 
-	bool device::physical_device_meets_requirements(VkPhysicalDevice a_device, const VkPhysicalDeviceProperties& a_properties, const VkPhysicalDeviceFeatures& a_features, const device_requirements& a_requirements, queue_family_indices* a_queue_indices) {
+	bool device::device_meets_requirements(VkPhysicalDevice a_device, const VkPhysicalDeviceProperties& a_properties, const VkPhysicalDeviceFeatures& a_features, const device_requirements& a_requirements, queue_family_indices* a_queue_indices) {
 		if (a_requirements.discrete_gpu && a_properties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
 			MYL_CORE_FATAL("No devices supporting Vulkan found.");
 			return false;
@@ -133,22 +134,22 @@ namespace myl::vulkan {
 			MYL_CORE_TRACE("Indices: Graphics | Present | Compute | Transfer | Name");
 			MYL_CORE_TRACE("         {:<8} | {:<7} | {:<7} | {:<8} | {}", a_queue_indices->graphics, a_queue_indices->present, a_queue_indices->compute, a_queue_indices->transfer, std::string(a_properties.deviceName));
 
-			m_swapchain_support_info = query_swapchain_support(a_device);
+			query_swapchain_support(a_device);
 			if (m_swapchain_support_info.formats.size() < 1 || m_swapchain_support_info.present_modes.size() < 1) {
 				MYL_CORE_WARN("'{}' does not meet swapchain support requirements", std::string(a_properties.deviceName));
 				return false;
 			}
 
 			// device extensions
-			if (!a_requirements.device_extension_names.empty()) {
+			if (!a_requirements.extensions.empty()) {
 				u32 available_extension_count = 0;
 				MYL_VK_CHECK(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, nullptr);
 				if (available_extension_count != 0) {
 					std::vector<VkExtensionProperties> available_extensions(available_extension_count);
 					MYL_VK_CHECK(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, available_extensions.data());
 
-					u32 required_extension_count = static_cast<u32>(a_requirements.device_extension_names.size());
-					for (auto& required : a_requirements.device_extension_names) {
+					u32 required_extension_count = static_cast<u32>(a_requirements.extensions.size());
+					for (auto& required : a_requirements.extensions) {
 						bool found = false;
 						for (auto& available : available_extensions)
 							if (strcmp(required, available.extensionName) == 0) {
@@ -181,7 +182,7 @@ namespace myl::vulkan {
 		u32 count = 0;
 		MYL_VK_CHECK(vkEnumeratePhysicalDevices, m_context.instance(), &count, nullptr);
 		MYL_CORE_DEBUG("{} device{} available", count, count > 1 ? "s" : "");
-		if (count == 0)
+		if (count == 0) /// MYTodo: should try to select a different rendering backend
 			throw core_runtime_error("No devices with Vulkan support found");
 
 		std::vector<VkPhysicalDevice> physical_devices(count);
@@ -203,12 +204,12 @@ namespace myl::vulkan {
 				.compute = false, // enable this if compute will be required /// MYTodo: set this up the spec says it should be supported if a queue family is exposed
 				.transfer = true,
 				.sampler_anisotropy = true,
-				.discrete_gpu = true /// MYTodo: It should be able to run on non-dedicated GPUs
+				.discrete_gpu = true, /// MYTodo: It should be able to run on non-dedicated GPUs
+				.extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME }
 			};
-			requirements.device_extension_names.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
 			queue_family_indices queue_info{};
-			if (physical_device_meets_requirements(device, properties, features, requirements, &queue_info)) {
+			if (device_meets_requirements(device, properties, features, requirements, &queue_info)) {
 				MYL_CORE_INFO("Selected device: {}", std::string(properties.deviceName));
 				switch (properties.deviceType) {
 					case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
@@ -233,7 +234,7 @@ namespace myl::vulkan {
 				MYL_CORE_INFO("\t- Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
 
 				// memory information
-				for (u32 i = 0; i != memory_properties.memoryHeapCount; ++i) { // not a range because memory_properties.memoryHeaps is a c array
+				for (u32 i = 0; i != memory_properties.memoryHeapCount; ++i) {
 					f32 mem_size_gib = static_cast<f32>(memory_properties.memoryHeaps[i].size) / 1024.f / 1024.f / 1024.f; // bytes to GiB
 					(memory_properties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ?
 						MYL_CORE_INFO("\t- Heap {} - Local GPU memory: {:.2f} GiB", i, mem_size_gib) :
@@ -253,11 +254,10 @@ namespace myl::vulkan {
 
 		m_physical_device ?
 			MYL_CORE_INFO("Physical device selected") :
-			throw core_runtime_error("No physical devices meet requirements");
+			throw core_runtime_error("No physical devices meet requirements"); /// MYTodo: should try to select a different rendering backend
 	}
 
 	void device::create_logical_device() {
-		MYL_CORE_INFO("Creating logical device");
 		// do not create additional queues for shared indices
 		const bool present_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.present;
 		const bool transfer_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.transfer;
@@ -280,8 +280,6 @@ namespace myl::vulkan {
 		for (u32 i = 0; i != index_count; ++i) {
 			queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			queue_create_infos[i].queueFamilyIndex = indices[i];
-			queue_create_infos[i].pNext = nullptr;
-			queue_create_infos[i].flags = 0;
 
 			if (indices[i] == m_queue_indices.graphics) {
 				queue_create_infos[i].queueCount = 2;
@@ -296,10 +294,11 @@ namespace myl::vulkan {
 		}
 
 		// request device features
-		VkPhysicalDeviceFeatures device_features{}; /// MYTodo: should be config driven
-		device_features.samplerAnisotropy = VK_TRUE;
+		VkPhysicalDeviceFeatures device_features{
+			.samplerAnisotropy = VK_TRUE
+		}; /// MYTodo: should be config driven
 
-		const char* extension_names = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
+		constexpr const char* extension_names = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 		VkDeviceCreateInfo device_create_info{
 			.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 			.queueCreateInfoCount = index_count,

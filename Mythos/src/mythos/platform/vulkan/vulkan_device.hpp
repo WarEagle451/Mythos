@@ -23,14 +23,14 @@ namespace myl::vulkan {
 		u32 transfer = std::numeric_limits<u32>::max();
 	};
 
-	struct device_requirements { /// MYTodo: probs should stay in the cpp file
+	struct device_requirements {
 		bool graphics;
 		bool present;
 		bool compute;
 		bool transfer;
-		std::vector<const char*> device_extension_names;
 		bool sampler_anisotropy;
 		bool discrete_gpu;
+		std::vector<const char*> extensions;
 	};
 
 	class device {
@@ -50,8 +50,6 @@ namespace myl::vulkan {
 		VkPhysicalDeviceProperties m_properties;
 		VkPhysicalDeviceFeatures m_features;
 		VkPhysicalDeviceMemoryProperties m_memory_properties;
-
-		VkFormat m_depth_format; /// MYTodo: Why does this get init in swapchain. Sounds like it should be in swapchain
 	public:
 		device(context&);
 		~device();
@@ -59,18 +57,18 @@ namespace myl::vulkan {
 		device(const device&) = delete;
 		device& operator=(const device&) = delete;
 
-		MYL_NO_DISCARD swapchain_support_info query_swapchain_support(VkPhysicalDevice);
-		MYL_NO_DISCARD queue_family_indices find_queue_family_indices(VkPhysicalDevice);
-		MYL_NO_DISCARD VkFormat find_supported_format(const std::vector<VkFormat>&, VkFormatFeatureFlags);
+		MYL_NO_DISCARD VkDevice logical() { return m_logical_device; }
+		MYL_NO_DISCARD VkPhysicalDevice physical() { return m_physical_device; }
 
-		MYL_NO_DISCARD VkDevice& logical() { return m_logical_device; }
-		MYL_NO_DISCARD VkPhysicalDevice& physical() { return m_physical_device; }
-		MYL_NO_DISCARD swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
-		MYL_NO_DISCARD queue_family_indices& queue_indices() { return m_queue_indices; }
-		MYL_NO_DISCARD VkFormat& depth_format() { return m_depth_format; }
-		MYL_NO_DISCARD VkCommandPool& graphics_command_pool() { return m_graphics_command_pool; }
+		MYL_NO_DISCARD const swapchain_support_info& swapchain_support_info() const { return m_swapchain_support_info; }
+		const queue_family_indices& queue_indices() const { return m_queue_indices; }
+		VkCommandPool graphics_command_pool() { return m_graphics_command_pool; }
+
+		const vulkan::swapchain_support_info& query_swapchain_support(VkPhysicalDevice);
+		MYL_NO_DISCARD VkFormat find_supported_format(const std::vector<VkFormat>&, VkFormatFeatureFlags);
 	private:
-		MYL_NO_DISCARD bool physical_device_meets_requirements(VkPhysicalDevice, const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures&, const device_requirements&, queue_family_indices*);
+		MYL_NO_DISCARD queue_family_indices find_queue_family_indices(VkPhysicalDevice);
+		MYL_NO_DISCARD bool device_meets_requirements(VkPhysicalDevice, const VkPhysicalDeviceProperties&, const VkPhysicalDeviceFeatures&, const device_requirements&, queue_family_indices*);
 
 		void select_physical_device();
 		void create_logical_device();

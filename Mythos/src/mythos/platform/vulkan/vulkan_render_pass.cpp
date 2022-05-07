@@ -1,11 +1,12 @@
 #include "vulkan_render_pass.hpp"
 #include "vulkan_context.hpp"
 #include "vulkan_common.hpp"
+#include "vulkan_swapchain.hpp"
 
 #include <vector>
 
 namespace myl::vulkan {
-	render_pass::render_pass(context& a_context, f32 a_x, f32 a_y, f32 a_w, f32 a_h, const f32vec4& a_color, f32 a_depth, u32 a_stencil)
+	render_pass::render_pass(swapchain& a_swapchain, context& a_context, f32 a_x, f32 a_y, f32 a_w, f32 a_h, const f32vec4& a_color, f32 a_depth, u32 a_stencil)
 		: m_context(a_context)
 		, m_x(a_x)
 		, m_y(a_y)
@@ -30,14 +31,14 @@ namespace myl::vulkan {
 		// color attachment
 		attachment_description.push_back(VkAttachmentDescription{
 				.flags = 0,
-				.format = m_context.swapchain().image_format().format, /// MYTodo: configurable
+				.format = a_swapchain.image_format().format, /// MYTodo: configurable
 				.samples = VK_SAMPLE_COUNT_1_BIT,
 				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 				.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
 				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED, // do not expect any particular layout before render_pass starts
-				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR // transitioned tp after render_pass
+				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR // transitioned to after render_pass
 			});
 
 		VkAttachmentReference color_attachment_ref{
@@ -51,7 +52,7 @@ namespace myl::vulkan {
 		// depth attachment
 		attachment_description.push_back(VkAttachmentDescription{
 				.flags = 0,
-				.format = m_context.device().depth_format(),
+				.format = a_swapchain.depth_format(),
 				.samples = VK_SAMPLE_COUNT_1_BIT,
 				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 				.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,

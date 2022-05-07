@@ -4,8 +4,8 @@ namespace myl::render {
 	std::unique_ptr<backend> renderer::s_backend = nullptr;
 	api renderer::s_api = api::vulkan; /// MYTodo: Needs to be able to detect render api
 
-	void renderer::init(const app::info& a_info) {
-		s_backend = backend::create(s_api, a_info);
+	void renderer::init() {
+		s_backend = backend::create(s_api);
 	}
 
 	void renderer::shutdown() {

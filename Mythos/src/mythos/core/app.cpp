@@ -9,7 +9,8 @@
 namespace myl {
 	app* app::s_instance = nullptr;
 
-	app::app(const info& a_info, const config& a_config) {
+	app::app(const app_info& a_info, const config& a_config)
+		: m_info(a_info) {
 		core::loggers::init(); // asserts contain a call to MYL_CORE_FATAL
 		MYL_CORE_INFO("Creating application");
 		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
@@ -24,7 +25,7 @@ namespace myl {
 		m_window = window::create(a_config.window);
 		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: why pass this though window? why not just set it from here?
 
-		render::renderer::init(a_info);
+		render::renderer::init();
 		MYL_CORE_INFO("Application initialized");
 	}
 

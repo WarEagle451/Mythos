@@ -7,7 +7,8 @@
 #include <vulkan/vulkan.h>
 
 namespace myl::vulkan {
-	class context; // fdw declaration
+	class context; // fwd declaration
+	class swapchain;// fwd declaration
 
 	enum class render_pass_state {
 		ready,
@@ -30,7 +31,7 @@ namespace myl::vulkan {
 
 		render_pass_state m_state;
 	public:
-		render_pass(context&, f32 a_x, f32 a_y, f32 a_w, f32 a_h, const f32vec4& a_color, f32 a_depth, u32 a_stencil);
+		render_pass(swapchain&, context&, f32 a_x, f32 a_y, f32 a_w, f32 a_h, const f32vec4& a_color, f32 a_depth, u32 a_stencil);
 		~render_pass();
 
 		VkRenderPass handle() { return m_handle; }

@@ -1,5 +1,6 @@
 #include "vulkan_fence.hpp"
 #include "vulkan_context.hpp"
+#include "vulkan_common.hpp"
 
 namespace myl::vulkan {
 	fence::fence(context& a_context, bool a_signaled)

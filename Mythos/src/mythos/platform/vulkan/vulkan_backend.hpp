@@ -1,5 +1,6 @@
 #pragma once
 #include "vulkan_context.hpp"
+#include "vulkan_swapchain.hpp"
 
 #include <mythos/render/backend.hpp>
 
@@ -8,8 +9,9 @@
 namespace myl::vulkan {
 	class backend : public render::backend {
 		context m_context;
+		swapchain m_swapchain;
 	public:
-		backend(const app::info&);
+		backend();
 		~backend();
 
 		backend(const backend&) = delete;

@@ -10,7 +10,7 @@
 #	include <vulkan/vulkan_win32.h>
 
 namespace myl::vulkan {
-	void platform_required_extension_names(std::vector<const char*>* a_extensions) {
+	void platform_required_extensions(std::vector<const char*>* a_extensions) {
 		a_extensions->push_back("VK_KHR_win32_surface");
 	}
 
