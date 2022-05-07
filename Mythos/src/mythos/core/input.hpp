@@ -26,7 +26,7 @@ namespace myl::input {
 	};
 
 	//@brief called by the platform to update a key state
-	void process_key(key_code, state);
+	void process_key(key_code, state, u32);
 	//@brief called by the platform to update a mouse button state
 	void process_mouse_button(mouse_code, state);
 	//@brief called by the platform to update cursor position

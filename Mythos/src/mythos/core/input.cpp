@@ -32,7 +32,7 @@ namespace myl::input {
 		s_previous_cursor_position = s_cursor_position;
 	}
 
-	void process_key(key_code a_code, state a_state) {
+	void process_key(key_code a_code, state a_state, u32 a_repeat_count) {
 		if (a_code == key::unknown)
 			return;
 
@@ -44,9 +44,13 @@ namespace myl::input {
 				fire_event(e);
 			}
 			else {
-				event_key_pressed e(a_code, 0); /// MYTodo: repeat count;
+				event_key_pressed e(a_code, 0);
 				fire_event(e);
 			}
+		}
+		else if (a_state == state::down) { // key repeats
+			event_key_pressed e(a_code, a_repeat_count); /// MYTodo: might have to keep track of key repeats internally as windows only ever returns 1
+			fire_event(e);
 		}
 	}
 
@@ -100,8 +104,8 @@ namespace myl::input {
 
 	bool key_pressed(key_code a_code) {
 		return
-			internal_states::s_previous_key_states[a_code] == state::up && /// MYBug: why does this seem to only detect when its pressed down ; maybe have to send on key typed event in process stuff ; is the mouse version broken too?
-			internal_states::s_key_states[a_code] == state::down; /// this works right in kohi 10 @ ~ 17:00
+			internal_states::s_previous_key_states[a_code] == state::up &&
+			internal_states::s_key_states[a_code] == state::down;
 	}
 
 	bool key_released(key_code a_code) {

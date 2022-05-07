@@ -32,7 +32,7 @@ namespace myl::windows {
 
 	/// MYBug: print screen does not work, also test all keys
 
-	/// MYTodo: Figure out event_key_typed and event_key_pressed with repeats
+	/// MYTodo: Figure out event_key_typed
 	/// MYTodo: When resizing the window as long as the window resize has not been let go things can go black, continously update this to allow it to clear the screen everytime
 
 	MYL_NO_DISCARD constexpr key_code translate_key_code(WPARAM w_param) {
@@ -178,11 +178,11 @@ namespace myl::windows {
 			} break;
 			case WM_KEYDOWN: MYL_FALLTHROUGH;
 			case WM_SYSKEYDOWN:
-				input::process_key(translate_key_code(w_param), input::state::down);
+				input::process_key(translate_key_code(w_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // first 16 bits contain the repeat count
 				break;
 			case WM_KEYUP: MYL_FALLTHROUGH;
 			case WM_SYSKEYUP:
-				input::process_key(translate_key_code(w_param), input::state::up);
+				input::process_key(translate_key_code(w_param), input::state::up, 0);
 				break;
 			case WM_MOUSEMOVE:
 				input::process_cursor_position(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param)));
@@ -203,7 +203,7 @@ namespace myl::windows {
 			case WM_MBUTTONDOWN: MYL_FALLTHROUGH;
 			case WM_RBUTTONDOWN: input::process_mouse_button(translate_mouse_code(w_param), input::state::down); break;
 			case WM_XBUTTONDOWN: input::process_mouse_button(translate_mouse_code(LOWORD(w_param)), input::state::down); break; // LOWORD contains the button
-#if 0 /// MYBug: for some reason w_param is always 0 when a button is released. Can't do stuff like block below
+#if 0 /// MYBug: For some reason w_param is always 0 when a button is released. Can't do stuff like block below
 			case WM_LBUTTONUP: MYL_FALLTHROUGH;
 			case WM_MBUTTONUP: MYL_FALLTHROUGH;
 			case WM_RBUTTONUP: input::process_mouse_button(translate_mouse_code(w_param), input::state::up); break;
