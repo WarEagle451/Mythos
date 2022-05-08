@@ -2,84 +2,85 @@
 #include "vec2.hpp"
 
 namespace myl {
-	namespace math {
-		template<typename Type>
-		struct mat<2, 2, Type> {
-			using value_type = Type;
-			using type = mat<2, 2, value_type>;
-			using transpose_type = mat<2, 2, value_type>;
-			using col_type = vec<2, value_type>;
-			using row_type = vec<2, value_type>;
-		private:
-			col_type data[2];
-		public:
-			// Constructors
+	template<typename T>
+	struct mat<2, 2, T> {
+		using value_type = T;
+		using transpose_type = mat<2, 2, value_type>;
+		using col_type = vec<2, value_type>;
+		using row_type = vec<2, value_type>;
+	private:
+		col_type m_data[2];
+	public:
+		// Constructors
 
-			constexpr mat() = default;
+		constexpr mat() = default;
 
-			constexpr explicit mat(const value_type& a_scalar)
-				: data{ col_type(a_scalar), col_type(a_scalar) } {}
+		constexpr explicit mat(const value_type& a_scalar)
+			: m_data{ col_type(a_scalar), col_type(a_scalar) } {}
 
-			constexpr mat(const value_type& x0, const value_type& y0, const value_type& x1, const value_type& y1)
-				: data{ col_type(x0, y0), col_type(x1, y1) } {}
+		constexpr mat(const value_type& x0, const value_type& y0, const value_type& x1, const value_type& y1)
+			: m_data{ col_type(x0, y0), col_type(x1, y1) } {}
 
-			constexpr mat(value_type&& x0, value_type&& y0, value_type&& x1, value_type&& y1)
-				: data{ col_type(std::move(x0), std::move(y0)), col_type(std::move(x1), std::move(y1)) } {}
+		constexpr mat(value_type&& x0, value_type&& y0, value_type&& x1, value_type&& y1)
+			: m_data{ col_type(std::move(x0), std::move(y0)), col_type(std::move(x1), std::move(y1)) } {}
 
-			constexpr mat(const col_type& col0, const col_type& col1)
-				: data{ col0, col1 } {}
+		constexpr mat(const col_type& col0, const col_type& col1)
+			: m_data{ col0, col1 } {}
 
-			constexpr mat(col_type&& col0, col_type&& col1)
-				: data{ std::move(col0), std::move(col1) } {}
+		constexpr mat(col_type&& col0, col_type&& col1)
+			: m_data{ std::move(col0), std::move(col1) } {}
 
-			// Access operators
+		// Utilities
 
-			MYL_NO_DISCARD constexpr col_type& operator[](std::size_t i) { return data[i]; }
-			MYL_NO_DISCARD constexpr const col_type& operator[](std::size_t i) const { return data[i]; }
+		MYL_NO_DISCARD static constexpr mat identity() { return mat{ { 1, 0 }, { 0, 1 } }; }
 
-			// Comparison operators
+		// Access operators
 
-			MYL_NO_DISCARD constexpr bool operator==(const type& rhs) const { return data[0] == rhs[0] && data[1] == rhs[1]; }
+		MYL_NO_DISCARD constexpr col_type& operator[](std::size_t i) { return m_data[i]; }
+		MYL_NO_DISCARD constexpr const col_type& operator[](std::size_t i) const { return m_data[i]; }
 
-			/// spaceship
+		// Comparison operators
 
-			// Scaler operators
+		MYL_NO_DISCARD constexpr bool operator==(const mat& rhs) const { return m_data[0] == rhs[0] && m_data[1] == rhs[1]; }
 
-			MYL_NO_DISCARD constexpr type operator+(const value_type& rhs) const { return type(data[0] + rhs, data[1] + rhs); }
-			MYL_NO_DISCARD constexpr type operator-(const value_type& rhs) const { return type(data[0] - rhs, data[1] - rhs); }
-			MYL_NO_DISCARD constexpr type operator*(const value_type& rhs) const { return type(data[0] * rhs, data[1] * rhs); }
-			MYL_NO_DISCARD constexpr type operator/(const value_type& rhs) const { return type(data[0] / rhs, data[1] / rhs); }
-			MYL_NO_DISCARD constexpr type operator%(const value_type& rhs) const { return type(data[0] % rhs, data[1] % rhs); }
+		/// spaceship
 
-			constexpr type& operator+=(const value_type& rhs) { data[0] += rhs; data[1] += rhs; return *this; }
-			constexpr type& operator-=(const value_type& rhs) { data[0] -= rhs; data[1] -= rhs; return *this; }
-			constexpr type& operator*=(const value_type& rhs) { data[0] *= rhs; data[1] *= rhs; return *this; }
-			constexpr type& operator/=(const value_type& rhs) { data[0] /= rhs; data[1] /= rhs; return *this; }
-			constexpr type& operator%=(const value_type& rhs) { data[0] %= rhs; data[1] %= rhs; return *this; }
+		// Scaler operators
 
-			// mat2x2 operators
+		MYL_NO_DISCARD constexpr mat operator+(const value_type& rhs) const { return mat(m_data[0] + rhs, m_data[1] + rhs); }
+		MYL_NO_DISCARD constexpr mat operator-(const value_type& rhs) const { return mat(m_data[0] - rhs, m_data[1] - rhs); }
+		MYL_NO_DISCARD constexpr mat operator*(const value_type& rhs) const { return mat(m_data[0] * rhs, m_data[1] * rhs); }
+		MYL_NO_DISCARD constexpr mat operator/(const value_type& rhs) const { return mat(m_data[0] / rhs, m_data[1] / rhs); }
+		MYL_NO_DISCARD constexpr mat operator%(const value_type& rhs) const { return mat(m_data[0] % rhs, m_data[1] % rhs); }
 
-			MYL_NO_DISCARD constexpr type operator+(const type& rhs) const { return type(data[0] + rhs[0], data[1] + rhs[1]); }
-			MYL_NO_DISCARD constexpr type operator-(const type& rhs) const { return type(data[0] - rhs[0], data[1] - rhs[1]); }
+		constexpr mat& operator+=(const value_type& rhs) { m_data[0] += rhs; m_data[1] += rhs; return *this; }
+		constexpr mat& operator-=(const value_type& rhs) { m_data[0] -= rhs; m_data[1] -= rhs; return *this; }
+		constexpr mat& operator*=(const value_type& rhs) { m_data[0] *= rhs; m_data[1] *= rhs; return *this; }
+		constexpr mat& operator/=(const value_type& rhs) { m_data[0] /= rhs; m_data[1] /= rhs; return *this; }
+		constexpr mat& operator%=(const value_type& rhs) { m_data[0] %= rhs; m_data[1] %= rhs; return *this; }
 
-			MYL_NO_DISCARD constexpr type operator*(const type& rhs) const {
-				return type(
-					data[0][0] * rhs[0][0] + data[1][0] * rhs[0][1], // x0
-					data[0][1] * rhs[0][0] + data[1][1] * rhs[0][1], // y0
-					data[0][0] * rhs[1][0] + data[1][0] * rhs[1][1], // x1
-					data[0][1] * rhs[1][0] + data[1][1] * rhs[1][1]);// y1
-			}
+		// mat2x2 operators
 
-			MYL_NO_DISCARD constexpr type operator/(const type& rhs) const { return *this * inverse(rhs); }
+		MYL_NO_DISCARD constexpr mat operator+(const mat& rhs) const { return mat(m_data[0] + rhs[0], m_data[1] + rhs[1]); }
+		MYL_NO_DISCARD constexpr mat operator-(const mat& rhs) const { return mat(m_data[0] - rhs[0], m_data[1] - rhs[1]); }
 
-			constexpr type& operator+=(const type& rhs) { data[0] += rhs[0]; data[1] += rhs[1]; return *this; }
-			constexpr type& operator-=(const type& rhs) { data[0] -= rhs[0]; data[1] -= rhs[1]; return *this; }
-			constexpr type& operator*=(const type& rhs) { return *this = (*this * rhs); }
-			constexpr type& operator/=(const type& rhs) { return *this *= inverse(rhs); }
-		};
-	}
+		MYL_NO_DISCARD constexpr mat operator*(const mat& rhs) const {
+			return mat(
+				m_data[0][0] * rhs[0][0] + m_data[1][0] * rhs[0][1], // x0
+				m_data[0][1] * rhs[0][0] + m_data[1][1] * rhs[0][1], // y0
+				m_data[0][0] * rhs[1][0] + m_data[1][0] * rhs[1][1], // x1
+				m_data[0][1] * rhs[1][0] + m_data[1][1] * rhs[1][1]);// y1
+		}
 
-	template<typename Type> using mat2x2 = math::mat<2, 2, Type>;
+		MYL_NO_DISCARD constexpr mat operator/(const mat& rhs) const { return *this * inverse(rhs); }
+
+		constexpr mat& operator+=(const mat& rhs) { m_data[0] += rhs[0]; m_data[1] += rhs[1]; return *this; }
+		constexpr mat& operator-=(const mat& rhs) { m_data[0] -= rhs[0]; m_data[1] -= rhs[1]; return *this; }
+		constexpr mat& operator*=(const mat& rhs) { return *this = (*this * rhs); }
+		constexpr mat& operator/=(const mat& rhs) { return *this *= inverse(rhs); }
+	};
+
+	template<typename T> using mat2x2 = mat<2, 2, T>;
 
 	using i8mat2x2 = mat2x2<i8>;
 	using i16mat2x2 = mat2x2<i16>;

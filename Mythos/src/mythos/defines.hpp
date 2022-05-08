@@ -12,7 +12,10 @@ using i64 = signed long long;
 using f32 = float;
 using f64 = double;
 
-using size = u64;
+#define MYL_VERSION_MAJOR 0
+#define MYL_VERSION_MINOR 0
+#define MYL_VERSION_PATCH 0
+#define MYL_VERSION (MYL_VERSION_MAJOR * 1000000 + MYL_VERSION_MINOR * 1000 + MYL_VERSION_PATCH)
 
 #define MYL_NO_RETURN [[noreturn]]
 #define MYL_CARRIES_DEPENDENCY [[carries_dependency]]
@@ -24,11 +27,6 @@ using size = u64;
 #define MYL_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #define MYL_LIKELY [[likely]]
 #define MYL_UNLIKELY [[unlikely]]
-
-#define MYL_VERSION_MAJOR 0
-#define MYL_VERSION_MINOR 0
-#define MYL_VERSION_PATCH 0
-#define MYL_VERSION (MYL_VERSION_MAJOR * 1000000 + MYL_VERSION_MINOR * 1000 + MYL_VERSION_PATCH)
 
 #ifdef MYL_EXPORT
 #	ifdef _MSC_VER
@@ -50,15 +48,15 @@ using size = u64;
 #	define MYL_STATIC_ASSERT static_assert
 #endif
 
-MYL_STATIC_ASSERT(sizeof(u8) == 1, "expected u8 to be 1 byte");
-MYL_STATIC_ASSERT(sizeof(u16) == 2, "expected u16 to be 2 bytes");
-MYL_STATIC_ASSERT(sizeof(u32) == 4, "expected u32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(u64) == 8, "expected u64 to be 8 bytes");
+MYL_STATIC_ASSERT(sizeof(u8) == 1, "Expected u8 to be 1 byte");
+MYL_STATIC_ASSERT(sizeof(u16) == 2, "Expected u16 to be 2 bytes");
+MYL_STATIC_ASSERT(sizeof(u32) == 4, "Expected u32 to be 4 bytes");
+MYL_STATIC_ASSERT(sizeof(u64) == 8, "Expected u64 to be 8 bytes");
 
-MYL_STATIC_ASSERT(sizeof(i8) == 1, "expected i8 to be 1 byte");
-MYL_STATIC_ASSERT(sizeof(i16) == 2, "expected i16 to be 2 bytes");
-MYL_STATIC_ASSERT(sizeof(i32) == 4, "expected i32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(i64) == 8, "expected i64 to be 8 bytes");
+MYL_STATIC_ASSERT(sizeof(i8) == 1, "Expected i8 to be 1 byte");
+MYL_STATIC_ASSERT(sizeof(i16) == 2, "Expected i16 to be 2 bytes");
+MYL_STATIC_ASSERT(sizeof(i32) == 4, "Expected i32 to be 4 bytes");
+MYL_STATIC_ASSERT(sizeof(i64) == 8, "Expected i64 to be 8 bytes");
 
-MYL_STATIC_ASSERT(sizeof(f32) == 4, "expected f32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(f64) == 8, "expected f64 to be 8 bytes");
+MYL_STATIC_ASSERT(sizeof(f32) == 4, "Expected f32 to be 4 bytes");
+MYL_STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes");

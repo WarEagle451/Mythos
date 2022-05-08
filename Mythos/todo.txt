@@ -1,1 +1,10 @@
 - Multiple window support
+- obj files speed up compliation also precompiled header files
+- Think about switching to VS Code
+
+- Use a left handed cord system
+- Top View
+- Z
+- YX
+
+- Write tests for all the math code

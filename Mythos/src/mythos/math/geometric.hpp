@@ -1,7 +1,8 @@
 #pragma once
 #include "structure_def.hpp"
+#include "common.hpp"
 
-namespace myl::math {
+namespace myl {
 	template<std::size_t S, typename T>
 	MYL_NO_DISCARD constexpr T dot(const vec<S, T>& a, const vec<S, T>& b);
 	
@@ -23,12 +24,12 @@ namespace myl::math {
 	//@brief AKA magnitude
 	template<std::size_t S, typename T>
 	MYL_NO_DISCARD constexpr T length(const vec<S, T>& a_vec) {
-		return sqrt(dot(a_vec, a_vec));
+		return myl::sqrt(dot(a_vec, a_vec)); /// MYTodo: do not use std::sqrt
 	}
 
 	template<std::size_t S, typename T>
-	MYL_NO_DISCARD constexpr T distance(const vec<S, T>& p0, const vec<S, T>& p1) {
-		return length(p1 - p0);
+	MYL_NO_DISCARD constexpr T distance(const vec<S, T>& a, const vec<S, T>& b) {
+		return length(b - a);
 	}
 
 	template<std::size_t S, typename T>
@@ -37,10 +38,10 @@ namespace myl::math {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr vec<3, T> cross(const vec<3, T>& a_vec1, const vec<3, T>& a_vec2) {
+	MYL_NO_DISCARD constexpr vec<3, T> cross(const vec<3, T>& a, const vec<3, T>& b) {
 		return vec<3, T>(
-			a_vec1.y * a_vec2.z - a_vec2.y * a_vec1.z,
-			a_vec1.z * a_vec2.x - a_vec2.z * a_vec1.x,
-			a_vec1.x * a_vec2.y - a_vec2.x * a_vec1.y);
+			a.y * b.z - b.y * a.z,
+			a.z * b.x - b.z * a.x,
+			a.x * b.y - b.x * a.y);
 	}
 }

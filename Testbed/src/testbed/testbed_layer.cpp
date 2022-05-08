@@ -20,21 +20,6 @@ namespace tb {
 		return true;
 	}
 
-	static bool key_pressed(myl::event_key_pressed& e) {
-		MYL_CORE_TRACE("Key {} pressed, count {}", e.key(), e.repeat_count());
-		return true;
-	}
-
-	static bool key_released(myl::event_key_released& e) {
-		MYL_CORE_TRACE("Key {} released", e.key());
-		return true;
-	}
-
-	static bool key_typed(myl::event_key_typed& e) {
-		MYL_CORE_TRACE("Key {} typed", e.key());
-		return true;
-	}
-
 	testbed_layer::testbed_layer()
 		: myl::layer("Testbed") {
 		MYL_CORE_TRACE("Testbed layer created");
@@ -56,9 +41,6 @@ namespace tb {
 		myl::event_dispatcher dispatcher(a_event);
 		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
 		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
-		dispatcher.dispatch<myl::event_key_pressed>(key_pressed);
-		dispatcher.dispatch<myl::event_key_released>(key_released);
-		dispatcher.dispatch<myl::event_key_typed>(key_typed);
 	}
 
 	void testbed_layer::update(myl::timestep ts) {

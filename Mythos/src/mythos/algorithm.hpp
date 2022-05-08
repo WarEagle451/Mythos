@@ -28,8 +28,8 @@ namespace myl {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr T lerp(const T a, const T b, const f32 t = .5f) {
-		return a + (b - a) * t;
+	MYL_NO_DISCARD constexpr T lerp(const T a, const T b, const f32 percentage = .5f) {
+		return a + (b - a) * percentage;
 	}
 
 	template<typename T>

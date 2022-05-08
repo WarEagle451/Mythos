@@ -9,7 +9,9 @@
 #include "mat4x3.hpp"
 #include "mat4x4.hpp"
 
-namespace myl::math {
+/// MYTodo: - unary operator for matrices
+
+namespace myl {
 	template<std::size_t R, std::size_t C, typename T>
 	MYL_NO_DISCARD constexpr typename mat<R, C, T>::transpose_type transpose(const mat<R, C, T>& a_mat) {
 		typename mat<R, C, T>::transpose_type transposed;
