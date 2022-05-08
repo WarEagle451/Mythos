@@ -134,8 +134,8 @@ namespace myl::vulkan {
 
 		if (meets_requirements(a_requirements, *a_queue_indices)) {
 			MYL_CORE_INFO("{} meets requirements", std::string(a_properties.deviceName));
-			MYL_CORE_TRACE("Indices: Graphics | Present | Compute | Transfer | Name");
-			MYL_CORE_TRACE("         {:<8} | {:<7} | {:<7} | {:<8} | {}", a_queue_indices->graphics, a_queue_indices->present, a_queue_indices->compute, a_queue_indices->transfer, std::string(a_properties.deviceName));
+			MYL_CORE_TRACE("        | Graphics | Present | Compute | Transfer | Name");
+			MYL_CORE_TRACE("Indices | {:<8} | {:<7} | {:<7} | {:<8} | {}", a_queue_indices->graphics, a_queue_indices->present, a_queue_indices->compute, a_queue_indices->transfer, std::string(a_properties.deviceName));
 
 			auto device_swapchain_support = query_swapchain_support(a_device);
 			if (device_swapchain_support.formats.size() < 1 || device_swapchain_support.present_modes.size() < 1) {
