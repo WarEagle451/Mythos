@@ -43,7 +43,11 @@ namespace myl {
 
 		MYL_NO_DISCARD constexpr bool operator==(const mat& rhs) const { return m_data[0] == rhs[0] && m_data[1] == rhs[1]; }
 
-		/// spaceship
+		/// Spaceship
+
+		// Unary operators
+
+		MYL_NO_DISCARD constexpr mat operator-() const { return mat{ -m_data[0], -m_data[1] }; }
 
 		// Scaler operators
 

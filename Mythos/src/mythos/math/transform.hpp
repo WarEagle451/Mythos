@@ -9,7 +9,7 @@
 namespace myl {
 	template<typename T>
 	MYL_NO_DISCARD constexpr mat4x4<T> matrix_translation(const vec3<T>& position) {
-		return mat4x4<T>( /// MYTodo: make sure this is good for a left handed cord system
+		return mat4x4<T>( /// MYTodo: Make sure this is good for a left handed cord system
 			{ 1, 0, 0, 0 },
 			{ 0, 1, 0, 0 },
 			{ 0, 0, 1, 0 },
@@ -18,7 +18,7 @@ namespace myl {
 
 	template<typename T>
 	MYL_NO_DISCARD constexpr mat4x4<T> matrix_scale(const vec3<T>& scale) {
-		return mat4x4<T>( /// MYTodo: make sure this is good for a left handed cord system
+		return mat4x4<T>( /// MYTodo: Make sure this is good for a left handed cord system
 			{ scale.x, 0, 0, 0 },
 			{ 0, scale.y, 0, 0 },
 			{ 0, 0, scale.z, 0 },
@@ -30,7 +30,7 @@ namespace myl {
 		T c = cos(radians);
 		T s = sin(radians);
 
-		return mat4x4<T>( /// MYTodo: make sure this is good for a left handed cord system
+		return mat4x4<T>( /// MYTodo: Make sure this is good for a left handed cord system
 			{ 1, 0, 0, 0 },
 			{ 0, c, s, 0 },
 			{ 0, -s, c, 0 },
@@ -42,7 +42,7 @@ namespace myl {
 		T c = cos(radians);
 		T s = sin(radians);
 
-		return mat4x4<T>( /// MYTodo: make sure this is good for a left handed cord system
+		return mat4x4<T>( /// MYTodo: Make sure this is good for a left handed cord system
 			{ c, 0, -s, 0 },
 			{ 0, 1, 0, 0 },
 			{ s, 0, c, 0 },
@@ -54,7 +54,7 @@ namespace myl {
 		T c = cos(radians);
 		T s = sin(radians);
 
-		return mat4x4<T>( /// MYTodo: make sure this is good for a left handed cord system
+		return mat4x4<T>( /// MYTodo: Make sure this is good for a left handed cord system
 			{ c, s, 0, 0 },
 			{ -s, c, 0, 0 },
 			{ 0, 0, 1, 0 },
@@ -62,37 +62,37 @@ namespace myl {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr mat4x4<T> matrix_euler_rotation(const vec3<T>& radians) { /// MYTodo: make sure this is good for a left handed cord system
+	MYL_NO_DISCARD constexpr mat4x4<T> matrix_euler_rotation(const vec3<T>& radians) { /// MYTodo: Make sure this is good for a left handed cord system
 		return matrix_euler_x(radians.x) * matrix_euler_y(radians.y) * matrix_euler_z(radians.z);
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr vec3<T> forward(const mat4x4<T>& mat) { /// MYTodo: make sure this is good for a left handed cord system
+	MYL_NO_DISCARD constexpr vec3<T> forward(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
 		return normalize(-{ mat[0][2], mat[1][2], mat[2][2] });
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr vec3<T> backward(const mat4x4<T>& mat) { /// MYTodo: make sure this is good for a left handed cord system
+	MYL_NO_DISCARD constexpr vec3<T> backward(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
 		return normalize({ mat[0][2], mat[1][2], mat[2][2] });
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr vec3<T> up(const mat4x4<T>& mat) { /// MYTodo: make sure this is good for a left handed cord system
+	MYL_NO_DISCARD constexpr vec3<T> up(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
 		return normalize({ mat[0][1], mat[1][1], mat[2][1] });
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr vec3<T> down(const mat4x4<T>& mat) { /// MYTodo: make sure this is good for a left handed cord system
+	MYL_NO_DISCARD constexpr vec3<T> down(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
 		return normalize(-{ mat[0][1], mat[1][1], mat[2][1] });
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr vec3<T> left(const mat4x4<T>& mat) { /// MYTodo: make sure this is good for a left handed cord system
+	MYL_NO_DISCARD constexpr vec3<T> left(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
 		return normalize(-{ mat[0][0], mat[1][0], mat[2][0] });
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr vec3<T> right(const mat4x4<T>& mat) { /// MYTodo: make sure this is good for a left handed cord system
+	MYL_NO_DISCARD constexpr vec3<T> right(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
 		return normalize({ mat[0][0], mat[1][0], mat[2][0] });
 	}
 }

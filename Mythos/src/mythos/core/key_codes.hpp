@@ -43,16 +43,16 @@ namespace myl {
 			y,
 			z,
 
-			kp0, // keypad 0
-			kp1, // keypad 1
-			kp2, // keypad 2
-			kp3, // keypad 3
-			kp4, // keypad 4
-			kp5, // keypad 5
-			kp6, // keypad 6
-			kp7, // keypad 7
-			kp8, // keypad 8
-			kp9, // keypad 9
+			kp0, // Keypad 0
+			kp1, // Keypad 1
+			kp2, // Keypad 2
+			kp3, // Keypad 3
+			kp4, // Keypad 4
+			kp5, // Keypad 5
+			kp6, // Keypad 6
+			kp7, // Keypad 7
+			kp8, // Keypad 8
+			kp9, // Keypad 9
 			decimal,
 			divide,
 			multiply,

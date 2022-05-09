@@ -3,20 +3,16 @@
 
 #include <mythos/math/vec2.hpp>
 
-/// Window minimize, window maximize
-
 namespace myl {
 	class event_window_resize : public event {
-		u32vec2 m_dimensions;
+		u32vec2 m_size;
 	public:
 		MYL_API event_window_resize(u32 a_width, u32 a_height)
-			: m_dimensions(a_width, a_height) {}
-		MYL_API event_window_resize(u32 a_dimensions)
-			: m_dimensions(a_dimensions) {}
+			: m_size(a_width, a_height) {}
+		MYL_API event_window_resize(const u32vec2& a_size)
+			: m_size(a_size) {}
 
-		MYL_API MYL_NO_DISCARD const u32vec2& dimensions() const { return m_dimensions; }
-		MYL_API MYL_NO_DISCARD u32 width() const { return m_dimensions.x; }
-		MYL_API MYL_NO_DISCARD u32 height() const { return m_dimensions.y; }
+		MYL_API MYL_NO_DISCARD const u32vec2& size() const { return m_size; }
 
 		MYL_IMPL_EVENT_CATEGORY(static_cast<i32>(event_category::application))
 		MYL_IMPL_EVENT_TYPE(window_resize)

@@ -8,10 +8,9 @@
 namespace myl {
 	class window {
 	public:
-		struct config { /// MYTodo: this can also have things like fullscreen, vsync, etc: basically anything glfw would have as window hints
+		struct config { /// MYTodo: This can also have things like fullscreen, vsync, etc: basically anything glfw would have as window hints
 			i32vec2 postion = { 0, 0 };
-			i32 width = 1280;
-			i32 height = 720;
+			i32vec2 size = { 1280, 720 };
 			std::string name = "Mythos Application";
 		};
 
@@ -19,7 +18,7 @@ namespace myl {
 
 		virtual ~window() = default;
 
-		//@return a pointer to the instance handle of a window
+		//@return A pointer to the instance handle of a window
 		MYL_API MYL_NO_DISCARD virtual void* native() const = 0;
 
 		virtual void set_event_callback(const event_callback&) = 0;

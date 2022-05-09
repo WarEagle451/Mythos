@@ -5,10 +5,10 @@
 #include <mythos/math/vec2.hpp>
 
 /// MYTodo: Should this really be in core?
-/// MYTodo: key mods
+/// MYTodo: Key mods
 
 namespace myl::input {
-	enum class state { /// MYTodo: this could probs be replaced with bits
+	enum class state { /// MYTodo: This could probs be replaced with bits
 		up,
 		down
 	};
@@ -25,12 +25,12 @@ namespace myl::input {
 		static void update();
 	};
 
-	//@brief called by the platform to update a key state
+	//@brief Called by the platform to update a key state
 	void process_key(key_code, state, u32);
-	//@brief called by the platform to update a mouse button state
+	//@brief Called by the platform to update a mouse button state
 	void process_mouse_button(mouse_code, state);
-	//@brief called by the platform to update cursor position
-	void process_cursor_position(f32 a_x, f32 a_y);
+	//@brief Called by the platform to update cursor position
+	void process_cursor_position(const f32vec2&);
 	void process_mouse_wheel(const f32vec2&);
 
 	MYL_API MYL_NO_DISCARD state get_key_state(key_code);

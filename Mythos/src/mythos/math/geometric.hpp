@@ -24,7 +24,7 @@ namespace myl {
 	//@brief AKA magnitude
 	template<std::size_t S, typename T>
 	MYL_NO_DISCARD constexpr T length(const vec<S, T>& a_vec) {
-		return myl::sqrt(dot(a_vec, a_vec)); /// MYTodo: do not use std::sqrt
+		return myl::sqrt(dot(a_vec, a_vec));
 	}
 
 	template<std::size_t S, typename T>

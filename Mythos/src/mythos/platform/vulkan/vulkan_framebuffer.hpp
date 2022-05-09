@@ -10,7 +10,7 @@ namespace myl::vulkan {
 	class context; // fwd declaration
 
 	class framebuffer {
-		context& m_context; // context must outlive framebuffer
+		context& m_context; // Context must outlive framebuffer
 
 		VkFramebuffer m_handle;
 		std::vector<VkImageView> m_attachments;

@@ -17,7 +17,7 @@ namespace myl::vulkan {
 		m_device = std::make_unique<vulkan::device>(*this);
 	}
 
-	context::~context() { // must destory in opposite order of creation
+	context::~context() { // Must destory in opposite order of creation
 		destroy_command_buffers();
 
 		m_device.reset();
@@ -36,7 +36,7 @@ namespace myl::vulkan {
 		vkGetPhysicalDeviceMemoryProperties(m_device->physical(), &mem_properties);
 
 		for (u32 i = 0; i != mem_properties.memoryTypeCount; ++i)
-			// check each memory type to see if its bit is set
+			// Check each memory type to see if its bit is set
 			if ((a_type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & a_property_flags) == a_property_flags)
 				return i;
 
@@ -60,7 +60,7 @@ namespace myl::vulkan {
 		for (auto& layer : available_layers)
 			MYL_CORE_DEBUG("\t- {}", layer.layerName);
 
-		for (auto name : required_layers) { // verify all required layers are available
+		for (auto name : required_layers) { // Verify all required layers are available
 			bool found = false;
 			for (auto& layer : available_layers)
 				if (strcmp(name, layer.layerName) == 0) {
@@ -78,7 +78,7 @@ namespace myl::vulkan {
 	static MYL_NO_DISCARD std::vector<const char*> required_extensions() {
 		std::vector<const char*> extensions;
 		platform_required_extensions(&extensions);
-		extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME); // generic surface extension
+		extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME); // Generic surface extension
 #ifdef MYL_ENABLE_VALIDATION_LAYERS
 		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
@@ -93,7 +93,7 @@ namespace myl::vulkan {
 		auto& app_info = app::get().info();
 		VkApplicationInfo vk_app_info{
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
-			.pApplicationName = app_info.name.c_str(), /// MYTodo: instead of passing everything through, have a function set_app_info, this is be optional, to be done before creating app and before pushing layer
+			.pApplicationName = app_info.name.c_str(),
 			.applicationVersion = VK_MAKE_VERSION(app_info.major, app_info.minor, app_info.patch),
 			.pEngineName = "Mythos Engine",
 			.engineVersion = VK_MAKE_VERSION(MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH),
@@ -124,7 +124,7 @@ namespace myl::vulkan {
 		}
 
 		for (auto& buffer : m_graphics_command_buffers) {
-			if (buffer.handle() == nullptr) // has a null handle if unallocated
+			if (buffer.handle() == nullptr) // Has a null handle if unallocated
 				buffer.deallocate();
 			buffer.allocate(true);
 		}

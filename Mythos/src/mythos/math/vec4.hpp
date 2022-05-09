@@ -63,7 +63,7 @@ namespace myl {
 		// Comparison operators
 
 		MYL_NO_DISCARD constexpr bool operator==(const vec& rhs) const { return x == rhs.x && y = rhs.y && z == rhs.z && w == rhs.w; }
-		/// spaceship?
+		/// Spaceship?
 
 		// Unary operators
 

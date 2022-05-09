@@ -6,12 +6,14 @@
 #include <mythos/event/app_event.hpp>
 #include <mythos/render/renderer.hpp>
 
+#include <deque>
+
 namespace myl {
 	app* app::s_instance = nullptr;
 
 	app::app(const app_info& a_info, const config& a_config)
 		: m_info(a_info) {
-		core::loggers::init(); // asserts contain a call to MYL_CORE_FATAL
+		core::loggers::init(); // Asserts contain a call to MYL_CORE_FATAL
 		MYL_CORE_INFO("Creating application");
 		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
 		s_instance = this;
@@ -20,10 +22,10 @@ namespace myl {
 
 		m_running = true;
 
-		input::internal_states::init(); // init key states
+		input::internal_states::init();
 
 		m_window = window::create(a_config.window);
-		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: why pass this though window? why not just set it from here?
+		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: Why pass this though window? why not just set it from here?
 
 		render::renderer::init();
 		MYL_CORE_INFO("Application initialized");
@@ -31,7 +33,7 @@ namespace myl {
 
 	app::~app() {
 		MYL_CORE_INFO("Terminating application");
-		m_layer_stack.clear(); // client layers are destroyed before any internal systems are shutdown
+		m_layer_stack.clear(); // Client layers are destroyed before any internal systems are shutdown
 
 		render::renderer::shutdown();
 		m_window.reset();
@@ -55,10 +57,11 @@ namespace myl {
 			m_window->update();
 
 			if (!m_suspended) {
-				static constexpr f64 target_time = 1.0 / 60.0; // 60 fps
-				f64 elapsed_time = get_time() - m_last_frame_time;
-				while (elapsed_time < target_time) /// MYHack: Do vsync the right way, This way to do v_sync also still uses the computer resources
-					elapsed_time = get_time() - m_last_frame_time;
+				static constexpr f64 target_frame_time = 1.0 / 60.0;
+				f64 delta = get_time() - m_last_frame_time;
+
+				while (delta < target_frame_time) /// MYHack: Do vsync the right way, this way is resource intensive
+					delta = get_time() - m_last_frame_time;
 			}
 		}
 	}
@@ -78,13 +81,13 @@ namespace myl {
 
 	bool app::on_window_resize(event_window_resize& a_event) {
 		/// MYTodo: This should return true if somehow the width and height don't actually change
-		if (a_event.width() == 0 || a_event.height() == 0) { // minimization
+		if (a_event.size().x == 0 || a_event.size().y == 0) { // Minimization
 			m_suspended = true;
 			return false;
 		}
 
 		m_suspended = false;
-		render::renderer::on_window_resize(a_event.width(), a_event.height());
+		render::renderer::on_window_resize(a_event.size());
 		return false;
 	}
 

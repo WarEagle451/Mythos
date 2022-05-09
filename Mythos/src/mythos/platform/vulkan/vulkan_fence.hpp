@@ -7,7 +7,7 @@ namespace myl::vulkan {
 	class context; // fwd declaration
 
 	class fence {
-		context& m_context; // fence must outlive context
+		context& m_context; // Fence must outlive context
 
 		VkFence m_handle;
 		bool m_signaled;
@@ -20,7 +20,7 @@ namespace myl::vulkan {
 
 		VkFence handle() { return m_handle; }
 
-		//@brief waits in nanoseconds
+		//@brief Waits in nanoseconds
 		bool wait(u64 a_max);
 		void reset();
 	};

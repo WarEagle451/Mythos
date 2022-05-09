@@ -7,7 +7,7 @@
 namespace myl::vulkan {
 	swapchain::swapchain(context& a_context, u32 a_width, u32 a_height)
 		: m_context(a_context)
-		, m_max_frames_in_flight(2) // triple buffering
+		, m_max_frames_in_flight(2) // Triple buffering
 		, m_current_frame(0) {
 		create_swapchain(a_width, a_height);
 		MYL_CORE_INFO("Created Vulkan Swapchain");
@@ -80,7 +80,7 @@ namespace myl::vulkan {
 
 	bool swapchain::acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index) {
 		VkResult result = vkAcquireNextImageKHR(m_context.device().logical(), m_handle, a_nanoseconds_timeout, a_image_available_semaphore, a_fence, a_out_image_index);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) { // trigger swapchain creation then exit render loop
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) { // Trigger swapchain creation then exit render loop
 			recreate(m_swapchain_extent.width, m_swapchain_extent.height);
 			return false;
 		}
@@ -93,7 +93,7 @@ namespace myl::vulkan {
 	}
 
 	void swapchain::present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index) {
-		// return the image to the swapchain for presentaion
+		// return The image to the swapchain for presentaion
 		VkPresentInfoKHR present_info{
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			.waitSemaphoreCount = 1,
@@ -106,7 +106,7 @@ namespace myl::vulkan {
 
 		VkResult result = vkQueuePresentKHR(a_present_queue, &present_info);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-			// swapchain is out of date, suboptimal or a framebuffer resize has occurred. recreate swapchain
+			// Swapchain is out of date, suboptimal or a framebuffer resize has occurred. Recreate swapchain
 			recreate(m_swapchain_extent.width, m_swapchain_extent.height);
 		else if (result != VK_SUCCESS)
 			MYL_CORE_FATAL("Failed to present swapchain image");
@@ -116,7 +116,7 @@ namespace myl::vulkan {
 
 	static MYL_NO_DISCARD VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& formats) {
 		for (const auto& format : formats)
-			if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // preferred formats
+			if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // Preferred formats
 				return format;
 		return formats[0];
 	}
@@ -131,8 +131,8 @@ namespace myl::vulkan {
 	static MYL_NO_DISCARD VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height) {
 		if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
 			return capabilities.currentExtent;
-		else // clamp to the value allowed by the gpu
-			return VkExtent2D{
+		else 
+			return VkExtent2D{ // Clamp to the value allowed by the gpu
 				.width = clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
 				.height = clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
 		};
@@ -144,11 +144,11 @@ namespace myl::vulkan {
 		m_image_format = choose_surface_format(swapchain_support.formats);
 		VkPresentModeKHR present_mode = choose_present_mode(swapchain_support.present_modes);
 
-		/// MYTodo: got rid of requry that was probs there because of recreating the swapchain
+		/// MYTodo: Got rid of requry that was probs there because of recreating the swapchain
 		m_swapchain_extent = choose_swap_extent(swapchain_support.capabilites, a_width, a_height);
 
 		u32 image_count = swapchain_support.capabilites.minImageCount + 1;
-		if (swapchain_support.capabilites.maxImageCount > 0 && image_count > swapchain_support.capabilites.maxImageCount) // safe guard
+		if (swapchain_support.capabilites.maxImageCount > 0 && image_count > swapchain_support.capabilites.maxImageCount) // Safe guard
 			image_count = swapchain_support.capabilites.maxImageCount;
 
 		VkSwapchainCreateInfoKHR create_info{
@@ -159,7 +159,7 @@ namespace myl::vulkan {
 			.imageColorSpace = m_image_format.colorSpace,
 			.imageExtent = m_swapchain_extent,
 			.imageArrayLayers = 1,
-			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, // aka color buffer in opengl
+			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, // AKA color buffer in opengl
 			.preTransform = swapchain_support.capabilites.currentTransform,
 			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
 			.presentMode = present_mode,
@@ -167,7 +167,7 @@ namespace myl::vulkan {
 			.oldSwapchain = VK_NULL_HANDLE,
 		};
 
-		// setup queue family indices
+		// Setup queue family indices
 		auto& queue_indices = m_context.device().queue_indices();
 		if (queue_indices.graphics != queue_indices.present) {
 			u32 queue_family_indices[]{
@@ -187,7 +187,7 @@ namespace myl::vulkan {
 
 		MYL_VK_CHECK(vkCreateSwapchainKHR, m_context.device().logical(), &create_info, nullptr, &m_handle);
 
-		// images
+		// Images
 		u32 image_amount = 0;
 		MYL_VK_CHECK(vkGetSwapchainImagesKHR, m_context.device().logical(), m_handle, &image_amount, nullptr);
 		m_images.resize(image_amount);
@@ -226,7 +226,7 @@ namespace myl::vulkan {
 
 	void swapchain::regenerate_framebuffers() {
 		m_framebuffers.clear();
-		for (int i = 0; i != m_images.size(); ++i) { /// MYTodo: make this dynamic based on current configured attachments
+		for (int i = 0; i != m_images.size(); ++i) { /// MYTodo: Make this dynamic based on current configured attachments
 			std::vector<VkImageView> attachments{
 				m_views[i], // color attachment
 				m_depth_attachment->view()
@@ -259,7 +259,7 @@ namespace myl::vulkan {
 
 	void swapchain::destroy_image_views() {
 		// Only destory the views, not the images, since those are owned by the swapchain and are destroyed when it is
-		for (auto& view : m_views) /// MYTodo: how does above make any sense?
+		for (auto& view : m_views) /// MYTodo: How does above make any sense?
 			vkDestroyImageView(m_context.device().logical(), view, nullptr);
 	}
 }

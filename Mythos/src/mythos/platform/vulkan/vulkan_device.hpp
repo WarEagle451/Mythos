@@ -15,11 +15,11 @@ namespace myl::vulkan {
 		std::vector<VkPresentModeKHR> present_modes;
 	};
 
-	//@brief all indices are invalid by default
+	//@brief All indices are invalid by default
 	struct queue_family_indices {
 		u32 graphics = std::numeric_limits<u32>::max();
 		u32 present = std::numeric_limits<u32>::max();
-		u32 compute = std::numeric_limits<u32>::max(); /// MYTodo: implement
+		u32 compute = std::numeric_limits<u32>::max(); /// MYTodo: Implement
 		u32 transfer = std::numeric_limits<u32>::max();
 	};
 
@@ -34,7 +34,7 @@ namespace myl::vulkan {
 	};
 
 	class device {
-		context& m_context; // context must outlive device
+		context& m_context; // Context must outlive device
 
 		VkPhysicalDevice m_physical_device;
 		VkDevice m_logical_device;

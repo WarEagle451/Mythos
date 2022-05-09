@@ -25,6 +25,6 @@ namespace myl::render {
 
 		static void draw_frame();
 
-		static void on_window_resize(u32 a_width, u32 a_height);
+		static void on_window_resize(const u32vec2&);
 	};
 }

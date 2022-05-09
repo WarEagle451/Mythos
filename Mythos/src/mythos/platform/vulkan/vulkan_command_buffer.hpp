@@ -16,7 +16,7 @@ namespace myl::vulkan {
 	};
 
 	class command_buffer {
-		context& m_context; // context must outlive command_buffer
+		context& m_context; // Context must outlive command_buffer
 		VkCommandPool m_pool;
 
 		VkCommandBuffer m_handle;
@@ -39,7 +39,7 @@ namespace myl::vulkan {
 		void allocate(bool a_primary);
 		void deallocate();
 
-		//@brief update submitted states
+		//@brief Update submitted states
 		void update_submitted();
 		void reset();
 	};

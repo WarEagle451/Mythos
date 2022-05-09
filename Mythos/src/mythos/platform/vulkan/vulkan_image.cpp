@@ -15,7 +15,7 @@ namespace myl::vulkan {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.imageType = VK_IMAGE_TYPE_2D,
 			.format = a_format,
-			.extent = { .width = m_width, .height = m_height, .depth = 1 }, /// MYTodo: support configable depth
+			.extent = { .width = m_width, .height = m_height, .depth = 1 }, /// MYTodo: Support configable depth
 			.mipLevels = 4, /// MYTodo: Support mip mapping
 			.arrayLayers = 1, /// MYTodo: Support a number of layers in an image
 			.samples = VK_SAMPLE_COUNT_1_BIT, /// MYTodo: Configurable sample count
@@ -27,7 +27,7 @@ namespace myl::vulkan {
 
 		MYL_VK_CHECK(vkCreateImage, m_context.device().logical(), &image_create_info, nullptr, &m_handle);
 
-		// query memory requirements
+		// Query memory requirements
 		VkMemoryRequirements memory_requirements{};
 		vkGetImageMemoryRequirements(m_context.device().logical(), m_handle, &memory_requirements);
 
@@ -35,7 +35,7 @@ namespace myl::vulkan {
 		if (memory_type == -1)
 			MYL_CORE_ERROR("Invaild image, required memory type not found");
 
-		// allocate memory
+		// Allocate memory
 		VkMemoryAllocateInfo memory_alloc_info{
 			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
 			.allocationSize = memory_requirements.size,
@@ -43,10 +43,10 @@ namespace myl::vulkan {
 		};
 		MYL_VK_CHECK(vkAllocateMemory, m_context.device().logical(), &memory_alloc_info, nullptr, &m_memory);
 
-		// bind the memory
-		MYL_VK_CHECK(vkBindImageMemory, m_context.device().logical(), m_handle, m_memory, 0); /// MYTodo: configurable memory offset
+		// Bind the memory
+		MYL_VK_CHECK(vkBindImageMemory, m_context.device().logical(), m_handle, m_memory, 0); /// MYTodo: Configurable memory offset
 
-		// create view
+		// Create view
 		if (a_create_view)
 			create_view(a_format, a_view_aspect_flags);
 	}
@@ -61,14 +61,14 @@ namespace myl::vulkan {
 		VkImageViewCreateInfo info{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 			.image = m_handle,
-			.viewType = VK_IMAGE_VIEW_TYPE_2D, /// MYTodo: make configurable
+			.viewType = VK_IMAGE_VIEW_TYPE_2D, /// MYTodo: Make configurable
 			.format = a_format,
 			.subresourceRange = {
 				.aspectMask = a_aspect_flags,
-				.baseMipLevel = 0, /// MYTodo: make configurable
-				.levelCount = 1, /// MYTodo: make configurable
-				.baseArrayLayer = 0, /// MYTodo: make configurable
-				.layerCount = 1 /// MYTodo: make configurable
+				.baseMipLevel = 0, /// MYTodo: Make configurable
+				.levelCount = 1, /// MYTodo: Make configurable
+				.baseArrayLayer = 0, /// MYTodo: Make configurable
+				.layerCount = 1 /// MYTodo: Make configurable
 			}
 		};
 

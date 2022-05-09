@@ -10,7 +10,7 @@ namespace myl::vulkan {
 	class context; // fwd declaration
 
 	class swapchain {
-		context& m_context; // context must outlive swapchain
+		context& m_context; // Context must outlive swapchain
 
 		VkSwapchainKHR m_handle;
 		VkSurfaceFormatKHR m_image_format;

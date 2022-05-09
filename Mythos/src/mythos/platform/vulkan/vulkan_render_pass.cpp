@@ -17,39 +17,39 @@ namespace myl::vulkan {
 		, m_stencil(a_stencil)
 		, m_state(render_pass_state::not_allocated) {
 
-		// main subpass
+		// Main subpass
 		VkSubpassDescription subpass{
 			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS
 		};
 
-		// attachments
-		/// MYTodo: make render_pass attachments configurable
+		// Attachments
+		/// MYTodo: Make render_pass attachments configurable
 		u32 attachment_description_count = 2;
 		std::vector<VkAttachmentDescription> attachment_description{};
 		attachment_description.reserve(attachment_description_count);
 
-		// color attachment
+		// Color attachment
 		attachment_description.push_back(VkAttachmentDescription{
 				.flags = 0,
-				.format = a_swapchain.image_format().format, /// MYTodo: configurable
+				.format = a_swapchain.image_format().format, /// MYTodo: Configurable
 				.samples = VK_SAMPLE_COUNT_1_BIT,
 				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 				.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
 				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED, // do not expect any particular layout before render_pass starts
-				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR // transitioned to after render_pass
+				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED, // Do not expect any particular layout before render_pass starts
+				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR // Transitioned to after render_pass
 			});
 
 		VkAttachmentReference color_attachment_ref{
-			.attachment = 0, // attachment array index
+			.attachment = 0, // Attachment array index
 			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		};
 
 		subpass.colorAttachmentCount = 1;
 		subpass.pColorAttachments = &color_attachment_ref;
 
-		// depth attachment
+		// Depth attachment
 		attachment_description.push_back(VkAttachmentDescription{
 				.flags = 0,
 				.format = a_swapchain.depth_format(),
@@ -63,22 +63,22 @@ namespace myl::vulkan {
 			});
 
 		VkAttachmentReference depth_attachment_ref{
-			.attachment = 1, // attachment array index
+			.attachment = 1, // Attachment array index
 			.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		};
 
 		subpass.pDepthStencilAttachment = &depth_attachment_ref;
 
-		/// MYTodo: other attachment types, input, resolve, preserve
+		/// MYTodo: Other attachment types, input, resolve, preserve
 
-		// input from a shader
+		// Input from a shader
 		subpass.inputAttachmentCount = 0;
 		subpass.pInputAttachments = nullptr;
 
-		// attachments used for multisampling color attachments
+		// Attachments used for multisampling color attachments
 		subpass.pResolveAttachments = nullptr;
 
-		// attachments not used in this subpass but used in the next subpass
+		// Attachments not used in this subpass but used in the next subpass
 		subpass.preserveAttachmentCount = 0;
 		subpass.pPreserveAttachments = nullptr;
 

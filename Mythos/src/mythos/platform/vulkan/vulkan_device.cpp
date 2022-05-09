@@ -23,14 +23,14 @@ namespace myl::vulkan {
 		if (m_logical_device)
 			vkDestroyDevice(m_logical_device, nullptr);
 		MYL_CORE_INFO("Destroyed logical device");
-		// physical devices are not destroyed
+		// Physical devices are not destroyed
 	}
 
 	const swapchain_support_info device::query_swapchain_support(VkPhysicalDevice a_device) {
 		vulkan::swapchain_support_info info{};
-		// surface capabilities
+		// Surface capabilities
 		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_context.surface(), &info.capabilites);
-		// surface formats
+		// Surface formats
 		u32 format_count = 0;
 		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, nullptr);
 		if (format_count != 0) {
@@ -39,7 +39,7 @@ namespace myl::vulkan {
 			MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, info.formats.data());
 		}
 
-		// present modes
+		// Present modes
 		u32 present_mode_count = 0;
 		MYL_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, nullptr);
 		if (present_mode_count != 0) {
@@ -79,7 +79,7 @@ namespace myl::vulkan {
 		vkGetPhysicalDeviceQueueFamilyProperties(a_device, &queue_family_count, queue_families.data());
 
 		u8 min_transfer_score = 255;
-		for (u32 i = 0; i != queue_family_count; ++i) { // checking what each queue supports
+		for (u32 i = 0; i != queue_family_count; ++i) { // Checking what each queue supports
 			u8 current_transfer_score = 0;
 
 			if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
@@ -93,7 +93,7 @@ namespace myl::vulkan {
 			}
 
 			if (queue_families[i].queueFlags & VK_QUEUE_TRANSFER_BIT) {
-				// take the index if it is the current lowest. This increases the chances that it is a dedicated transfer queue
+				// Take the index if it is the current lowest. This increases the chances that it is a dedicated transfer queue
 				if (current_transfer_score <= min_transfer_score) {
 					min_transfer_score = current_transfer_score;
 					indices.transfer = i;
@@ -110,7 +110,7 @@ namespace myl::vulkan {
 	}
 
 	static MYL_NO_DISCARD bool meets_requirements(const device_requirements& requirements, const queue_family_indices& indices) {
-		return // isn't a requirement or it is a requirement and there's a index, therefore meets requirements
+		return // Isn't a requirement or it is a requirement and there's a index, therefore meets requirements
 			(!requirements.graphics || (requirements.graphics && indices.graphics != std::numeric_limits<u32>::max())) &&
 			(!requirements.present || (requirements.present && indices.present != std::numeric_limits<u32>::max())) &&
 			(!requirements.compute || (requirements.compute && indices.compute != std::numeric_limits<u32>::max())) &&
@@ -143,7 +143,7 @@ namespace myl::vulkan {
 				return false;
 			}
 
-			// device extensions
+			// Dvice extensions
 			if (!a_requirements.extensions.empty()) {
 				u32 available_extension_count = 0;
 				MYL_VK_CHECK(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, nullptr);
@@ -168,7 +168,7 @@ namespace myl::vulkan {
 				}
 			}
 
-			// sampler anisotropy
+			// Sampler anisotropy
 			if (a_requirements.sampler_anisotropy && !a_features.samplerAnisotropy) {
 				MYL_CORE_WARN("Device does not support samplerAnisotropy");
 				return false;
@@ -216,7 +216,7 @@ namespace myl::vulkan {
 			device_requirements requirements{
 				.graphics = true,
 				.present = true,
-				.compute = false, // enable this if compute will be required /// MYTodo: set this up the spec says it should be supported if a queue family is exposed
+				.compute = false, // Enable this if compute will be required /// MYTodo: set this up the spec says it should be supported if a queue family is exposed
 				.transfer = true,
 				.sampler_anisotropy = true,
 				.discrete_gpu = true, /// MYTodo: It should be able to run on non-dedicated GPUs
@@ -230,7 +230,7 @@ namespace myl::vulkan {
 				MYL_CORE_INFO("\t- GPU driver version: {}.{}.{}", VK_VERSION_MAJOR(properties.driverVersion), VK_VERSION_MINOR(properties.driverVersion), VK_VERSION_PATCH(properties.driverVersion));
 				MYL_CORE_INFO("\t- Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
 
-				// memory information
+				// Memory information
 				for (u32 i = 0; i != memory_properties.memoryHeapCount; ++i) {
 					f32 mem_size_gib = static_cast<f32>(memory_properties.memoryHeaps[i].size) / 1024.f / 1024.f / 1024.f; // bytes to GiB
 					(memory_properties.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) ?
@@ -241,21 +241,21 @@ namespace myl::vulkan {
 				m_physical_device = device;
 				m_queue_indices = queue_info;
 
-				// keep a copy of properties, features and memory info for later use
+				// Keep a copy of properties, features and memory info for later use
 				m_properties = properties;
 				m_features = features;
 				m_memory_properties = memory_properties;
-				break; // a device was selected
+				break; // A device was selected
 			}
 		}
 
 		m_physical_device ?
 			MYL_CORE_INFO("Physical device selected") :
-			throw core_runtime_error("No physical devices meet requirements"); /// MYTodo: should try to select a different rendering backend
+			throw core_runtime_error("No physical devices meet requirements"); /// MYTodo: Should try to select a different rendering backend
 	}
 
 	void device::create_logical_device() {
-		// do not create additional queues for shared indices
+		// Do not create additional queues for shared indices
 		const bool present_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.present;
 		const bool transfer_shares_graphics_queue = m_queue_indices.graphics == m_queue_indices.transfer;
 		u32 index_count = 1;
@@ -293,7 +293,7 @@ namespace myl::vulkan {
 		// request device features
 		VkPhysicalDeviceFeatures device_features{
 			.samplerAnisotropy = VK_TRUE
-		}; /// MYTodo: should be config driven
+		}; /// MYTodo: Should be config driven
 
 		constexpr const char* extension_names = VK_KHR_SWAPCHAIN_EXTENSION_NAME;
 		VkDeviceCreateInfo device_create_info{
@@ -310,9 +310,9 @@ namespace myl::vulkan {
 	}
 
 	void device::get_device_queues() {
-		vkGetDeviceQueue(m_logical_device, m_queue_indices.graphics, 0, &m_graphics_queue); // 0 because it's the first queue being requested, might need to keep track of this later
-		vkGetDeviceQueue(m_logical_device, m_queue_indices.present, 0, &m_present_queue); // 0 because it's the first queue being requested, might need to keep track of this later
-		vkGetDeviceQueue(m_logical_device, m_queue_indices.transfer, 0, &m_transfer_queue); // 0 because it's the first queue being requested, might need to keep track of this later
+		vkGetDeviceQueue(m_logical_device, m_queue_indices.graphics, 0, &m_graphics_queue); // 0 Because it's the first queue being requested, might need to keep track of this later
+		vkGetDeviceQueue(m_logical_device, m_queue_indices.present, 0, &m_present_queue); // 0 Because it's the first queue being requested, might need to keep track of this later
+		vkGetDeviceQueue(m_logical_device, m_queue_indices.transfer, 0, &m_transfer_queue); // 0 Because it's the first queue being requested, might need to keep track of this later
 		MYL_CORE_INFO("Queues obtained");
 	}
 

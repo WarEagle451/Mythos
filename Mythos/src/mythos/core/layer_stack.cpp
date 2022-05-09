@@ -2,7 +2,7 @@
 
 namespace myl {
 	layer_stack::~layer_stack() {
-		for (auto& l : m_layers) { // safe guard incase shutdown fails somehow
+		for (auto& l : m_layers) { // Safe guard incase shutdown fails somehow
 			l->on_detach();
 			delete l;
 			l = nullptr;

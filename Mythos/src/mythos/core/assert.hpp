@@ -16,12 +16,12 @@
 #endif
 
 /// MYTodo: Add assert that can be called like MYL_CORE_ASSERT(false, "{}{}", 1, 2)
-/// MYBug: Why are asserts not logging before breaking?
+// To enable __VA_OPT__ -> Project property page->Configuration properties->C / C++->Command Line->Add "/Zc:preprocessor"
 
 #ifdef MYL_ENABLE_ASSERTS
 #	define MYL_INTERNAL_ASSERT_IMPL(check, msg, ...) { if(!(check)) { MYL_CORE_FATAL(msg, __VA_ARGS__); MYL_DEBUGBREAK(); } }
-#	define MYL_INTERNAL_ASSERT_MSG(check, ...) MYL_INTERNAL_ASSERT_IMPL(check, "assertion failed: {0}", __VA_ARGS__)
-#	define MYL_INTERNAL_ASSERT_NO_MSG(check) MYL_INTERNAL_ASSERT_IMPL(check, "assertion '{0}' failed at {1}:{2}", #check, std::filesystem::path(__FILE__).filename().string(), __LINE__)
+#	define MYL_INTERNAL_ASSERT_MSG(check, ...) MYL_INTERNAL_ASSERT_IMPL(check, "Assertion failed: {0}", __VA_ARGS__)
+#	define MYL_INTERNAL_ASSERT_NO_MSG(check) MYL_INTERNAL_ASSERT_IMPL(check, "Assertion '{0}' failed at {1}:{2}", #check, std::filesystem::path(__FILE__).filename().string(), __LINE__)
 
 #	define MYL_INTERNAL_ASSERT_GET_MACRO_NAME(check, arg, macro, ...) macro
 #	define MYL_INTERNAL_ASSERT_GET_MACRO(...) MYL_EXPAND_MACRO(MYL_INTERNAL_ASSERT_GET_MACRO_NAME(__VA_ARGS__, MYL_INTERNAL_ASSERT_MSG, MYL_INTERNAL_ASSERT_NO_MSG))

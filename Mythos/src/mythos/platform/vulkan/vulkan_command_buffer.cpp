@@ -18,7 +18,7 @@ namespace myl::vulkan {
 
 		MYL_VK_CHECK(vkQueueSubmit, a_queue, 1, &info, 0);
 
-		// wait for it to finish, instead of using a fence
+		// Wait for it to finish, instead of using a fence
 		MYL_VK_CHECK(vkQueueWaitIdle, a_queue);
 
 		a_command_buffer.deallocate();

@@ -6,15 +6,12 @@
 
 namespace myl {
 	class event_mouse_moved : public event {
-		f32vec2 m_point;
+		f32vec2 m_position;
 	public:
-		MYL_API constexpr event_mouse_moved(const f32 a_x, const f32 a_y)
-			: m_point(a_x, a_y) {}
-		MYL_API constexpr event_mouse_moved(const f32vec2& a_point)
-			: m_point(a_point){ }
+		MYL_API constexpr event_mouse_moved(const f32vec2& a_position)
+			: m_position(a_position){ }
 
-		MYL_API MYL_NO_DISCARD constexpr f32 x() const { return m_point.x; }
-		MYL_API MYL_NO_DISCARD constexpr f32 y() const { return m_point.y; }
+		MYL_API MYL_NO_DISCARD constexpr f32 position() const { return m_position.x; }
 
 		MYL_IMPL_EVENT_CATEGORY(static_cast<i32>(event_category::mouse) | static_cast<i32>(event_category::input))
 		MYL_IMPL_EVENT_TYPE(mouse_moved)
@@ -29,8 +26,6 @@ namespace myl {
 			: m_delta(a_delta) {}
 
 		MYL_API MYL_NO_DISCARD constexpr const f32vec2& delta() const { return m_delta; }
-		MYL_API MYL_NO_DISCARD constexpr f32 x_delta() const { return m_delta.x; }
-		MYL_API MYL_NO_DISCARD constexpr f32 y_delta() const { return m_delta.y; }
 
 		MYL_IMPL_EVENT_CATEGORY(static_cast<i32>(event_category::mouse) | static_cast<i32>(event_category::input))
 		MYL_IMPL_EVENT_TYPE(mouse_scrolled)

@@ -19,7 +19,7 @@ namespace myl::windows {
 		window& operator=(const window&) = delete;
 
 		MYL_API MYL_NO_DISCARD void* native() const override { return static_cast<void*>(m_handle); }
-		//@return the module handle of the window
+		//@return Module handle of the window
 		MYL_NO_DISCARD HINSTANCE module() const { return m_instance; }
 
 		void set_event_callback(const event_callback& a_callback) override { m_event_callback = a_callback; }

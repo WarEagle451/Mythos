@@ -4,13 +4,13 @@
 #include <functional>
 
 /// MYTodo: I don't like this macro
-#include <memory> /// for macro below
+#include <memory> /// For macro below
 #define MYL_BIND_EVENT_FN(fn) [this](auto&&... a_args) -> decltype(auto) { return this->fn(std::forward<decltype(a_args)>(a_args)...); }
 
-/// MYTodo: event design: Need ability to register and unregister events
+/// MYTodo: Event design: Need ability to register and unregister events
 
 namespace myl {
-	//@brief user defined event types should not conflict with the engine event types below
+	//@brief User defined event types should not conflict with the engine event types below
 	enum class event_type {
 		none,
 
@@ -68,7 +68,7 @@ namespace myl {
 		MYL_API constexpr event_dispatcher(event& a_event)
 			: m_event(a_event) {}
 
-		//@param a_func needs to return a bool
+		//@param a_func: Must return a bool
 		template<typename T, typename Func>
 		bool dispatch(const Func& a_func) {
 			if (m_event.type() == T::static_type()) {

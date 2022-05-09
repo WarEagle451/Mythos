@@ -24,7 +24,7 @@ namespace myl {
 		app_info m_info;
 
 		bool m_running = true;
-		bool m_suspended = false; // aka minimized
+		bool m_suspended = false; // AKA minimized
 		f64 m_last_frame_time = 0.0;
 	public:
 		struct config {

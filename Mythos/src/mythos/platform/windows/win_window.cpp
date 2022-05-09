@@ -30,7 +30,7 @@ namespace myl::windows {
 		}
 	}
 
-	/// MYBug: print screen does not work, also test all keys
+	/// MYBug: Print screen does not work, also test all keys
 
 	/// MYTodo: Figure out event_key_typed
 	/// MYTodo: When resizing the window as long as the window resize has not been let go things can go black, continously update this to allow it to clear the screen everytime
@@ -161,16 +161,16 @@ namespace myl::windows {
 
 	LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
 		switch (msg) {
-			case WM_ERASEBKGND: // notify the OS that erasing will be handled by the app to prevent flicker
+			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
 				return 1;
 			case WM_CLOSE: {
 				event_window_close e{};
 				fire_event(e);
-			} return 1;
+			} return 0;
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;
-			case WM_SIZE: { // get the updated size
+			case WM_SIZE: { // Get the updated size
 				RECT r;
 				GetClientRect(hwnd, &r);
 				event_window_resize e(static_cast<u32>(r.right - r.left), static_cast<u32>(r.bottom - r.top));
@@ -178,24 +178,24 @@ namespace myl::windows {
 			} break;
 			case WM_KEYDOWN: MYL_FALLTHROUGH;
 			case WM_SYSKEYDOWN:
-				input::process_key(translate_key_code(w_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // first 16 bits contain the repeat count
+				input::process_key(translate_key_code(w_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // First 16 bits contain the repeat count
 				break;
 			case WM_KEYUP: MYL_FALLTHROUGH;
 			case WM_SYSKEYUP:
 				input::process_key(translate_key_code(w_param), input::state::up, 0);
 				break;
 			case WM_MOUSEMOVE:
-				input::process_cursor_position(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param)));
+				input::process_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
 				break;
 			case WM_MOUSEWHEEL: {
 				i32 y_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-				if (y_delta != 0) // flatten the input to an OS-independent(-1, 1)
+				if (y_delta != 0) // Flatten the input to an OS-independent(-1, 1)
 					y_delta = y_delta < 0 ? -1 : 1;
 				input::process_mouse_wheel({ 0.f, static_cast<f32>(y_delta) });
 			} break;
 			case WM_MOUSEHWHEEL: {
 				i32 x_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-				if (x_delta != 0) // flatten the input to an OS-independent(-1, 1)
+				if (x_delta != 0) // Flatten the input to an OS-independent(-1, 1)
 					x_delta = x_delta < 0 ? -1 : 1;
 				input::process_mouse_wheel({ static_cast<f32>(x_delta), 0.f });
 			} break;
@@ -225,7 +225,7 @@ namespace myl::windows {
 
 		constexpr const char* window_class_name = "mythos_window_class";
 
-		// setup and register window class
+		// Setup and register window class
 		HICON icon = LoadIcon(m_instance, IDI_APPLICATION);
 		WNDCLASSA wc;
 		memset(&wc, 0, sizeof(wc));
@@ -245,8 +245,8 @@ namespace myl::windows {
 		// create window
 		u32 client_x = a_config.postion.x;
 		u32 client_y = a_config.postion.y;
-		u32 client_width = a_config.width;
-		u32 client_height = a_config.height;
+		u32 client_width = a_config.size.w;
+		u32 client_height = a_config.size.h;
 
 		u32 window_x = client_x;
 		u32 window_y = client_y;
@@ -261,15 +261,15 @@ namespace myl::windows {
 		window_style |= WS_MAXIMIZEBOX;
 		window_style |= WS_THICKFRAME;
 
-		// obtain size of the border
+		// Obtain size of the border
 		RECT border_rect = { 0, 0, 0, 0 };
 		AdjustWindowRectEx(&border_rect, window_style, 0, window_ex_style);
 
-		// in this case, the border rect is negative
+		// In this case, the border rect is negative
 		window_x += border_rect.left;
 		window_y += border_rect.top;
 
-		// grow by the size of the OS bordering
+		// Grow by the size of the OS bordering
 		window_width += border_rect.right - border_rect.left;
 		window_height += border_rect.bottom - border_rect.top;
 
@@ -277,18 +277,18 @@ namespace myl::windows {
 		if (!m_handle)
 			throw core_runtime_error("Windows window creation failed");
 
-		// show the window
-		bool should_activate = true; /// MYTodo: if the window should not accept input this should be false
+		// Show the window
+		bool should_activate = true; /// MYTodo: If the window should not accept input this should be false
 		i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
-		// if initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
-		// if initially mazimized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
+		// If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
+		// If initially mazimized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
 
-		// clock setup
+		// Clock setup
 		setup_clock();
 
-		// setup event callbacks
-		myl::set_event_callback(m_event_callback); /// MYTodo: should the application set this up maybe?
+		// Setup event callbacks
+		myl::set_event_callback(m_event_callback); /// MYTodo: Should the application set this up maybe?
 	}
 
 	window::~window() {

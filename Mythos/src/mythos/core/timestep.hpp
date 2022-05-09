@@ -3,7 +3,7 @@
 
 namespace myl {
 	void setup_clock();
-	// @return seconds since application start
+	// @return Seconds since application start
 	MYL_API MYL_NO_DISCARD f64 get_time();
 
 	struct timestep {

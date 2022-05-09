@@ -9,8 +9,6 @@
 #include "mat4x3.hpp"
 #include "mat4x4.hpp"
 
-/// MYTodo: - unary operator for matrices
-
 namespace myl {
 	template<std::size_t R, std::size_t C, typename T>
 	MYL_NO_DISCARD constexpr typename mat<R, C, T>::transpose_type transpose(const mat<R, C, T>& a_mat) {
@@ -32,17 +30,17 @@ namespace myl {
 	template<typename T>
 	MYL_NO_DISCARD constexpr T determinant(const mat<3, 3, T>& a_mat) {
 		return
-			  a_mat[0][0] * (a_mat[1][1] * a_mat[2][2] - a_mat[2][1] * a_mat[1][2]) // a(ei - fh)
-			- a_mat[1][0] * (a_mat[0][1] * a_mat[2][2] - a_mat[2][1] * a_mat[0][2]) // - b(di - fg)
+			  a_mat[0][0] * (a_mat[1][1] * a_mat[2][2] - a_mat[2][1] * a_mat[1][2])  //   a(ei - fh)
+			- a_mat[1][0] * (a_mat[0][1] * a_mat[2][2] - a_mat[2][1] * a_mat[0][2])  // - b(di - fg)
 			+ a_mat[2][0] * (a_mat[0][1] * a_mat[1][2] - a_mat[1][1] * a_mat[0][2]); // + c(dh - eg)
 	}
 
 	template<typename T>
 	MYL_NO_DISCARD constexpr T determinant(const mat<4, 4, T>& a_mat) {
 		return
-			  a_mat[0][0] * determinant(mat<3, 3, T>(a_mat[1][1], a_mat[1][2], a_mat[1][3], a_mat[2][1], a_mat[2][2], a_mat[2][3], a_mat[3][1], a_mat[3][2], a_mat[3][3])) // 3x3 mat a
-			- a_mat[1][0] * determinant(mat<3, 3, T>(a_mat[2][1], a_mat[2][2], a_mat[2][3], a_mat[3][1], a_mat[3][2], a_mat[3][3], a_mat[0][1], a_mat[0][2], a_mat[0][3])) // 3x3 mat b
-			+ a_mat[2][0] * determinant(mat<3, 3, T>(a_mat[3][1], a_mat[3][2], a_mat[3][3], a_mat[0][1], a_mat[0][2], a_mat[0][3], a_mat[1][1], a_mat[1][2], a_mat[1][3])) // 3x3 mat c
+			  a_mat[0][0] * determinant(mat<3, 3, T>(a_mat[1][1], a_mat[1][2], a_mat[1][3], a_mat[2][1], a_mat[2][2], a_mat[2][3], a_mat[3][1], a_mat[3][2], a_mat[3][3]))  // 3x3 mat a
+			- a_mat[1][0] * determinant(mat<3, 3, T>(a_mat[2][1], a_mat[2][2], a_mat[2][3], a_mat[3][1], a_mat[3][2], a_mat[3][3], a_mat[0][1], a_mat[0][2], a_mat[0][3]))  // 3x3 mat b
+			+ a_mat[2][0] * determinant(mat<3, 3, T>(a_mat[3][1], a_mat[3][2], a_mat[3][3], a_mat[0][1], a_mat[0][2], a_mat[0][3], a_mat[1][1], a_mat[1][2], a_mat[1][3]))  // 3x3 mat c
 			- a_mat[3][0] * determinant(mat<3, 3, T>(a_mat[0][1], a_mat[0][2], a_mat[0][3], a_mat[1][1], a_mat[1][2], a_mat[1][3], a_mat[2][1], a_mat[2][2], a_mat[2][3])); // 3x3 mat d
 	}
 

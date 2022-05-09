@@ -7,7 +7,7 @@ namespace myl::vulkan {
 	class context; // fwd declaration
 
 	class image {
-		context& m_context; // context should outlive images
+		context& m_context; // Context should outlive images
 
 		VkImage m_handle;
 		VkDeviceMemory m_memory;

@@ -15,7 +15,7 @@ namespace myl::vulkan {
 	}
 
 	VkSurfaceKHR platform_create_surface(VkInstance& a_instance) {
-		windows::window* window = static_cast<windows::window*>(app::get().window()); // window and app are set before the renderer is initialized
+		windows::window* window = static_cast<windows::window*>(app::get().window()); // Window and app are set before the renderer is initialized
 
 		VkWin32SurfaceCreateInfoKHR create_info{};
 		create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;

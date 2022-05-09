@@ -39,16 +39,16 @@ namespace myl::random {
 			: m_gen(a_gen)
 			, m_dist(a_dist) {}
 
-		//@brief advances the internal state of the generator
+		//@brief Advances the internal state of the generator
 		void discard(seed_type a_amount = 1) { m_gen->discard(a_amount); }
-		//@brief calls reset on the distribution
+		//@brief Calls reset on the distribution
 		void reset() { m_dist.reset(); }
 
 		void set_distribution(const distribution_type& a_dist) { m_dist = a_dist; }
 
-		//@return the distribution's lowest possible value
+		//@return Dstribution's lowest possible value
 		MYL_NO_DISCARD result_type min() const noexcept { return m_dist.min(); }
-		//@return the distribution's highest possible value
+		//@return Distribution's highest possible value
 		MYL_NO_DISCARD result_type max() const noexcept { return m_dist.max(); }
 
 		MYL_NO_DISCARD result_type operator()() { return m_dist(*m_gen); }

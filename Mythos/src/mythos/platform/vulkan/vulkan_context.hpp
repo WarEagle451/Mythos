@@ -44,7 +44,7 @@ namespace myl::vulkan {
 		MYL_NO_DISCARD std::vector<command_buffer>& graphics_command_buffers() { return m_graphics_command_buffers; }
 		MYL_NO_DISCARD command_buffer& get_graphics_command_buffer(u64 a_index) { return m_graphics_command_buffers[a_index]; }
 
-		void create_command_buffers(swapchain&); /// MYTodo: should command buffers be in swapchain
+		void create_command_buffers(swapchain&);
 	private:
 		void create_instance();
 

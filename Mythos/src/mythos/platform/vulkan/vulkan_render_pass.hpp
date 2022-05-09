@@ -20,7 +20,7 @@ namespace myl::vulkan {
 	};
 
 	class render_pass {
-		context& m_context; // context must outlive render_pass
+		context& m_context; // Context must outlive render_pass
 
 		VkRenderPass m_handle;
 		f32 m_x, m_y, m_w, m_h;

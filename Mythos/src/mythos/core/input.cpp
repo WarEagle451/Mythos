@@ -36,7 +36,7 @@ namespace myl::input {
 		if (a_code == key::unknown)
 			return;
 
-		if (internal_states::s_key_states[a_code] != a_state) { // only update when they change state
+		if (internal_states::s_key_states[a_code] != a_state) { // Only update when they change state
 			internal_states::s_key_states[a_code] = a_state;
 
 			if (a_state == state::up) {
@@ -48,8 +48,8 @@ namespace myl::input {
 				fire_event(e);
 			}
 		}
-		else if (a_state == state::down) { // key repeats
-			event_key_pressed e(a_code, a_repeat_count); /// MYTodo: might have to keep track of key repeats internally as windows only ever returns 1
+		else if (a_state == state::down) { // Key repeats
+			event_key_pressed e(a_code, a_repeat_count); /// MYTodo: Might have to keep track of key repeats internally as windows only ever returns 1
 			fire_event(e);
 		}
 	}
@@ -58,7 +58,7 @@ namespace myl::input {
 		if (a_code == mouse_button::unknown)
 			return;
 
-		if (internal_states::s_mouse_button_states[a_code] != a_state) { // only update when they change state
+		if (internal_states::s_mouse_button_states[a_code] != a_state) { // Only update when they change state
 			internal_states::s_mouse_button_states[a_code] = a_state;
 
 			if (a_state == state::up) {
@@ -72,17 +72,17 @@ namespace myl::input {
 		}
 	}
 
-	void process_cursor_position(f32 a_x, f32 a_y) {
-		if (internal_states::s_cursor_position.x != a_x || internal_states::s_cursor_position.y != a_y) {  // only update when they change state
-			internal_states::s_cursor_position = { a_x, a_y };
+	void process_cursor_position(const f32vec2& position) {
+		if (internal_states::s_cursor_position.x != position.x || internal_states::s_cursor_position.y != position.y) {  // Only update when they change state
+			internal_states::s_cursor_position = position;
 
-			event_mouse_moved e(a_x, a_y);
+			event_mouse_moved e(position);
 			fire_event(e);
 		}
 	}
 
 	void process_mouse_wheel(const f32vec2& a_scroll_delta) {
-		event_mouse_scrolled e(a_scroll_delta.x, a_scroll_delta.y);
+		event_mouse_scrolled e(a_scroll_delta);
 		fire_event(e);
 	}
 

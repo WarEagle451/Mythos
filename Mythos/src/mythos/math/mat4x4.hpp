@@ -43,7 +43,11 @@ namespace myl {
 
 		MYL_NO_DISCARD constexpr bool operator==(const mat& rhs) const { return m_data[0] == rhs[0] && m_data[1] == rhs[1] && m_data[2] == rhs[2] && m_data[3] == rhs[3]; }
 
-		/// spaceship
+		/// Spaceship
+
+		// Unary operators
+
+		MYL_NO_DISCARD constexpr mat operator-() const { return mat{ -m_data[0], -m_data[1], -m_data[2], -m_data[3] }; }
 
 		// Scaler operators
 
@@ -84,7 +88,7 @@ namespace myl {
 				m_data[0][3] * rhs[3][0] + m_data[1][3] * rhs[3][1] + m_data[2][3] * rhs[3][2] + m_data[3][3] * rhs[3][3]);// w3
 		}
 
-		MYL_NO_DISCARD constexpr mat operator/(const mat& rhs) const { return *this * inverse(rhs); } /// MYTodo: This won't work if matrix.hpp is not included
+		MYL_NO_DISCARD constexpr mat operator/(const mat& rhs) const { return *this * inverse(rhs); } /// MYBug: This won't work if matrix.hpp is not included
 
 		constexpr mat& operator+=(const mat& rhs) { m_data[0] += rhs[0]; m_data[1] += rhs[1]; m_data[2] += rhs[2]; m_data[3] += rhs[3]; return *this; }
 		constexpr mat& operator-=(const mat& rhs) { m_data[0] -= rhs[0]; m_data[1] -= rhs[1]; m_data[2] -= rhs[2]; m_data[3] -= rhs[3]; return *this; }

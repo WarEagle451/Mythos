@@ -9,7 +9,7 @@
 namespace myl {
 	class layer_stack {
 	public:
-		using layer_ptr = layer*; /// MYTodo: get these to be unique ptrs
+		using layer_ptr = layer*; /// MYTodo: Get these to be unique ptrs
 		using stack = std::vector<layer_ptr>;
 	private:
 		stack m_layers;

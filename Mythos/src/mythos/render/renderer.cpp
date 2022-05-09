@@ -9,16 +9,16 @@ namespace myl::render {
 	}
 
 	void renderer::shutdown() {
-		s_backend.reset(); // deletes the backend
+		s_backend.reset(); // Deletes the backend
 	}
 
-	void renderer::draw_frame() { /// MYTodo: this should draw all of the submited data using the draw functions, aka make it a batch renderer
+	void renderer::draw_frame() { /// MYTodo: This should draw all of the submited data using the draw functions, aka make it a batch renderer
 		if (s_backend->begin()) {
 			s_backend->end();
 		}
 	}
 
-	void renderer::on_window_resize(u32 a_width, u32 a_height) {
-		s_backend->on_window_resize(a_width, a_height);
+	void renderer::on_window_resize(const u32vec2& a_size) {
+		s_backend->on_window_resize(a_size);
 	}
 }

@@ -20,6 +20,6 @@ namespace myl::vulkan {
 		bool begin() override;
 		void end() override;
 
-		void on_window_resize(u32 a_width, u32 a_height) override;
+		void on_window_resize(const u32vec2&) override;
 	};
 }
