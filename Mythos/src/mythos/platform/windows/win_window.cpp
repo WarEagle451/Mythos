@@ -5,10 +5,13 @@
 #	include <mythos/core/timestep.hpp>
 #	include <mythos/core/key_codes.hpp>
 #	include <mythos/core/mouse_codes.hpp>
-#	include <mythos/core/input.hpp>
 #	include <mythos/event/app_event.hpp>
 
+#	include <mythos/input.hpp>
+
 #	include <windowsx.h>
+
+/// MYTodo: Figure out event_key_typed
 
 namespace myl::windows {
 	MYL_NO_DISCARD constexpr mouse_code translate_mouse_code(WPARAM w_param) {
@@ -23,10 +26,7 @@ namespace myl::windows {
 		return mouse_buttons;
 	}
 
-	/// MYTodo: Need to track toggled keys
-	/// MYTodo: Figure out event_key_typed
-	/// MYTodo: Find a way to tell if left/right alt, ctrl and shift keys are released, can't figure out how to distingish releases between left and rights
-	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param) {
+	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param, LPARAM l_param) {
 		switch (static_cast<u16>(w_param)) { // Key code it a u16 from the w_param
 			/// MYTodo: Figure out what to do with VK_KEY codes below
 			/// - VK_CLEAR
@@ -191,6 +191,22 @@ namespace myl::windows {
 			case VK_ADD: return add;
 			case VK_LWIN: return left_super;
 			case VK_RWIN: return right_super;
+
+			// Special handling
+
+			case VK_MENU: {
+				bool extended = (l_param & 0x01000000) == 0;
+				return extended ? left_alt : right_alt;
+			}
+			case VK_CONTROL: {
+				bool extended = (l_param & 0x01000000) == 0;
+				return extended ? left_control : right_control;
+			}
+			case VK_SHIFT: {
+				UINT scancode = (l_param & 0x00ff0000) >> 16;
+				return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX) == VK_LSHIFT ? left_shift : right_shift;
+			}
+
 			default: return unknown;
 		}
 	}
@@ -214,11 +230,11 @@ namespace myl::windows {
 			} break;
 			case WM_KEYDOWN: MYL_FALLTHROUGH;
 			case WM_SYSKEYDOWN:
-				input::process_key(translate_key_code(w_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // First 16 bits contain the repeat count
+				input::process_key(translate_key_code(w_param, l_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // First 16 bits contain the repeat count
 				break;
 			case WM_KEYUP: MYL_FALLTHROUGH;
 			case WM_SYSKEYUP:
-				input::process_key(translate_key_code(w_param), input::state::up, 0);
+				input::process_key(translate_key_code(w_param, l_param), input::state::up, 0);
 				break;
 			case WM_MOUSEMOVE:
 				input::process_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));

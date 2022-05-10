@@ -1,32 +1,32 @@
 #include "testbed_layer.hpp"
 
 #include <mythos/core/log.hpp>
-#include <mythos/event/event.hpp>
+#include <mythos/core/app.hpp>
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/event/key_event.hpp>
 
-#include <mythos/core/input.hpp>
+#include <mythos/input.hpp>
 
-#include <mythos/core/app.hpp>
+#include "utils/keys_buttons_string.hpp"
 
 namespace tb {
 	static bool mouse_pressed(myl::event_mouse_pressed& e) {
-		MYL_CORE_TRACE("mouse pressed: {}", e.buttons());
+		MYL_CORE_TRACE("mouse pressed: {}", mouse_buttons_to_string(e.buttons()));
 		return true;
 	}
 
 	static bool mouse_released(myl::event_mouse_released& e) {
-		MYL_CORE_TRACE("mouse released: {}", e.buttons());
+		MYL_CORE_TRACE("mouse released: {}", mouse_buttons_to_string(e.buttons()));
 		return true;
 	}
 
 	static bool key_released(myl::event_key_released& e) {
-		MYL_CORE_TRACE("Key '{}' up", e.key());
+		MYL_CORE_TRACE("Key '{}' released", key_to_string(e.key()));
 		return true;
 	}
 
 	static bool key_pressed(myl::event_key_pressed& e) {
-		MYL_CORE_TRACE("Key '{}' down", e.key());
+		MYL_CORE_TRACE("Key '{}' pressed", key_to_string(e.key()));
 		return true;
 	}
 
@@ -56,7 +56,7 @@ namespace tb {
 	}
 
 	void testbed_layer::update(myl::timestep ts) {
-		if (myl::input::key_down(myl::key::escape))
+		if (myl::input::key_down(myl::key::escape) && myl::input::key_down(myl::key::left_shift))
 			myl::app::get().close();
 	}
 

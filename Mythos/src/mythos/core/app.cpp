@@ -1,12 +1,10 @@
 #include "app.hpp"
 #include "assert.hpp"
 #include "log.hpp"
-#include "input.hpp"
 
+#include <mythos/input.hpp>
 #include <mythos/event/app_event.hpp>
 #include <mythos/render/renderer.hpp>
-
-#include <deque>
 
 namespace myl {
 	app* app::s_instance = nullptr;
