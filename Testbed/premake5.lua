@@ -1,4 +1,3 @@
-LibraryDir = {}
 LibraryDir["MythosDLL"] = ("%{wks.location}/bin/" .. outputdir .. "/Mythos")
 
 project "Testbed"

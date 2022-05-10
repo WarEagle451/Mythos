@@ -24,8 +24,7 @@ project "Mythos"
 	}
 	
 	links {
-		premake.detoken.expand("%{Library.Vulkan}", Library, Library) -- MYHack: %{Library.Vulkan}" is not working
-		--"%{Library.Vulkan}"
+		"%{Library.Vulkan}"
 	}
 
 	filter "system:windows"
