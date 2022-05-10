@@ -38,7 +38,7 @@ namespace myl {
 		MYL_API constexpr event_mouse_button(mouse_code a_code)
 			: m_code(a_code) {}
 	public:
-		MYL_API MYL_NO_DISCARD constexpr mouse_code button() const { return m_code; }
+		MYL_API MYL_NO_DISCARD constexpr mouse_code buttons() const { return m_code; }
 
 		MYL_IMPL_EVENT_CATEGORY(static_cast<i32>(event_category::mouse) | static_cast<i32>(event_category::input) | static_cast<i32>(event_category::mouse_button))
 	};

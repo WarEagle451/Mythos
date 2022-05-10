@@ -58,8 +58,6 @@ namespace myl {
 			multiply,
 			subtract,
 			add,
-			kp_enter,
-			kp_equal,
 
 			space,
 			apostrophe,
@@ -90,7 +88,6 @@ namespace myl {
 			page_down,
 			home,
 			end,
-			menu,
 
 			world1,
 			world2,

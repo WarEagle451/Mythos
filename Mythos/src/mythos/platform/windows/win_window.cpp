@@ -12,31 +12,76 @@
 
 namespace myl::windows {
 	MYL_NO_DISCARD constexpr mouse_code translate_mouse_code(WPARAM w_param) {
-		switch (w_param) {
-			using namespace mouse_button;
-			case MK_LBUTTON: return left;
-			case MK_RBUTTON: return right;
-			case MK_MBUTTON: return middle;
-			case MK_XBUTTON1: return button4;
-			case MK_XBUTTON2: return button5;
-			default: return unknown;
+		using namespace mouse_button;
+		mouse_code mouse_buttons = none;
+		if (w_param & MK_LBUTTON) mouse_buttons |= left;
+		if (w_param & MK_RBUTTON) mouse_buttons |= right;
+		if (w_param & MK_MBUTTON) mouse_buttons |= middle;
+		if (w_param & MK_XBUTTON1) mouse_buttons |= button4;
+		if (w_param & MK_XBUTTON2) mouse_buttons |= button5;
 
-				/// left + right = 3
-				/// middle + left = 17
-				/// middle + right = 18
-				/// middle + left + right = 19
-				/// MYBug: when 2 buttons are pressed at the same time windows puts the values together, no way to handle that
-				/// left = 0001; right = 0010; same time = 0011
-		}
+		return mouse_buttons;
 	}
 
-	/// MYBug: Print screen does not work, also test all keys
-
+	/// MYTodo: Need to track toggled keys
 	/// MYTodo: Figure out event_key_typed
-	/// MYTodo: When resizing the window as long as the window resize has not been let go things can go black, continously update this to allow it to clear the screen everytime
+	/// MYTodo: Find a way to tell if left/right alt, ctrl and shift keys are released, can't figure out how to distingish releases between left and rights
+	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param) {
+		switch (static_cast<u16>(w_param)) { // Key code it a u16 from the w_param
+			/// MYTodo: Figure out what to do with VK_KEY codes below
+			/// - VK_CLEAR
+			/// - VK_KANA
+			/// - VK_HANGUEL
+			/// - VK_HANGUL
+			/// - VK_IME_ON
+			/// - VK_JUNJA
+			/// - VK_FINAL
+			/// - VK_HANJA
+			/// - VK_KANJI
+			/// - VK_IME_OFF
+			/// - VK_CONVERT
+			/// - VK_NONCONVERT
+			/// - VK_ACCEPT
+			/// - VK_MODECHANGE
+			/// - VK_SELECT
+			/// - VK_PRINT
+			/// - VK_EXECUTE
+			/// - VK_HELP
+			/// - VK_APPS
+			/// - VK_SLEEP
+			/// - VK_SEPARATOR
+			/// - VK_BROWSER_BACK
+			/// - VK_BROWSER_FORWARD
+			/// - VK_BROWSER_REFRESH
+			/// - VK_BROWSER_STOP
+			/// - VK_BROWSER_SEARCH
+			/// - VK_BROWSER_FAVORITES
+			/// - VK_BROWSER_HOME
+			/// - VK_VOLUME_MUTE
+			/// - VK_VOLUME_DOWN
+			/// - VK_VOLUME_UP
+			/// - VK_MEDIA_NEXT_TRACK
+			/// - VK_MEDIA_PREV_TRACK
+			/// - VK_MEDIA_STOP
+			/// - VK_MEDIA_PLAY_PAUSE
+			/// - VK_LAUNCH_MAIL
+			/// - VK_LAUNCH_MEDIA_SELECT
+			/// - VK_LAUNCH_APP1
+			/// - VK_LAUNCH_APP2
+			/// - VK_OEM_8
+			/// - VK_OEM_102
+			/// - VK_PROCESSKEY
+			/// - VK_PACKET
+			/// - VK_ATTN
+			/// - VK_CRSEL
+			/// - VK_EXSEL
+			/// - VK_EREOF
+			/// - VK_PLAY
+			/// - VK_ZOOM
+			/// - VK_NONAME
+			/// - VK_PA1
+			/// - VK_OEM_CLEAR
 
-	MYL_NO_DISCARD constexpr key_code translate_key_code(WPARAM w_param) {
-		switch (static_cast<u16>(w_param)) { // key code it a u16 from the w_param
 			using namespace key;
 			case VK_TAB: return tab;
 			case VK_RETURN: return enter;
@@ -85,10 +130,10 @@ namespace myl::windows {
 			case 0x58: return x;
 			case 0x59: return y;
 			case 0x5a: return z;
+			case VK_OEM_3: return grave_accent;
 			case VK_OEM_4: return left_bracket;
 			case VK_OEM_5: return backslash;
 			case VK_OEM_6: return right_bracket;
-			case VK_OEM_3: return grave_accent;
 			case VK_BACK: return backspace;
 			case VK_INSERT: return insert;
 			case VK_DELETE: return delete_key;
@@ -103,7 +148,7 @@ namespace myl::windows {
 			case VK_CAPITAL: return caps_lock;
 			case VK_SCROLL: return scroll_lock;
 			case VK_NUMLOCK: return num_lock;
-			case VK_SNAPSHOT: return print_screen;
+			case VK_SNAPSHOT: return print_screen; 	/// MYBug: Print screen does not work
 			case VK_PAUSE: return pause;
 			case VK_F1: return f1;
 			case VK_F2: return f2;
@@ -144,17 +189,8 @@ namespace myl::windows {
 			case VK_MULTIPLY: return multiply;
 			case VK_SUBTRACT: return subtract;
 			case VK_ADD: return add;
-			///case: return kp_enter;
-			///case: return kp_equal; 
-			case VK_LSHIFT: return left_shift;
-			case VK_LCONTROL: return left_control;
-			case VK_LMENU: return left_alt;
 			case VK_LWIN: return left_super;
-			case VK_RSHIFT: return right_shift;
-			case VK_RCONTROL: return right_control;
-			case VK_RMENU: return right_alt;
 			case VK_RWIN: return right_super;
-			case VK_MENU: return menu;
 			default: return unknown;
 		}
 	}
@@ -201,18 +237,18 @@ namespace myl::windows {
 			} break;
 			case WM_LBUTTONDOWN: MYL_FALLTHROUGH;
 			case WM_MBUTTONDOWN: MYL_FALLTHROUGH;
-			case WM_RBUTTONDOWN: input::process_mouse_button(translate_mouse_code(w_param), input::state::down); break;
-			case WM_XBUTTONDOWN: input::process_mouse_button(translate_mouse_code(LOWORD(w_param)), input::state::down); break; // LOWORD contains the button
+			case WM_RBUTTONDOWN: input::process_mouse_buttons(translate_mouse_code(w_param), input::state::down); break;
+			case WM_XBUTTONDOWN: input::process_mouse_buttons(translate_mouse_code(LOWORD(w_param)), input::state::down); break; // LOWORD contains the button
 #if 0 /// MYBug: For some reason w_param is always 0 when a button is released. Can't do stuff like block below
 			case WM_LBUTTONUP: MYL_FALLTHROUGH;
 			case WM_MBUTTONUP: MYL_FALLTHROUGH;
-			case WM_RBUTTONUP: input::process_mouse_button(translate_mouse_code(w_param), input::state::up); break;
-			case WM_XBUTTONUP: input::process_mouse_button(translate_mouse_code(LOWORD(w_param)), input::state::up); break; // LOWORD contains the button
+			case WM_RBUTTONUP: input::process_mouse_buttons(translate_mouse_code(w_param), input::state::up); break;
+			case WM_XBUTTONUP: input::process_mouse_buttons(translate_mouse_code(LOWORD(w_param)), input::state::up); break; // LOWORD contains the button
 #else /// MYHack: See bug note above
-			case WM_LBUTTONUP: input::process_mouse_button(mouse_button::left, input::state::up); break;
-			case WM_MBUTTONUP: input::process_mouse_button(mouse_button::middle, input::state::up); break;
-			case WM_RBUTTONUP: input::process_mouse_button(mouse_button::right, input::state::up); break;
-			case WM_XBUTTONUP: input::process_mouse_button(HIWORD(w_param) == XBUTTON1 ? mouse_button::button4 : mouse_button::button5, input::state::up); break;
+			case WM_LBUTTONUP: input::process_mouse_buttons(mouse_button::left, input::state::up); break;
+			case WM_MBUTTONUP: input::process_mouse_buttons(mouse_button::middle, input::state::up); break;
+			case WM_RBUTTONUP: input::process_mouse_buttons(mouse_button::right, input::state::up); break;
+			case WM_XBUTTONUP: input::process_mouse_buttons(HIWORD(w_param) == XBUTTON1 ? mouse_button::button4 : mouse_button::button5, input::state::up); break;
 #endif
 		}
 	
@@ -242,7 +278,7 @@ namespace myl::windows {
 		if (!RegisterClassA(&wc))
 			throw core_runtime_error("Windows window registration failed");
 
-		// create window
+		// Create window
 		u32 client_x = a_config.postion.x;
 		u32 client_y = a_config.postion.y;
 		u32 client_width = a_config.size.w;

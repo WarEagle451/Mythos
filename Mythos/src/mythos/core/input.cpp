@@ -6,8 +6,8 @@
 namespace myl::input {
 	state internal_states::s_previous_key_states[key::size];
 	state internal_states::s_key_states[key::size];
-	state internal_states::s_previous_mouse_button_states[mouse_button::size];
-	state internal_states::s_mouse_button_states[mouse_button::size];
+	mouse_code internal_states::s_previous_mouse_button_states;
+	mouse_code internal_states::s_mouse_button_states;
 	f32vec2 internal_states::s_previous_cursor_position;
 	f32vec2 internal_states::s_cursor_position;
 
@@ -20,15 +20,13 @@ namespace myl::input {
 			s_key_states[i] = state::up;
 		}
 
-		for (u32 i = 0; i != mouse_button::size; ++i) {
-			s_previous_mouse_button_states[i] = state::up;
-			s_mouse_button_states[i] = state::up;
-		}
+		s_previous_mouse_button_states = mouse_button::none;
+		s_mouse_button_states = mouse_button::none;
 	}
-
-	void internal_states::update() {
+	/// MYBug: highly doubt this works right
+	void internal_states::update() { /// MYTodo: Make sure this update function works correctly (Does the current state get reset? and should it?)
 		*s_previous_key_states = *s_key_states;
-		*s_previous_mouse_button_states = *s_mouse_button_states;
+		s_previous_mouse_button_states = s_mouse_button_states;
 		s_previous_cursor_position = s_cursor_position;
 	}
 
@@ -54,19 +52,27 @@ namespace myl::input {
 		}
 	}
 
-	void process_mouse_button(mouse_code a_code, state a_state) {
-		if (a_code == mouse_button::unknown)
-			return;
+	void process_mouse_buttons(mouse_code a_code, state a_state) {
+		// Bit changes from 1 to 0 don't matter beacuse it's a bit that's changed for the opposite state
+		// Platform should fire an event for that state change where it will be handled here again
 
-		if (internal_states::s_mouse_button_states[a_code] != a_state) { // Only update when they change state
-			internal_states::s_mouse_button_states[a_code] = a_state;
-
-			if (a_state == state::up) {
-				event_mouse_released e(a_code);
+		if (a_state == state::up) {
+			// new = 0110; old = 1010
+			// old & new = 0010. Therefor bit 2 has changed state to up
+			mouse_code changed_buttons = internal_states::s_mouse_button_states & a_code;
+			if (changed_buttons != 0) { // Only update if there is a change
+				internal_states::s_mouse_button_states &= ~changed_buttons; // Clear bits to up
+				event_mouse_released e(changed_buttons);
 				fire_event(e);
 			}
-			else {
-				event_mouse_pressed e(a_code);
+		}
+		else { // a_state == state::down
+			// new = 0110; old = 1010
+			// ~(old | ~new) = 0100. Therefor bit 3 has changed state to down
+			mouse_code changed_buttons = ~(internal_states::s_mouse_button_states | ~a_code); // Getting changed down buttons
+			if (changed_buttons != 0) { // Only update if there is a change
+				internal_states::s_mouse_button_states |= changed_buttons; // Set bits to down
+				event_mouse_pressed e(changed_buttons);
 				fire_event(e);
 			}
 		}
@@ -86,11 +92,11 @@ namespace myl::input {
 		fire_event(e);
 	}
 
-	state get_key_state(key_code a_code) {
+	state key_state(key_code a_code) {
 		return internal_states::s_key_states[a_code];
 	}
 
-	state get_previous_key_state(key_code a_code) {
+	state previous_key_state(key_code a_code) {
 		return internal_states::s_previous_key_states[a_code];
 	}
 
@@ -114,32 +120,32 @@ namespace myl::input {
 			internal_states::s_key_states[a_code] == state::up;
 	}
 
-	state get_mouse_button_state(mouse_code a_code) {
-		return internal_states::s_mouse_button_states[a_code];
+	state mouse_button_state(mouse_code a_code) {
+		return (internal_states::s_mouse_button_states & a_code) ? state::down : state::up;
 	}
 
-	state get_previous_mouse_button_state(mouse_code a_code) {
-		return internal_states::s_previous_mouse_button_states[a_code];
+	state previous_mouse_button_state(mouse_code a_code) {
+		return (internal_states::s_previous_mouse_button_states & a_code) ? state::down : state::up;
 	}
 
 	bool mouse_button_down(mouse_code a_code) {
-		return internal_states::s_mouse_button_states[a_code] == state::down;
+		return (internal_states::s_mouse_button_states & a_code) == 1;
 	}
 
 	bool mouse_button_up(mouse_code a_code) {
-		return internal_states::s_mouse_button_states[a_code] == state::up;
+		return (internal_states::s_mouse_button_states & a_code) == 0;
 	}
 
 	bool mouse_button_pressed(mouse_code a_code) {
 		return
-			internal_states::s_previous_mouse_button_states[a_code] == state::up &&
-			internal_states::s_mouse_button_states[a_code] == state::down;
+			(internal_states::s_previous_mouse_button_states & a_code) == 0 &&
+			(internal_states::s_mouse_button_states & a_code) == 1;
 	}
 
 	bool mouse_button_released(mouse_code a_code) {
 		return
-			internal_states::s_previous_mouse_button_states[a_code] == state::down &&
-			internal_states::s_mouse_button_states[a_code] == state::up;
+			(internal_states::s_previous_mouse_button_states & a_code) == 1 &&
+			(internal_states::s_mouse_button_states & a_code) == 0;
 	}
 
 	f32vec2 cursor_position() {

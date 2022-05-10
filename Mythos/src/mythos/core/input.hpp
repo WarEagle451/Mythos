@@ -16,8 +16,8 @@ namespace myl::input {
 	struct internal_states {
 		static state s_previous_key_states[key::size];
 		static state s_key_states[key::size];
-		static state s_previous_mouse_button_states[mouse_button::size];
-		static state s_mouse_button_states[mouse_button::size];
+		static mouse_code s_previous_mouse_button_states;
+		static mouse_code s_mouse_button_states;
 		static f32vec2 s_previous_cursor_position;
 		static f32vec2 s_cursor_position;
 
@@ -27,21 +27,23 @@ namespace myl::input {
 
 	//@brief Called by the platform to update a key state
 	void process_key(key_code, state, u32);
-	//@brief Called by the platform to update a mouse button state
-	void process_mouse_button(mouse_code, state);
+	//@brief Called by the platform to update mouses button state. Can handle multiple buttons at once
+	void process_mouse_buttons(mouse_code, state);
 	//@brief Called by the platform to update cursor position
 	void process_cursor_position(const f32vec2&);
 	void process_mouse_wheel(const f32vec2&);
 
-	MYL_API MYL_NO_DISCARD state get_key_state(key_code);
-	MYL_API MYL_NO_DISCARD state get_previous_key_state(key_code);
+	MYL_API MYL_NO_DISCARD state key_state(key_code);
+	MYL_API MYL_NO_DISCARD state previous_key_state(key_code);
 	MYL_API MYL_NO_DISCARD bool key_down(key_code);
 	MYL_API MYL_NO_DISCARD bool key_up(key_code);
+	//@brief Keys like shift, control and alt don't hold states
 	MYL_API MYL_NO_DISCARD bool key_pressed(key_code);
+	//@brief Keys like shift, control and alt don't hold states
 	MYL_API MYL_NO_DISCARD bool key_released(key_code);
 
-	MYL_API MYL_NO_DISCARD state get_mouse_button_state(mouse_code);
-	MYL_API MYL_NO_DISCARD state get_previous_mouse_button_state(mouse_code);
+	MYL_API MYL_NO_DISCARD state mouse_button_state(mouse_code);
+	MYL_API MYL_NO_DISCARD state previous_mouse_button_state(mouse_code);
 	MYL_API MYL_NO_DISCARD bool mouse_button_down(mouse_code);
 	MYL_API MYL_NO_DISCARD bool mouse_button_up(mouse_code);
 	MYL_API MYL_NO_DISCARD bool mouse_button_pressed(mouse_code);

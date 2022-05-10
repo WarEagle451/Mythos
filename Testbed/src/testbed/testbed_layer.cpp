@@ -11,12 +11,22 @@
 
 namespace tb {
 	static bool mouse_pressed(myl::event_mouse_pressed& e) {
-		MYL_CORE_TRACE("mouse pressed: {}", static_cast<i32>(e.button()));
+		MYL_CORE_TRACE("mouse pressed: {}", e.buttons());
 		return true;
 	}
 
 	static bool mouse_released(myl::event_mouse_released& e) {
-		MYL_CORE_TRACE("mouse released: {}", static_cast<i32>(e.button()));
+		MYL_CORE_TRACE("mouse released: {}", e.buttons());
+		return true;
+	}
+
+	static bool key_released(myl::event_key_released& e) {
+		MYL_CORE_TRACE("Key '{}' up", e.key());
+		return true;
+	}
+
+	static bool key_pressed(myl::event_key_pressed& e) {
+		MYL_CORE_TRACE("Key '{}' down", e.key());
 		return true;
 	}
 
@@ -41,6 +51,8 @@ namespace tb {
 		myl::event_dispatcher dispatcher(a_event);
 		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
 		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
+		dispatcher.dispatch<myl::event_key_pressed>(key_pressed);
+		dispatcher.dispatch<myl::event_key_released>(key_released);
 	}
 
 	void testbed_layer::update(myl::timestep ts) {
