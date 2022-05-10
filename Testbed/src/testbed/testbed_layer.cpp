@@ -8,6 +8,7 @@
 #include <mythos/input.hpp>
 
 #include "utils/keys_buttons_string.hpp"
+#include "test_manager.hpp"
 
 namespace tb {
 	static bool mouse_pressed(myl::event_mouse_pressed& e) {
@@ -30,6 +31,10 @@ namespace tb {
 		return true;
 	}
 
+	static bool add_numbers() {
+		return 9 + 3 == 12;
+	}
+
 	testbed_layer::testbed_layer()
 		: myl::layer("Testbed") {
 		MYL_CORE_TRACE("Testbed layer created");
@@ -41,6 +46,11 @@ namespace tb {
 
 	void testbed_layer::on_attach() {
 		MYL_CORE_TRACE("Testbed layer on_attach");
+
+		test_manager tests;
+		/// MYTodo: Math tests
+
+		tests.run();
 	}
 
 	void testbed_layer::on_detach() {
