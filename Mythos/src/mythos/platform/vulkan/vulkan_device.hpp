@@ -41,7 +41,7 @@ namespace myl::vulkan {
 		swapchain_support_info m_swapchain_support_info;
 
 		queue_family_indices m_queue_indices;
-		VkQueue m_graphics_queue; /// MYBug: Apparently Something funky goes on with AMD cards; Refer to comments in Kohi 21
+		VkQueue m_graphics_queue;
 		VkQueue m_present_queue;
 		VkQueue m_transfer_queue;
 

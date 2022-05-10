@@ -82,9 +82,17 @@ namespace myl::vulkan {
 		for (u32 i = 0; i != queue_family_count; ++i) { // Checking what each queue supports
 			u8 current_transfer_score = 0;
 
-			if (queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			if (indices.graphics == std::numeric_limits<u32>::max() && queue_families[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 				indices.graphics = i;
 				++current_transfer_score;
+
+				// If the grahpics queue is also a present queue (AMD cards), this prioritizes grouping of the 2
+				VkBool32 supports_present = VK_FALSE;
+				MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
+				if (supports_present) {
+					indices.present = i;
+					++current_transfer_score;
+				}
 			}
 
 			if (queue_families[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
@@ -99,6 +107,21 @@ namespace myl::vulkan {
 					indices.transfer = i;
 				}
 			}
+
+			// If a present queue hasn't been found iterate again and take the first one
+			// Should only happen if there is a queue that supports graphics but not present
+			if (indices.present == std::numeric_limits<u32>::max())
+				for (u32 i = 0; i != queue_family_count; ++i) {
+					VkBool32 supports_present = VK_FALSE;
+					MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
+					if (supports_present) {
+						indices.present = i;
+
+						if (supports_present != indices.graphics) // This is just here for troubleshooting purposes
+							MYL_CORE_WARN("Warning: Different queue index used for present vs graphics: {}", i);
+						break;
+					}
+				}
 
 			VkBool32 supports_present = VK_FALSE;
 			MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
@@ -123,19 +146,19 @@ namespace myl::vulkan {
 			return false;
 		}
 
-		*a_queue_indices = find_queue_family_indices(a_device);
+		auto queue_indices = find_queue_family_indices(a_device);
 		MYL_CORE_INFO("Graphics | Present | Compute | Transfer | Name");
 		MYL_CORE_INFO("{:<8} | {:<7} | {:<7} | {:<8} | {}",
-			a_queue_indices->graphics != std::numeric_limits<u32>::max(),
-			a_queue_indices->present != std::numeric_limits<u32>::max(),
-			a_queue_indices->compute != std::numeric_limits<u32>::max(),
-			a_queue_indices->transfer != std::numeric_limits<u32>::max(),
+			queue_indices.graphics != std::numeric_limits<u32>::max(),
+			queue_indices.present != std::numeric_limits<u32>::max(),
+			queue_indices.compute != std::numeric_limits<u32>::max(),
+			queue_indices.transfer != std::numeric_limits<u32>::max(),
 			std::string(a_properties.deviceName));
 
-		if (meets_requirements(a_requirements, *a_queue_indices)) {
+		if (meets_requirements(a_requirements, queue_indices)) {
 			MYL_CORE_INFO("{} meets requirements", std::string(a_properties.deviceName));
 			MYL_CORE_TRACE("        | Graphics | Present | Compute | Transfer | Name");
-			MYL_CORE_TRACE("Indices | {:<8} | {:<7} | {:<7} | {:<8} | {}", a_queue_indices->graphics, a_queue_indices->present, a_queue_indices->compute, a_queue_indices->transfer, std::string(a_properties.deviceName));
+			MYL_CORE_TRACE("Indices | {:<8} | {:<7} | {:<7} | {:<8} | {}", queue_indices.graphics, queue_indices.present, queue_indices.compute, queue_indices.transfer, std::string(a_properties.deviceName));
 
 			auto device_swapchain_support = query_swapchain_support(a_device);
 			if (device_swapchain_support.formats.size() < 1 || device_swapchain_support.present_modes.size() < 1) {
@@ -175,6 +198,7 @@ namespace myl::vulkan {
 			}
 
 			m_swapchain_support_info = device_swapchain_support;
+			*a_queue_indices = queue_indices;
 			return true;
 		}
 
