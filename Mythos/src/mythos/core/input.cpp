@@ -23,8 +23,9 @@ namespace myl::input {
 		s_previous_mouse_button_states = mouse_button::none;
 		s_mouse_button_states = mouse_button::none;
 	}
-	/// MYBug: highly doubt this works right
-	void internal_states::update() { /// MYTodo: Make sure this update function works correctly (Does the current state get reset? and should it?)
+
+	/// MYBug: If the window loses focus and a key or mouse button is down when the window regains focus it will stay down until the key or button event up happens
+	void internal_states::update() {
 		*s_previous_key_states = *s_key_states;
 		s_previous_mouse_button_states = s_mouse_button_states;
 		s_previous_cursor_position = s_cursor_position;
@@ -121,31 +122,31 @@ namespace myl::input {
 	}
 
 	state mouse_button_state(mouse_code a_code) {
-		return (internal_states::s_mouse_button_states & a_code) ? state::down : state::up;
+		return (internal_states::s_mouse_button_states & a_code) == a_code ? state::down : state::up;
 	}
 
 	state previous_mouse_button_state(mouse_code a_code) {
-		return (internal_states::s_previous_mouse_button_states & a_code) ? state::down : state::up;
+		return (internal_states::s_previous_mouse_button_states & a_code) == a_code ? state::down : state::up;
 	}
 
 	bool mouse_button_down(mouse_code a_code) {
-		return (internal_states::s_mouse_button_states & a_code) == 1;
+		return (internal_states::s_mouse_button_states & a_code) == a_code;
 	}
 
 	bool mouse_button_up(mouse_code a_code) {
-		return (internal_states::s_mouse_button_states & a_code) == 0;
+		return (~internal_states::s_mouse_button_states & a_code) == a_code;
 	}
 
 	bool mouse_button_pressed(mouse_code a_code) {
 		return
-			(internal_states::s_previous_mouse_button_states & a_code) == 0 &&
-			(internal_states::s_mouse_button_states & a_code) == 1;
+			(~internal_states::s_previous_mouse_button_states & a_code) == a_code && // up
+			(internal_states::s_mouse_button_states & a_code) == a_code; // down
 	}
 
 	bool mouse_button_released(mouse_code a_code) {
 		return
-			(internal_states::s_previous_mouse_button_states & a_code) == 1 &&
-			(internal_states::s_mouse_button_states & a_code) == 0;
+			(internal_states::s_previous_mouse_button_states & a_code) == a_code && // down
+			(~internal_states::s_mouse_button_states & a_code) == a_code; // up
 	}
 
 	f32vec2 cursor_position() {

@@ -1,8 +1,6 @@
 #pragma once
 #include <mythos/defines.hpp>
 
-#include <string>
-
 namespace myl {
 	using mouse_code = u16;
 	namespace mouse_button {

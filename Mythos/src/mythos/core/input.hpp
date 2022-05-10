@@ -42,11 +42,17 @@ namespace myl::input {
 	//@brief Keys like shift, control and alt don't hold states
 	MYL_API MYL_NO_DISCARD bool key_released(key_code);
 
+	//@brief Capable of checking multiple buttons at once
 	MYL_API MYL_NO_DISCARD state mouse_button_state(mouse_code);
+	//@brief Capable of checking multiple buttons at once
 	MYL_API MYL_NO_DISCARD state previous_mouse_button_state(mouse_code);
+	//@brief Capable of checking multiple buttons at once
 	MYL_API MYL_NO_DISCARD bool mouse_button_down(mouse_code);
+	//@brief Capable of checking multiple buttons at once
 	MYL_API MYL_NO_DISCARD bool mouse_button_up(mouse_code);
+	//@brief Capable of checking multiple buttons at once
 	MYL_API MYL_NO_DISCARD bool mouse_button_pressed(mouse_code);
+	//@brief Capable of checking multiple buttons at once
 	MYL_API MYL_NO_DISCARD bool mouse_button_released(mouse_code);
 
 	MYL_API MYL_NO_DISCARD f32vec2 cursor_position();
