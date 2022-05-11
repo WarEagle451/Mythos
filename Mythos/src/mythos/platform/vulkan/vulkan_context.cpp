@@ -26,8 +26,9 @@ namespace myl::vulkan {
 			vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 			MYL_CORE_INFO("Destroyed Vulkan surface");
 		}
-
+#ifdef MYL_ENABLE_VALIDATION_LAYERS
 		destroy_debug_messenger();
+#endif
 		destroy_instance();
 	}
 
