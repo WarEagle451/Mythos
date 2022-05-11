@@ -4,6 +4,8 @@
 
 #include <mythos/event/app_event.hpp>
 
+#include <mythos/timer.hpp>
+
 #include <string>
 #include <memory>
 
@@ -25,7 +27,9 @@ namespace myl {
 
 		bool m_running = true;
 		bool m_suspended = false; // AKA minimized
-		f64 m_last_frame_time = 0.0;
+
+		high_resolution_timer m_clock;
+		std::chrono::nanoseconds m_last_frame_time;
 	public:
 		struct config {
 			window::config window{};

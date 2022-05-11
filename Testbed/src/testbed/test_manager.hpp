@@ -22,7 +22,7 @@ namespace tb {
 			u32 failed = 0;
 
 			for (auto& t : m_tests) {
-				myl::timer timer;
+				myl::high_resolution_timer timer;
 				bool result = t.test();
 				auto time = timer.elapsed_pretty<std::chrono::milliseconds>();
 

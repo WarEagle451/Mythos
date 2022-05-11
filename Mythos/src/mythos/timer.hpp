@@ -12,27 +12,30 @@ namespace myl {
 		a_unit.count();
 	};
 
+	template<typename Clock>
 	class timer {
 	public:
-		using clock = std::chrono::high_resolution_clock;
+		using clock = Clock;
 	private:
 		std::chrono::time_point<clock> m_start;
 	public:
 		timer()
 			: m_start(clock::now()) {}
 
-		void reset() noexcept { m_start = clock::now(); }
+		void reset() { m_start = clock::now(); }
 
 		template<time_unit TimeUnit = std::chrono::nanoseconds>
-		u64 elapsed() const {
+		TimeUnit elapsed() const {
 			auto time = clock::now() - m_start;
-			return std::chrono::duration_cast<TimeUnit>(time).count();
+			return std::chrono::duration_cast<TimeUnit>(time);
 		}
 
-		template<time_unit TimeUnit>
+		template<time_unit TimeUnit = std::chrono::seconds>
 		f32 elapsed_pretty() const {
 			auto time = clock::now() - m_start;
 			return std::chrono::duration<f32, TimeUnit::period>(time).count();
 		}
 	};
+
+	using high_resolution_timer = timer<std::chrono::high_resolution_clock>;
 }

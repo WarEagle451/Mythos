@@ -2,10 +2,6 @@
 #include <mythos/defines.hpp>
 
 namespace myl {
-	void setup_clock();
-	// @return Seconds since application start
-	MYL_API MYL_NO_DISCARD f64 get_time();
-
 	struct timestep {
 	private:
 		f64 time;

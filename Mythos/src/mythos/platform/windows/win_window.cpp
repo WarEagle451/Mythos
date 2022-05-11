@@ -2,7 +2,6 @@
 #ifdef MYL_PLATFORM_WINDOWS
 #	include <mythos/core/except.hpp>
 #	include <mythos/core/log.hpp>
-#	include <mythos/core/timestep.hpp>
 #	include <mythos/core/key_codes.hpp>
 #	include <mythos/core/mouse_codes.hpp>
 #	include <mythos/event/app_event.hpp>
@@ -335,9 +334,6 @@ namespace myl::windows {
 		// If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
 		// If initially mazimized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
-
-		// Clock setup
-		setup_clock();
 
 		// Setup event callbacks
 		myl::set_event_callback(m_event_callback); /// MYTodo: Should the application set this up maybe?
