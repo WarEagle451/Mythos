@@ -7,7 +7,6 @@
 namespace myl::vulkan {
 	swapchain::swapchain(context& a_context, u32 a_width, u32 a_height)
 		: m_context(a_context)
-		, m_max_frames_in_flight(2) // Triple buffering
 		, m_current_frame(0) {
 		create_swapchain(a_width, a_height);
 		MYL_CORE_INFO("Created Vulkan Swapchain");
@@ -150,6 +149,8 @@ namespace myl::vulkan {
 		u32 image_count = swapchain_support.capabilites.minImageCount + 1;
 		if (swapchain_support.capabilites.maxImageCount > 0 && image_count > swapchain_support.capabilites.maxImageCount) // Safe guard
 			image_count = swapchain_support.capabilites.maxImageCount;
+
+		m_max_frames_in_flight = image_count - 1; /// MYTodo Test;
 
 		VkSwapchainCreateInfoKHR create_info{
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
