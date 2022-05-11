@@ -57,11 +57,14 @@ namespace myl {
 			m_window->update();
 			
 			if (!m_suspended) {
-				static constexpr f64 target_frame_time = 1.0 / 60.0; /// MYHack: This should be the vsync number
-				f64 time_remaining = target_frame_time - std::chrono::duration<f64, std::chrono::seconds::period>(m_clock.elapsed() - m_last_frame_time).count();
-				while (time_remaining > 0) /// MYHack: Do vsync the right way, this way is resource intensive
-					time_remaining = target_frame_time - std::chrono::duration<f64, std::chrono::seconds::period>(m_clock.elapsed() - m_last_frame_time).count();
-				MYL_CORE_DEBUG("FPS: {}", 1.0 / (std::chrono::duration<f64, std::chrono::seconds::period>(m_clock.elapsed() - m_last_frame_time).count()));
+				static constexpr std::chrono::nanoseconds target_frame_time(static_cast<i64>((1.0 / 60.0) * 1'000'000'000));
+				std::chrono::nanoseconds time_remaining = target_frame_time - (m_clock.elapsed() - m_last_frame_time);
+				while (time_remaining.count() > 0)
+					time_remaining = target_frame_time - (m_clock.elapsed() - m_last_frame_time);
+				/// MYBug: Why is this limiting at ~33 fps
+				///if (time_remaining.count() > 0)
+				///	std::this_thread::sleep_for(time_remaining);
+				MYL_CORE_WARN("FPS: {}", 1.0 / (std::chrono::duration<f64, std::chrono::seconds::period>(m_clock.elapsed() - m_last_frame_time).count()));
 			}
 		}
 	}
