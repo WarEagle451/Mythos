@@ -15,5 +15,3 @@
 /// is power of 2
 /// 
 /// Compare the sized of vector by comparing their dot products
-/// 
-/// MYTodo: Need to write tests for all the functions

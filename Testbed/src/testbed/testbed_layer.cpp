@@ -48,8 +48,6 @@ namespace tb {
 		MYL_CORE_TRACE("Testbed layer on_attach");
 
 		test_manager tests;
-		/// MYTodo: Math tests
-
 		tests.run();
 	}
 

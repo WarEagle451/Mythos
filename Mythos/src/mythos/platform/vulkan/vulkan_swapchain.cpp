@@ -150,7 +150,7 @@ namespace myl::vulkan {
 		if (swapchain_support.capabilites.maxImageCount > 0 && image_count > swapchain_support.capabilites.maxImageCount) // Safe guard
 			image_count = swapchain_support.capabilites.maxImageCount;
 
-		m_max_frames_in_flight = image_count - 1; /// MYTodo Test;
+		m_max_frames_in_flight = image_count - 1;
 
 		VkSwapchainCreateInfoKHR create_info{
 			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
@@ -260,7 +260,7 @@ namespace myl::vulkan {
 
 	void swapchain::destroy_image_views() {
 		// Only destory the views, not the images, since those are owned by the swapchain and are destroyed when it is
-		for (auto& view : m_views) /// MYTodo: How does above make any sense?
+		for (auto& view : m_views)
 			vkDestroyImageView(m_context.device().logical(), view, nullptr);
 	}
 }

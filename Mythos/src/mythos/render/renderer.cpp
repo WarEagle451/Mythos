@@ -1,10 +1,21 @@
 #include "renderer.hpp"
 
+#include <mythos/platform/detection.hpp>
+
 namespace myl::render {
 	std::unique_ptr<backend> renderer::s_backend = nullptr;
-	api renderer::s_api = api::vulkan; /// MYTodo: Needs to be able to detect render api
+	api renderer::s_api = api::none;
 
-	void renderer::init() {
+	static constexpr api choose_renderer_api() {
+#ifdef MYL_PLATFORM_WINDOWS
+		return api::vulkan;
+#else
+		/// MYTodo: Should attempt opengl as last resort
+#endif
+	}
+
+	void renderer::init(render::api a_api) {
+		s_api = a_api == api::none ? choose_renderer_api() : a_api;
 		s_backend = backend::create(s_api);
 	}
 

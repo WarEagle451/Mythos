@@ -15,6 +15,8 @@ namespace tb {
 	class test_manager {
 		std::vector<test_entry> m_tests;
 	public:
+		test_manager();
+
 		void add(const char* a_name, const std::function<bool()>& a_func) { m_tests.emplace_back(a_name, a_func); }
 
 		void run() const {

@@ -4,6 +4,15 @@
 #include <mythos/event/mouse_event.hpp>
 
 namespace myl::input {
+	struct internal_states {
+		static state s_previous_key_states[key::size];
+		static state s_key_states[key::size];
+		static mouse_code s_previous_mouse_button_states;
+		static mouse_code s_mouse_button_states;
+		static f32vec2 s_previous_cursor_position;
+		static f32vec2 s_cursor_position;
+	};
+
 	state internal_states::s_previous_key_states[key::size];
 	state internal_states::s_key_states[key::size];
 	mouse_code internal_states::s_previous_mouse_button_states;
@@ -11,24 +20,25 @@ namespace myl::input {
 	f32vec2 internal_states::s_previous_cursor_position;
 	f32vec2 internal_states::s_cursor_position;
 
-	void internal_states::init() {
-		s_previous_cursor_position = { 0, 0 };
-		s_cursor_position = { 0, 0 };
+	void init() {
+		internal_states::s_previous_cursor_position = { 0, 0 };
+		internal_states::s_cursor_position = { 0, 0 };
 
 		for (u32 i = 0; i != key::size; ++i) {
-			s_previous_key_states[i] = state::up;
-			s_key_states[i] = state::up;
+			internal_states::s_previous_key_states[i] = state::up;
+			internal_states::s_key_states[i] = state::up;
 		}
 
-		s_previous_mouse_button_states = mouse_button::none;
-		s_mouse_button_states = mouse_button::none;
+		internal_states::s_previous_mouse_button_states = mouse_button::none;
+		internal_states::s_mouse_button_states = mouse_button::none;
 	}
 
 	/// MYBug: If the window loses focus and a key or mouse button is down when the window regains focus it will stay down until the key or button event up happens
-	void internal_states::update() {
-		*s_previous_key_states = *s_key_states;
-		s_previous_mouse_button_states = s_mouse_button_states;
-		s_previous_cursor_position = s_cursor_position;
+	/// On refocus maybe query the platform to update all input states
+	void update() {
+		*internal_states::s_previous_key_states = *internal_states::s_key_states;
+		internal_states::s_previous_mouse_button_states = internal_states::s_mouse_button_states;
+		internal_states::s_previous_cursor_position = internal_states::s_cursor_position;
 	}
 
 	void process_key(key_code a_code, state a_state, u32 a_repeat_count) {

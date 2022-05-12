@@ -4,24 +4,14 @@
 
 #include <mythos/math/vec2.hpp>
 
-/// MYTodo: Should this really be in core?
 /// MYTodo: Key mods
 /// MYTodo: Track toggled keys
 
 namespace myl::input {
 	enum class state { up, down };
 
-	struct internal_states { /// MYTodo: Move this into a different file
-		static state s_previous_key_states[key::size];
-		static state s_key_states[key::size];
-		static mouse_code s_previous_mouse_button_states;
-		static mouse_code s_mouse_button_states;
-		static f32vec2 s_previous_cursor_position;
-		static f32vec2 s_cursor_position;
-
-		static void init();
-		static void update();
-	};
+	void init();
+	void update();
 
 	//@brief Called by the platform to update a key state
 	void process_key(key_code, state, u32);

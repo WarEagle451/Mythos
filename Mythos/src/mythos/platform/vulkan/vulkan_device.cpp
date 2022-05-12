@@ -289,7 +289,7 @@ namespace myl::vulkan {
 		if (!transfer_shares_graphics_queue)
 			++index_count;
 
-		std::vector<u32> indices(index_count); /// MYBug: in livestream he changed this to array[32] why?
+		std::vector<u32> indices(index_count);
 		u8 index = 0;
 		indices[index++] = m_queue_indices.graphics;
 		if (!present_shares_graphics_queue)
@@ -297,7 +297,7 @@ namespace myl::vulkan {
 		if (!transfer_shares_graphics_queue)
 			indices[index++] = m_queue_indices.transfer;
 
-		std::vector<VkDeviceQueueCreateInfo> queue_create_infos(index_count); /// MYBug: in livestream he changed this to array[32] why?
+		std::vector<VkDeviceQueueCreateInfo> queue_create_infos(index_count);
 		for (u32 i = 0; i != index_count; ++i) {
 			queue_create_infos[i].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
 			queue_create_infos[i].queueFamilyIndex = indices[i];

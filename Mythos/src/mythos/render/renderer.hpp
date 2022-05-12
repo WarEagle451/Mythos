@@ -17,7 +17,8 @@ namespace myl::render {
 		static api s_api;
 		static statistics s_stats;
 	public:
-		static void init();
+		//@brief Will auto detect api if none is selected
+		static void init(api = api::none);
 		static void shutdown();
 
 		static MYL_NO_DISCARD backend* backend() { return s_backend.get(); }

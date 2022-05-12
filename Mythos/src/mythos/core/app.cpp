@@ -20,7 +20,7 @@ namespace myl {
 
 		m_running = true;
 
-		input::internal_states::init();
+		input::init();
 
 		m_window = window::create(a_config.window);
 		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: Why pass this though window? why not just set it from here?
@@ -51,7 +51,7 @@ namespace myl {
 				for (auto& l : m_layer_stack) l->render();
 
 				render::renderer::draw_frame();
-				input::internal_states::update();
+				input::update();
 			}
 
 			m_window->update();
@@ -64,7 +64,6 @@ namespace myl {
 				/// MYBug: Why is this limiting at ~33 fps
 				///if (time_remaining.count() > 0)
 				///	std::this_thread::sleep_for(time_remaining);
-				MYL_CORE_WARN("FPS: {}", 1.0 / (std::chrono::duration<f64, std::chrono::seconds::period>(m_clock.elapsed() - m_last_frame_time).count()));
 			}
 		}
 	}

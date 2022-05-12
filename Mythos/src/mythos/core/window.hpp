@@ -8,7 +8,7 @@
 namespace myl {
 	class window {
 	public:
-		struct config { /// MYTodo: This can also have things like fullscreen, vsync, etc: basically anything glfw would have as window hints
+		struct config {
 			i32vec2 postion = { 0, 0 };
 			i32vec2 size = { 1280, 720 };
 			std::string name = "Mythos Application";
