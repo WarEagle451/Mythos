@@ -7,8 +7,11 @@
 
 #include <mythos/input.hpp>
 
-#include "utils/keys_buttons_string.hpp"
+#include <testbed/utils/keys_buttons_string.hpp>
+
 #include "test_manager.hpp"
+
+#define TESTBED_RUN_TESTS
 
 namespace tb {
 	static bool mouse_pressed(myl::event_mouse_pressed& e) {
@@ -46,9 +49,10 @@ namespace tb {
 
 	void testbed_layer::on_attach() {
 		MYL_CORE_TRACE("Testbed layer on_attach");
-
+#ifdef TESTBED_RUN_TESTS
 		test_manager tests;
 		tests.run();
+#endif
 	}
 
 	void testbed_layer::on_detach() {

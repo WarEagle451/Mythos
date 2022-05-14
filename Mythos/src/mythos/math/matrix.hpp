@@ -12,7 +12,7 @@
 namespace myl {
 	template<std::size_t R, std::size_t C, typename T>
 	MYL_NO_DISCARD constexpr typename mat<R, C, T>::transpose_type transpose(const mat<R, C, T>& a_mat) {
-		typename mat<R, C, T>::transpose_type transposed;
+		typename mat<R, C, T>::transpose_type transposed{};
 		for (std::size_t c = 0; c != C; ++c) // Tranverse columns
 			for (std::size_t r = 0; r != R; ++r) // Transverse rows
 				transposed[r][c] = a_mat[c][r];

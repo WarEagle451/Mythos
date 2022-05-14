@@ -68,7 +68,7 @@ namespace myl {
 
 	template<typename T>
 	MYL_NO_DISCARD constexpr vec3<T> forward(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
-		return normalize(-{ mat[0][2], mat[1][2], mat[2][2] });
+		return normalize(-vec3<T>{ mat[0][2], mat[1][2], mat[2][2] });
 	}
 
 	template<typename T>
@@ -83,12 +83,12 @@ namespace myl {
 
 	template<typename T>
 	MYL_NO_DISCARD constexpr vec3<T> down(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
-		return normalize(-{ mat[0][1], mat[1][1], mat[2][1] });
+		return normalize(-vec3<T>{ mat[0][1], mat[1][1], mat[2][1] });
 	}
 
 	template<typename T>
 	MYL_NO_DISCARD constexpr vec3<T> left(const mat4x4<T>& mat) { /// MYTodo: Make sure this is good for a left handed cord system
-		return normalize(-{ mat[0][0], mat[1][0], mat[2][0] });
+		return normalize(-vec3<T>{ mat[0][0], mat[1][0], mat[2][0] });
 	}
 
 	template<typename T>
