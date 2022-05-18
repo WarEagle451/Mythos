@@ -30,6 +30,8 @@ namespace myl {
 
 		high_resolution_timer m_clock;
 		std::chrono::nanoseconds m_last_frame_time;
+
+		event_callback m_event_callback; // event callback needs to refer to a member
 	public:
 		struct config {
 			window::config window{};

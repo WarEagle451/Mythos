@@ -312,6 +312,8 @@ namespace myl::windows {
 		window_style |= WS_MAXIMIZEBOX;
 		window_style |= WS_THICKFRAME;
 
+		/// MYTodo: When it is minimized it does not show the the buttons
+
 		// Obtain size of the border
 		RECT border_rect = { 0, 0, 0, 0 };
 		AdjustWindowRectEx(&border_rect, window_style, 0, window_ex_style);
@@ -329,14 +331,11 @@ namespace myl::windows {
 			throw core_runtime_error("Windows window creation failed");
 
 		// Show the window
-		bool should_activate = true; /// MYTodo: If the window should not accept input this should be false
+		bool should_activate = true;
 		i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
 		// If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
 		// If initially mazimized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
-
-		// Setup event callbacks
-		myl::set_event_callback(m_event_callback); /// MYTodo: Should the application set this up maybe?
 	}
 
 	window::~window() {

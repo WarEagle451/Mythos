@@ -1,13 +1,12 @@
 #pragma once
 #include <mythos/defines.hpp>
-
-#include <numbers>
+#include <mythos/constants.hpp>
 
 #include <cmath> /// MYTodo: Get rid of this
 
 namespace myl {
-	template<typename T> MYL_NO_DISCARD constexpr T degrees(T radian) { return (static_cast<T>(180) / std::numbers::pi_v<T>) * radian; }
-	template<typename T> MYL_NO_DISCARD constexpr T radians(T degree) { return degree * (std::numbers::pi_v<T> / static_cast<T>(180)); }
+	template<typename T> MYL_NO_DISCARD constexpr T degrees(T radian) { return (static_cast<T>(180) / constants::pi<T>) * radian; }
+	template<typename T> MYL_NO_DISCARD constexpr T radians(T degree) { return degree * (constants::pi<T> / static_cast<T>(180)); }
 
 	template<typename T> MYL_NO_DISCARD constexpr T sin(T radian) { return std::sin(radian); }
 	template<typename T> MYL_NO_DISCARD constexpr T cos(T radian) { return std::cos(radian); }

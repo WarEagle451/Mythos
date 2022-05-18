@@ -6,7 +6,7 @@
 
 #include <string>
 
-namespace myl { /// MYTodo: All layers should have a way to block events
+namespace myl {
 	class layer {
 	protected:
 		std::string m_name;

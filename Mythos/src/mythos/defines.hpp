@@ -1,17 +1,4 @@
 #pragma once
-using u8 = unsigned char;
-using u16 = unsigned short;
-using u32 = unsigned int;
-using u64 = unsigned long long;
-
-using i8 = signed char;
-using i16 = signed short;
-using i32 = signed int;
-using i64 = signed long long;
-
-using f32 = float;
-using f64 = double;
-
 #define MYL_VERSION_MAJOR 0
 #define MYL_VERSION_MINOR 0
 #define MYL_VERSION_PATCH 0
@@ -41,6 +28,19 @@ using f64 = double;
 #		define MYL_API
 #	endif
 #endif
+
+using u8 = unsigned char;
+using u16 = unsigned short;
+using u32 = unsigned int;
+using u64 = unsigned long long;
+
+using i8 = signed char;
+using i16 = signed short;
+using i32 = signed int;
+using i64 = signed long long;
+
+using f32 = float;
+using f64 = double;
 
 #if defined(__clang__) || defined(__gcc__)
 #	define MYL_STATIC_ASSERT _Static_assert

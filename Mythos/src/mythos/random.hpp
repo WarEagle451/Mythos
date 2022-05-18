@@ -4,7 +4,7 @@
 #include <random>
 #include <memory>
 
-namespace myl::random {
+namespace myl {
 	template<class Engine>
 	concept random_engine = requires(Engine a_engine, u32 a_u32) {
 		a_engine.discard(a_u32);

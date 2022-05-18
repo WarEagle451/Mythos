@@ -21,8 +21,6 @@ namespace myl {
 		//@return A pointer to the instance handle of a window
 		MYL_API MYL_NO_DISCARD virtual void* native() const = 0;
 
-		virtual void set_event_callback(const event_callback&) = 0;
-
 		virtual void update() = 0;
 	};
 }

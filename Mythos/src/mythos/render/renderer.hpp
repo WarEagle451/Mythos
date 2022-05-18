@@ -4,9 +4,6 @@
 #include <mythos/defines.hpp>
 #include <mythos/core/app.hpp>
 
-/// MYTodo: Make renderer call backend and submit data to backend, this would prevent having to implement a custom renderer per backend
-/// MYTodo: When resizing the window as long as the window resize has not been let go things can go black, continously update this to allow it to clear the screen everytime
-
 namespace myl::render {
 	struct statistics {
 		u64 draw_calls = 0;

@@ -86,7 +86,7 @@ namespace myl::vulkan {
 				indices.graphics = i;
 				++current_transfer_score;
 
-				// If the grahpics queue is also a present queue (AMD cards), this prioritizes grouping of the 2
+				// If the graphics queue is also a present queue (AMD cards), this prioritizes grouping of the 2
 				VkBool32 supports_present = VK_FALSE;
 				MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
 				if (supports_present) {

@@ -28,11 +28,6 @@ namespace myl {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr T lerp(const T a, const T b, const f32 percentage = .5f) {
-		return a + (b - a) * percentage;
-	}
-
-	template<typename T>
 	MYL_NO_DISCARD constexpr T clamp(const T value, const T min, const T max) {
 		return value < min ? min : value > max ? max : value;
 	}

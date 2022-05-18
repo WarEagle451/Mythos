@@ -30,10 +30,10 @@ namespace myl {
 			return std::chrono::duration_cast<TimeUnit>(time);
 		}
 
-		template<time_unit TimeUnit = std::chrono::seconds>
-		f32 elapsed_pretty() const {
+		template<time_unit TimeUnit = std::chrono::seconds, typename FloatT = f32>
+		FloatT elapsed_pretty() const {
 			auto time = clock::now() - m_start;
-			return std::chrono::duration<f32, TimeUnit::period>(time).count();
+			return std::chrono::duration<FloatT, TimeUnit::period>(time).count();
 		}
 	};
 

@@ -23,7 +23,8 @@ namespace myl {
 		input::init();
 
 		m_window = window::create(a_config.window);
-		m_window->set_event_callback(MYL_BIND_EVENT_FN(app::on_event)); /// MYTodo: Why pass this though window? why not just set it from here?
+		m_event_callback = MYL_BIND_EVENT_FN(app::on_event);
+		set_event_callback(m_event_callback);
 
 		render::renderer::init();
 		MYL_CORE_INFO("Application initialized");

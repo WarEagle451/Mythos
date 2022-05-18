@@ -29,7 +29,7 @@ namespace myl::vulkan {
 			return false;
 		}
 
-		/// MYTodo: Change to a MYNote: Kohi 21 31:30; Has swapchain recreating code here. But I don't think it's needed for the way I've done it
+		/// MYTodo: Kohi 21 31:30; Has swapchain recreating code here. But I don't think it's needed for the way I've done it
 		/// MYTodo: Should this be the only place where the swapchain can be recreated?
 
 		// Wait for the execution of the current frame to complete. The fence being free will allow this one to move on

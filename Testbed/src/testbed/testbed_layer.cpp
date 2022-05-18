@@ -4,7 +4,6 @@
 #include <mythos/core/app.hpp>
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/event/key_event.hpp>
-
 #include <mythos/input.hpp>
 
 #include <testbed/utils/keys_buttons_string.hpp>
@@ -32,10 +31,6 @@ namespace tb {
 	static bool key_pressed(myl::event_key_pressed& e) {
 		MYL_CORE_TRACE("Key '{}' pressed", key_to_string(e.key()));
 		return true;
-	}
-
-	static bool add_numbers() {
-		return 9 + 3 == 12;
 	}
 
 	testbed_layer::testbed_layer()

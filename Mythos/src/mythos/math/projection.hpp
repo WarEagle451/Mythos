@@ -5,7 +5,7 @@
 #include "geometric.hpp"
 
 namespace myl {
-	/// MYBug: Why does MSVC have an issue with near and far
+	/// MYBug: Why does MSVC have an issue with near and far names
 	template<typename T>
 	MYL_NO_DISCARD constexpr mat4x4<T> orthographic(T left, T right, T bottom, T top, T a_near, T a_far) {
 		T lr = static_cast<T>(1) / (left - right);
@@ -19,7 +19,7 @@ namespace myl {
 			{ (left + right) * lr, (bottom + top) * bt, (a_near + a_far) * nf, 1 });
 	}
 	
-	/// MYBug: Why does MSVC have an issue with near and far
+	/// MYBug: Why does MSVC have an issue with near and far names
 	template<typename T>
 	MYL_NO_DISCARD constexpr mat4x4<T> perspective(T fov_radians, T aspect_ratio, T a_near, T a_far) {
 		T half_tan_fov = tan(fov_radians * static_cast<T>(.5f));
