@@ -10,7 +10,7 @@ namespace myl::core {
 
 	void loggers::init() {
 		std::vector<spdlog::sink_ptr> sinks;
-
+#ifdef MYL_BUILD_DEBUG
 		auto color_sink = std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>();
 		color_sink->set_color(spdlog::level::trace, "\033[38;2;230;230;230m");
 		color_sink->set_color(spdlog::level::debug, "\033[38;2;240;130;20m");
@@ -20,10 +20,10 @@ namespace myl::core {
 		color_sink->set_color(spdlog::level::critical, "\033[38;2;0;0;0;48;2;200;50;50m");
 
 		sinks.emplace_back(color_sink);
-		sinks[0]->set_pattern("%^[%T] %n: %v%$");
-
+		sinks.back()->set_pattern("%^[%T] %n: %v%$");
+#endif
 		sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("mythos.log", true));
-		sinks[1]->set_pattern("[%T] [%L] %n: %v");
+		sinks.back()->set_pattern("[%T] [%L] %n: %v");
 
 		s_core = std::make_shared<spdlog::logger>("Mythos", sinks.begin(), sinks.end());
 		spdlog::register_logger(s_core);
