@@ -32,13 +32,13 @@ namespace myl::vulkan {
 		destroy_instance();
 	}
 
-	i32 context::find_memory_index(u32 a_type_filter, u32 a_property_flags) {
-		VkPhysicalDeviceMemoryProperties mem_properties{};
-		vkGetPhysicalDeviceMemoryProperties(m_device->physical(), &mem_properties);
+	u32 context::find_memory_index(u32 a_type_filter, VkMemoryPropertyFlags a_property_flags) {
+		VkPhysicalDeviceMemoryProperties properties{};
+		vkGetPhysicalDeviceMemoryProperties(m_device->physical(), &properties);
 
-		for (u32 i = 0; i != mem_properties.memoryTypeCount; ++i)
+		for (u32 i = 0; i != properties.memoryTypeCount; ++i)
 			// Check each memory type to see if its bit is set
-			if ((a_type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & a_property_flags) == a_property_flags)
+			if ((a_type_filter & (1 << i)) && (properties.memoryTypes[i].propertyFlags & a_property_flags) == a_property_flags)
 				return i;
 
 		MYL_CORE_WARN("Unable to find suitable memory type");
@@ -177,4 +177,27 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Destroyed debug messenger");
 	}
 #endif
+
+	void context::create_buffer(VkDeviceSize a_size, VkBufferUsageFlags a_usage, VkMemoryPropertyFlags a_properties, VkBuffer& a_buffer, VkDeviceMemory& a_memory) {
+		VkBufferCreateInfo buffer_info{
+			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+			.size = a_size,
+			.usage = a_usage,
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+		};
+
+		MYL_VK_CHECK(vkCreateBuffer, m_device->logical(), &buffer_info, nullptr, &a_buffer);
+
+		VkMemoryRequirements memory_reqs;
+		vkGetBufferMemoryRequirements(m_device->logical(), a_buffer, &memory_reqs);
+
+		VkMemoryAllocateInfo alloc_info{
+			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+			.allocationSize = memory_reqs.size,
+			.memoryTypeIndex = find_memory_index(memory_reqs.memoryTypeBits, a_properties)
+		};
+
+		MYL_VK_CHECK(vkAllocateMemory, m_device->logical(), &alloc_info, nullptr, &a_memory);
+		MYL_VK_CHECK(vkBindBufferMemory, m_device->logical(), a_buffer, a_memory, 0);
+	}
 }

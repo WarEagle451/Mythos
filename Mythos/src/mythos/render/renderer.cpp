@@ -20,6 +20,9 @@ namespace myl::render {
 	}
 
 	void renderer::shutdown() {
+		/// MYTodo: All shaders must be destroyed before backend is destroyed
+		/// MYTodo: Should probs unbind the shader being used if there is one
+
 		s_backend.reset(); // Deletes the backend
 	}
 

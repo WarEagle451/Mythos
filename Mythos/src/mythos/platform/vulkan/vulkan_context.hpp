@@ -40,11 +40,13 @@ namespace myl::vulkan {
 		MYL_NO_DISCARD device& device() { return *m_device; }
 		MYL_NO_DISCARD u32& image_index() { return m_image_index; }
 
-		MYL_NO_DISCARD i32 find_memory_index(u32 a_type_filter, u32 a_property_flags);
+		MYL_NO_DISCARD u32 find_memory_index(u32 a_type_filter, VkMemoryPropertyFlags a_property_flags);
 		MYL_NO_DISCARD std::vector<command_buffer>& graphics_command_buffers() { return m_graphics_command_buffers; }
 		MYL_NO_DISCARD command_buffer& get_graphics_command_buffer(u64 a_index) { return m_graphics_command_buffers[a_index]; }
 
 		void create_command_buffers(swapchain&);
+
+		void create_buffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory&);
 	private:
 		void create_instance();
 

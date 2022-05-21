@@ -10,6 +10,8 @@ namespace myl::vulkan {
 	class backend : public render::backend {
 		context m_context;
 		swapchain m_swapchain;
+
+		std::shared_ptr<render::shader> m_shader;
 	public:
 		backend();
 		~backend();
@@ -19,6 +21,8 @@ namespace myl::vulkan {
 
 		bool begin() override;
 		void end() override;
+
+		std::shared_ptr<render::shader> create_shader(const std::filesystem::path&) override;
 
 		void on_window_resize(const u32vec2&) override;
 	};

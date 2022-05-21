@@ -1,3 +1,4 @@
+#pragma once
 #include "vulkan_image.hpp"
 #include "vulkan_render_pass.hpp"
 #include "vulkan_framebuffer.hpp"

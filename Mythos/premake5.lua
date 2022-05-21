@@ -34,13 +34,31 @@ project "Mythos"
 		defines "MYL_BUILD_DEBUG"
 		runtime "Debug"
 		symbols "On"
+		
+		links {
+			"%{Library.ShaderC_Debug}",
+			"%{Library.SPIRV_Cross_Debug}",
+			"%{Library.SPIRV_Cross_GLSL_Debug}"
+		}
 	
 	filter "configurations:Release"
 		defines "MYL_BUILD_RELEASE"
 		runtime "Release"
 		optimize "On"
+		
+		links {
+			"%{Library.ShaderC_Release}",
+			"%{Library.SPIRV_Cross_Release}",
+			"%{Library.SPIRV_Cross_GLSL_Release}"
+		}
 
 	filter "configurations:Distribution"
 		defines "MYL_BUILD_DISTRIBUTION"
 		runtime "Release"
 		optimize "On"
+		
+		links {
+			"%{Library.ShaderC_Release}",
+			"%{Library.SPIRV_Cross_Release}",
+			"%{Library.SPIRV_Cross_GLSL_Release}"
+		}

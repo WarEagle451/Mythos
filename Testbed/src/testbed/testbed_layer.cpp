@@ -10,7 +10,7 @@
 
 #include "test_manager.hpp"
 
-#define TESTBED_RUN_TESTS
+///#define TESTBED_RUN_TESTS
 
 namespace tb {
 	static bool mouse_pressed(myl::event_mouse_pressed& e) {

@@ -1,4 +1,5 @@
 #include "vulkan_backend.hpp"
+#include "vulkan_shader.hpp"
 
 #include <mythos/core/log.hpp>
 
@@ -8,11 +9,17 @@ namespace myl::vulkan {
 		, m_swapchain(m_context, 800, 600) { /// MYTodo: Have a configurable size to start
 		m_context.create_command_buffers(m_swapchain);
 		MYL_CORE_INFO("Created command buffers");
+
+		m_shader = create_shader("resources/shaders/shader.glsl"); /// MYTodo: DO NOT HARD CODE THIS
+
 		MYL_CORE_INFO("Created Vulkan backend");
 	}
 
 	backend::~backend() { // C++ standard has members desructors called in opposite order of creation
 		vkDeviceWaitIdle(m_context.device().logical()); // Waits for all graphics operations to cease
+
+		m_shader.reset(); // Deleting shader object
+
 		MYL_CORE_INFO("Destroying Vulkan backend");
 	}
 
@@ -118,15 +125,16 @@ namespace myl::vulkan {
 
 		VkResult result = vkQueueSubmit(m_context.device().graphics_queue(), 1, &submit_info, m_swapchain.in_flight_fences()[m_swapchain.current_frame()]->handle());
 		if (result != VK_SUCCESS)
-			/// return false
 			MYL_CORE_ERROR("vkQueueSubmit failed, result: {}", VkResult_to_string(result));
 
 		command_buffer.update_submitted();
 		
 		// Give the image back to the swapchain
 		m_swapchain.present(m_context.device().graphics_queue(), m_context.device().present_queue(), m_swapchain.queue_complete_semaphores()[m_swapchain.current_frame()], m_context.image_index());
+	}
 
-		/// return true
+	std::shared_ptr<render::shader> backend::create_shader(const std::filesystem::path& a_file) {
+		return std::make_shared<vulkan::shader>(m_context, a_file, m_swapchain);
 	}
 
 	void backend::on_window_resize(const u32vec2& a_size) {
