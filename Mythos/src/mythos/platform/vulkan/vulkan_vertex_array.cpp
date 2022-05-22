@@ -41,7 +41,7 @@ namespace myl::vulkan {
 		MYL_CORE_ASSERT(m_vertex_count >= 3, "vertex count must be at least 3");
 
 		VkDeviceSize buffer_size = sizeof(a_vertices[0]) * m_vertex_count;
-		m_context.create_buffer(buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vertex_buffer, m_vertex_buffer_memory);
+		///m_context.create_buffer(buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, m_vertex_buffer, m_vertex_buffer_memory);
 
 		void* data;
 		vkMapMemory(m_context.device().logical(), m_vertex_buffer_memory, 0, buffer_size, 0, &data);

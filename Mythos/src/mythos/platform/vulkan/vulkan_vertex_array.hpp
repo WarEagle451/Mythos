@@ -5,12 +5,14 @@
 
 #include <vector>
 
-namespace myl::vulkan {
+/// MYTodo: Contains Index buffer and vertex buffer, I put vertex buffer and index buffer into context
+
+namespace myl::vulkan { /// MYBug: Redo this or get rid of it
 	class vertex_array {
 		context& m_context;
 		VkBuffer m_vertex_buffer;
+		u32 m_vertex_count;
 		VkDeviceMemory m_vertex_buffer_memory;
-		uint32_t m_vertex_count;
 	public:
 		struct vertex {
 			f32vec3 position;

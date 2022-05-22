@@ -2,6 +2,7 @@
 #include "vulkan_utils.hpp"
 #include "vulkan_platform.hpp"
 #include "vulkan_swapchain.hpp"
+#include "vulkan_vertex_array.hpp"
 
 #include <mythos/core/app.hpp>
 
@@ -15,9 +16,14 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Created Vulkan surface");
 		
 		m_device = std::make_unique<vulkan::device>(*this);
+
+		create_buffers();
 	}
 
 	context::~context() { // Must destory in opposite order of creation
+		m_vertex_buffer.reset();
+		m_index_buffer.reset();
+
 		destroy_command_buffers();
 
 		m_device.reset();
@@ -42,7 +48,7 @@ namespace myl::vulkan {
 				return i;
 
 		MYL_CORE_WARN("Unable to find suitable memory type");
-		return -1;
+		return -1; /// MYTodo: Need a better way to have a invalid number, macro maybe?
 	}
 
 	static MYL_NO_DISCARD std::vector<const char*> required_validation_layers() {
@@ -144,6 +150,25 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Destroyed command buffers");
 	}
 
+	/// MYTodo: The amount of memory allocated for geometry needs to be the same across all platforms
+	void context::create_buffers() {
+		VkMemoryPropertyFlagBits memory_prop_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+		/// MYTodo: This should be dynamic later on
+		const u64 vertex_buffer_size = sizeof(vertex_array::vertex) * 1024 * 1024;
+		m_vertex_buffer = std::make_unique<buffer>(*this, vertex_buffer_size,
+			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			memory_prop_flags, true);
+		m_geometry_vertex_offset = 0;
+
+		/// MYTodo: This should be dynamic later on
+		const u64 index_buffer_size = sizeof(u32) * 1024 * 1024;
+		m_index_buffer = std::make_unique<buffer>(*this, index_buffer_size,
+			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+			memory_prop_flags, true);
+		m_geometry_index_offset = 0;
+	}
+
 #ifdef MYL_ENABLE_VALIDATION_LAYERS
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* data, void* user_data) {
 		switch (severity) {
@@ -177,27 +202,4 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Destroyed debug messenger");
 	}
 #endif
-
-	void context::create_buffer(VkDeviceSize a_size, VkBufferUsageFlags a_usage, VkMemoryPropertyFlags a_properties, VkBuffer& a_buffer, VkDeviceMemory& a_memory) {
-		VkBufferCreateInfo buffer_info{
-			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-			.size = a_size,
-			.usage = a_usage,
-			.sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-		};
-
-		MYL_VK_CHECK(vkCreateBuffer, m_device->logical(), &buffer_info, nullptr, &a_buffer);
-
-		VkMemoryRequirements memory_reqs;
-		vkGetBufferMemoryRequirements(m_device->logical(), a_buffer, &memory_reqs);
-
-		VkMemoryAllocateInfo alloc_info{
-			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-			.allocationSize = memory_reqs.size,
-			.memoryTypeIndex = find_memory_index(memory_reqs.memoryTypeBits, a_properties)
-		};
-
-		MYL_VK_CHECK(vkAllocateMemory, m_device->logical(), &alloc_info, nullptr, &a_memory);
-		MYL_VK_CHECK(vkBindBufferMemory, m_device->logical(), a_buffer, a_memory, 0);
-	}
 }

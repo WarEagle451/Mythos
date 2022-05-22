@@ -1,6 +1,7 @@
 #pragma once
 #include "vulkan_device.hpp"
 #include "vulkan_command_buffer.hpp"
+#include "vulkan_buffer.hpp"
 
 #include <vulkan/vulkan.h>
 
@@ -20,6 +21,11 @@ namespace myl::vulkan {
 		VkSurfaceKHR m_surface;
 
 		std::unique_ptr<device> m_device;
+
+		std::unique_ptr<buffer> m_vertex_buffer;
+		std::unique_ptr<buffer> m_index_buffer;
+		u64 m_geometry_vertex_offset; /// Should this be part of vertex array?
+		u64 m_geometry_index_offset; /// Should this be part of vertex array?
 
 		std::vector<command_buffer> m_graphics_command_buffers;
 
@@ -45,8 +51,7 @@ namespace myl::vulkan {
 		MYL_NO_DISCARD command_buffer& get_graphics_command_buffer(u64 a_index) { return m_graphics_command_buffers[a_index]; }
 
 		void create_command_buffers(swapchain&);
-
-		void create_buffer(VkDeviceSize, VkBufferUsageFlags, VkMemoryPropertyFlags, VkBuffer&, VkDeviceMemory&);
+		void create_buffers();
 	private:
 		void create_instance();
 

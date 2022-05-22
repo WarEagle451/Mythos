@@ -9,7 +9,7 @@
 namespace myl::vulkan {
 	//@param extended: Indicates whether to also return an extended result
 	//@return The error code and/or extended error message in string form
-	std::string VkResult_to_string(VkResult result, bool extended = false);
+	std::string VkResult_to_string(VkResult, bool extended = false);
 
 	bool result_is_success(VkResult);
 }

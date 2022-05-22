@@ -7,6 +7,8 @@
 #include <string>
 
 namespace tb {
+	using namespace myl; // Yes it's bad practice but it doesn't matter here
+
 	struct test_entry {
 		std::string name;
 		std::function<bool()> test;

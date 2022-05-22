@@ -22,7 +22,6 @@ namespace myl::render {
 	class shader {
 	public:
 		/// MYTodo: create from file or provide the src code
-		/// MYTodo: Find a way to call this before backend is assigned
 		MYL_API MYL_NO_DISCARD static std::shared_ptr<shader> create(const std::filesystem::path&);
 
 		MYL_API virtual ~shader() = default;

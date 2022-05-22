@@ -3,6 +3,8 @@
 
 #include <mythos/core/log.hpp>
 
+/// MYTodo: Vulkan contructors should throw if they fail
+
 namespace myl::vulkan {
 	backend::backend()
 		: m_context()
@@ -15,12 +17,11 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Created Vulkan backend");
 	}
 
-	backend::~backend() { // C++ standard has members desructors called in opposite order of creation
+	backend::~backend() { // C++ standard has members destructors called in opposite order of creation
 		vkDeviceWaitIdle(m_context.device().logical()); // Waits for all graphics operations to cease
 
-		m_shader.reset(); // Deleting shader object
-
 		MYL_CORE_INFO("Destroying Vulkan backend");
+		m_shader.reset(); // Deleting shader object
 	}
 
 	bool backend::begin() {
