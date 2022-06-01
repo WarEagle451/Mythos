@@ -18,11 +18,11 @@ namespace myl::vulkan {
 		buffer_info.usage = m_usage;
 		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;  // NOTE: Only used in one queue.
 
-		MYL_VK_ASSERT(vkCreateBuffer, m_context.m_device, &buffer_info, VK_NULL_HANDLE, &m_handle);
+		MYL_VK_ASSERT(vkCreateBuffer, m_context.device(), &buffer_info, VK_NULL_HANDLE, &m_handle);
 
 		// Gather memory requirements.
 		VkMemoryRequirements requirements;
-		vkGetBufferMemoryRequirements(m_context.m_device, m_handle, &requirements);
+		vkGetBufferMemoryRequirements(m_context.device(), m_handle, &requirements);
 		m_memory_index = m_context.find_memory_index(requirements.memoryTypeBits, m_memory_property_flags);
 		if (m_memory_index == -1)
 			throw vulkan_error("Failed to create buffer: Required memory type index not found");
@@ -34,7 +34,7 @@ namespace myl::vulkan {
 
 		// Allocate the memory.
 		VkResult result = vkAllocateMemory(
-			m_context.m_device,
+			m_context.device(),
 			&allocate_info,
 			VK_NULL_HANDLE,
 			&m_memory);
@@ -48,11 +48,11 @@ namespace myl::vulkan {
 
 	buffer::~buffer() {
 		if (m_memory) {
-			vkFreeMemory(m_context.m_device, m_memory, VK_NULL_HANDLE);
+			vkFreeMemory(m_context.device(), m_memory, VK_NULL_HANDLE);
 			m_memory = 0;
 		}
 		if (m_handle) {
-			vkDestroyBuffer(m_context.m_device, m_handle, VK_NULL_HANDLE);
+			vkDestroyBuffer(m_context.device(), m_handle, VK_NULL_HANDLE);
 			m_handle = 0;
 		}
 		m_size = 0;
@@ -68,11 +68,11 @@ namespace myl::vulkan {
 		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;  // NOTE: Only used in one queue.
 
 		VkBuffer new_buffer;
-		MYL_VK_ASSERT(vkCreateBuffer, m_context.m_device, &buffer_info, VK_NULL_HANDLE, &new_buffer);
+		MYL_VK_ASSERT(vkCreateBuffer, m_context.device(), &buffer_info, VK_NULL_HANDLE, &new_buffer);
 
 		// Gather memory requirements.
 		VkMemoryRequirements requirements;
-		vkGetBufferMemoryRequirements(m_context.m_device, new_buffer, &requirements);
+		vkGetBufferMemoryRequirements(m_context.device(), new_buffer, &requirements);
 
 		// Allocate memory info
 		VkMemoryAllocateInfo allocate_info = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
@@ -81,26 +81,26 @@ namespace myl::vulkan {
 
 		// Allocate the memory.
 		VkDeviceMemory new_memory;
-		VkResult result = vkAllocateMemory(m_context.m_device, &allocate_info, VK_NULL_HANDLE, &new_memory); /// MYTodo: should have a function that does this
+		VkResult result = vkAllocateMemory(m_context.device(), &allocate_info, VK_NULL_HANDLE, &new_memory); /// MYTodo: should have a function that does this
 		if (result != VK_SUCCESS)
 			throw vulkan_error("'vkAllocateMemory' failed");
 
 		// Bind the new buffer's memory
-		MYL_VK_ASSERT(vkBindBufferMemory, m_context.m_device, new_buffer, new_memory, 0);
+		MYL_VK_ASSERT(vkBindBufferMemory, m_context.device(), new_buffer, new_memory, 0);
 
 		// Copy over the data
 		copy_to(new_buffer, a_pool, 0, a_queue, 0, m_size);
 
 		// Make sure anything potentially using these is finished.
-		vkDeviceWaitIdle(m_context.m_device);
+		vkDeviceWaitIdle(m_context.device());
 
 		// Destroy the old
 		if (m_memory) {
-			vkFreeMemory(m_context.m_device, m_memory, VK_NULL_HANDLE);
+			vkFreeMemory(m_context.device(), m_memory, VK_NULL_HANDLE);
 			m_memory = 0;
 		}
 		if (m_handle) {
-			vkDestroyBuffer(m_context.m_device, m_handle, VK_NULL_HANDLE);
+			vkDestroyBuffer(m_context.device(), m_handle, VK_NULL_HANDLE);
 			m_handle = 0;
 		}
 
@@ -111,24 +111,24 @@ namespace myl::vulkan {
 	}
 
 	void buffer::bind(u64 a_offset) {
-		MYL_VK_ASSERT(vkBindBufferMemory, m_context.m_device, m_handle, m_memory, a_offset);
+		MYL_VK_ASSERT(vkBindBufferMemory, m_context.device(), m_handle, m_memory, a_offset);
 	}
 
 	void* buffer::lock(u64 a_offset, u64 a_size, u32 a_flags) {
 		void* data;
-		MYL_VK_ASSERT(vkMapMemory, m_context.m_device, m_memory, a_offset, a_size, a_flags, &data);
+		MYL_VK_ASSERT(vkMapMemory, m_context.device(), m_memory, a_offset, a_size, a_flags, &data);
 		return data;
 	}
 
 	void buffer::unlock() {
-		vkUnmapMemory(m_context.m_device, m_memory);
+		vkUnmapMemory(m_context.device(), m_memory);
 	}
 
 	void buffer::load(u64 a_offset, u64 a_size, u32 a_flags, const void* a_data) {
 		void* data_ptr;
-		MYL_VK_ASSERT(vkMapMemory, m_context.m_device, m_memory, a_offset, a_size, a_flags, &data_ptr);
+		MYL_VK_ASSERT(vkMapMemory, m_context.device(), m_memory, a_offset, a_size, a_flags, &data_ptr);
 		memcpy(data_ptr, a_data, a_size); /// MYTodo: Temp
-		vkUnmapMemory(m_context.m_device, m_memory);
+		vkUnmapMemory(m_context.device(), m_memory);
 	}
 
 	void buffer::copy_to(VkBuffer a_buffer, VkCommandPool a_pool, VkFence a_fence, VkQueue a_queue, u64 a_offset, u64 a_size) {

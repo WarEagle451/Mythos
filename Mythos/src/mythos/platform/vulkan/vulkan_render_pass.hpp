@@ -7,6 +7,7 @@
 
 namespace myl::vulkan {
 	class context; // fwd declaration
+	class swapchain; // fwd declaration
 
 	enum class render_pass_state {
 		ready,
@@ -18,12 +19,12 @@ namespace myl::vulkan {
 	};
 
 	class render_pass {
-	public: /// MYTemp: To help with implementing kohi code
 		context& m_context;
 
 		VkRenderPass m_handle;
 
-		f32 m_x, m_y, m_w, m_h;
+		f32 m_x, m_y;
+		VkExtent2D m_extent;
 		f32vec4 m_color;
 
 		f32 m_depth;
@@ -31,8 +32,13 @@ namespace myl::vulkan {
 
 		render_pass_state m_state;
 	public:
-		render_pass(context&, const f32vec4& a_color, f32 a_x, f32 a_y, f32 a_w, f32 a_h, f32 a_depth, u32 a_stencil);
+		render_pass(context&, swapchain&, const f32vec4& a_color, f32 a_x, f32 a_y, const VkExtent2D&, f32 a_depth, u32 a_stencil);
 		~render_pass();
+
+		VkRenderPass& handle() { return m_handle; }
+		VkExtent2D& extent() { return m_extent; }
+		f32& x() { return m_x; }
+		f32& y() { return m_y; }
 
 		void begin(command_buffer*, VkFramebuffer);
 		void end(command_buffer*);

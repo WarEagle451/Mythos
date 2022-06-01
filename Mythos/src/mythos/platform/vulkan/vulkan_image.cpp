@@ -26,11 +26,11 @@ namespace myl::vulkan {
 			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 		};
 
-		MYL_VK_ASSERT(vkCreateImage, m_context.m_device, &info, VK_NULL_HANDLE, &m_handle);
+		MYL_VK_ASSERT(vkCreateImage, m_context.device(), &info, VK_NULL_HANDLE, &m_handle);
 
 		// Query memory requirements.
 		VkMemoryRequirements memory_requirements;
-		vkGetImageMemoryRequirements(m_context.m_device, m_handle, &memory_requirements);
+		vkGetImageMemoryRequirements(m_context.device(), m_handle, &memory_requirements);
 
 		u32 memory_type = m_context.find_memory_index(memory_requirements.memoryTypeBits, a_memory_flags);
 		if (memory_type == ~0) {
@@ -41,18 +41,18 @@ namespace myl::vulkan {
 		VkMemoryAllocateInfo memory_allocate_info = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
 		memory_allocate_info.allocationSize = memory_requirements.size;
 		memory_allocate_info.memoryTypeIndex = memory_type;
-		MYL_VK_ASSERT(vkAllocateMemory, m_context.m_device, &memory_allocate_info, VK_NULL_HANDLE, &m_memory);
+		MYL_VK_ASSERT(vkAllocateMemory, m_context.device(), &memory_allocate_info, VK_NULL_HANDLE, &m_memory);
 
 		// Bind the memory
-		MYL_VK_ASSERT(vkBindImageMemory, m_context.m_device, m_handle, m_memory, 0);  /// MyTODO: configurable memory offset.
+		MYL_VK_ASSERT(vkBindImageMemory, m_context.device(), m_handle, m_memory, 0);  /// MyTODO: configurable memory offset.
 
 		create_view(a_format, a_view_aspect_flags);
 	}
 
 	image::~image() {
-		if (m_view) vkDestroyImageView(m_context.m_device, m_view, VK_NULL_HANDLE);
-		if (m_memory) vkFreeMemory(m_context.m_device, m_memory, VK_NULL_HANDLE);
-		if (m_handle) vkDestroyImage(m_context.m_device, m_handle, VK_NULL_HANDLE);
+		if (m_view) vkDestroyImageView(m_context.device(), m_view, VK_NULL_HANDLE);
+		if (m_memory) vkFreeMemory(m_context.device(), m_memory, VK_NULL_HANDLE);
+		if (m_handle) vkDestroyImage(m_context.device(), m_handle, VK_NULL_HANDLE);
 	}
 
 	void image::create_view(VkFormat a_format, VkImageAspectFlags a_aspect_flags) {
@@ -70,6 +70,6 @@ namespace myl::vulkan {
 			}
 		};
 
-		MYL_VK_ASSERT(vkCreateImageView, m_context.m_device, &info, VK_NULL_HANDLE, &m_view);
+		MYL_VK_ASSERT(vkCreateImageView, m_context.device(), &info, VK_NULL_HANDLE, &m_view);
 	}
 }

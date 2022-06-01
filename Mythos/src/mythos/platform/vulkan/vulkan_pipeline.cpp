@@ -105,7 +105,7 @@ namespace myl::vulkan {
 			.pSetLayouts = a_descriptor_layouts.data()
 		};
 
-		MYL_VK_ASSERT(vkCreatePipelineLayout, m_context.m_device, &pipeline_layout_create_info, VK_NULL_HANDLE, &m_pipeline_layout);
+		MYL_VK_ASSERT(vkCreatePipelineLayout, m_context.device(), &pipeline_layout_create_info, VK_NULL_HANDLE, &m_pipeline_layout);
 
 		VkGraphicsPipelineCreateInfo pipeline_create_info{
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -121,13 +121,13 @@ namespace myl::vulkan {
 			.pColorBlendState = &color_blend_state_create_info,
 			.pDynamicState = &dynamic_state_create_info,
 			.layout = m_pipeline_layout,
-			.renderPass = a_render_pass.m_handle,
+			.renderPass = a_render_pass.handle(),
 			.subpass = 0,
 			.basePipelineHandle = VK_NULL_HANDLE,
 			.basePipelineIndex = -1,
 		};
 
-		VkResult result = vkCreateGraphicsPipelines(m_context.m_device, VK_NULL_HANDLE, 1, &pipeline_create_info, VK_NULL_HANDLE, &m_handle);
+		VkResult result = vkCreateGraphicsPipelines(m_context.device(), VK_NULL_HANDLE, 1, &pipeline_create_info, VK_NULL_HANDLE, &m_handle);
 		result_is_success(result) ?
 			MYL_CORE_DEBUG("Graphics pipeline created!") :
 			throw vulkan_error(std::format("vkCreateGraphicsPipelines failed with {}.", VkResult_to_string(result, true)));
@@ -135,9 +135,9 @@ namespace myl::vulkan {
 
 	pipeline::~pipeline() {
 		if (m_handle)
-			vkDestroyPipeline(m_context.m_device, m_handle, VK_NULL_HANDLE);
+			vkDestroyPipeline(m_context.device(), m_handle, VK_NULL_HANDLE);
 		if (m_pipeline_layout)
-			vkDestroyPipelineLayout(m_context.m_device, m_pipeline_layout, VK_NULL_HANDLE);
+			vkDestroyPipelineLayout(m_context.device(), m_pipeline_layout, VK_NULL_HANDLE);
 	}
 
 	void pipeline::bind(command_buffer& a_command_buffer, VkPipelineBindPoint a_bind_point) {

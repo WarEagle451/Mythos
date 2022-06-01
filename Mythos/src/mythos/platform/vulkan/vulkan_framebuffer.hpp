@@ -13,7 +13,7 @@ namespace myl::vulkan {
 		std::vector<VkImageView> m_attachments;
 		render_pass& m_render_pass;
 	public:
-		framebuffer(context&, render_pass&, u32 a_width, u32 a_height, const std::vector<VkImageView>& a_attachments);
+		framebuffer(context&, render_pass&, const VkExtent2D&, const std::vector<VkImageView>& a_attachments);
 		~framebuffer();
 
 		VkFramebuffer& handle() { return m_handle; }

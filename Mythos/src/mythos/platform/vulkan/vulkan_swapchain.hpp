@@ -24,7 +24,7 @@ namespace myl::vulkan {
 		std::vector<framebuffer> m_framebuffers;
 		std::unique_ptr<image> m_depth_attachment;
 	public:
-		swapchain(context&, u32 a_width, u32 a_height);
+		swapchain(context&, const VkExtent2D&);
 		~swapchain();
 
 		const VkSurfaceFormatKHR& image_format() const { return m_image_format; }
@@ -36,10 +36,10 @@ namespace myl::vulkan {
 
 		bool acquire_next_image_index(u64 a_timeout_ns, VkSemaphore a_image_available_semaphore, VkFence, u32* a_image_index);
 
-		void recreate(u32 a_width, u32 a_height);
+		void recreate(const VkExtent2D&);
 		void present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index);
 	private:
-		void create(u32 a_width, u32 a_height);
+		void create(const VkExtent2D&);
 		void destroy();
 	};
 }

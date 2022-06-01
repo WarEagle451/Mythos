@@ -77,12 +77,9 @@ namespace myl::vulkan {
 		}
 	}
 
-	context::context() {
-		m_framebuffer_width = (cached_framebuffer_width != 0) ? cached_framebuffer_width : 800;
-		m_framebuffer_height = (cached_framebuffer_height != 0) ? cached_framebuffer_height : 600;
-		cached_framebuffer_width = 0;
-		cached_framebuffer_height = 0;
-
+	context::context()
+		: m_cached_framebuffer_extent{ .width = 0, .height = 0 }
+		, m_framebuffer_extent{ .width = (m_cached_framebuffer_extent.width == 0) ? 800 : m_cached_framebuffer_extent.width, .height = (m_cached_framebuffer_extent.height == 0) ? 600 : m_cached_framebuffer_extent.height } { /// MYTodo: Don't like this big piece of code
 		create_instance();
 		create_surface();
 		create_device();
@@ -112,7 +109,7 @@ namespace myl::vulkan {
 	}
 
 	swapchain_support_info context::query_swapchain_support(VkPhysicalDevice a_device) const {
-		swapchain_support_info info{};
+		vulkan::swapchain_support_info info{};
 		MYL_VK_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_surface, &info.capabilities);
 		
 		u32 format_count = 0;
@@ -190,7 +187,7 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("        | Graphics | Present | Compute | Transfer");
 		MYL_CORE_INFO("Indices | {:<8} | {:<7} | {:<7} | {:<8}", queue_indices.graphics_index, queue_indices.present_index, queue_indices.compute_index, queue_indices.transfer_index);
 
-		swapchain_support_info swapchain_support_info = query_swapchain_support(a_device);
+		vulkan::swapchain_support_info swapchain_support_info = query_swapchain_support(a_device);
 		if (swapchain_support_info.formats.empty() || swapchain_support_info.present_modes.empty())
 			return false;
 

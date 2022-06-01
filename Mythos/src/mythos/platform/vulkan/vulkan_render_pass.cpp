@@ -1,14 +1,14 @@
 #include "vulkan_render_pass.hpp"
 #include "vulkan_context.hpp"
 #include "vulkan_utils.hpp"
+#include "vulkan_swapchain.hpp"
 
 namespace myl::vulkan {
-	render_pass::render_pass(context& a_context, const f32vec4& a_color, f32 a_x, f32 a_y, f32 a_w, f32 a_h, f32 a_depth, u32 a_stencil)
+	render_pass::render_pass(context& a_context, swapchain& a_swapchain, const f32vec4& a_color, f32 a_x, f32 a_y, const VkExtent2D& a_extent, f32 a_depth, u32 a_stencil)
 		: m_context(a_context)
 		, m_x(a_x)
 		, m_y(a_y)
-		, m_w(a_w)
-		, m_h(a_h)
+		, m_extent(a_extent)
 		, m_color(a_color)
 		, m_depth(a_depth)
 		, m_stencil(a_stencil)
@@ -16,7 +16,7 @@ namespace myl::vulkan {
 		std::vector<VkAttachmentDescription> attachment_descriptions;
 		attachment_descriptions.push_back(VkAttachmentDescription{ // Color attachment
 			.flags = 0,
-			.format = m_context.swapchain->image_format().format,
+			.format = a_swapchain.image_format().format,
 			.samples = VK_SAMPLE_COUNT_1_BIT,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
@@ -32,7 +32,7 @@ namespace myl::vulkan {
 		};
 
 		attachment_descriptions.push_back(VkAttachmentDescription{ // Depth attachment
-			.format = m_context.m_depth_format,
+			.format = m_context.depth_format(),
 			.samples = VK_SAMPLE_COUNT_1_BIT,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
 			.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -83,12 +83,12 @@ namespace myl::vulkan {
 			.pDependencies = &dependency,
 		};
 
-		MYL_VK_ASSERT(vkCreateRenderPass, m_context.m_device, &render_pass_create_info, VK_NULL_HANDLE, &m_handle);
+		MYL_VK_ASSERT(vkCreateRenderPass, m_context.device(), &render_pass_create_info, VK_NULL_HANDLE, &m_handle);
 	}
 
 	render_pass::~render_pass() {
 		if (m_handle)
-			vkDestroyRenderPass(m_context.m_device, m_handle, VK_NULL_HANDLE);
+			vkDestroyRenderPass(m_context.device(), m_handle, VK_NULL_HANDLE);
 	}
 
 	void render_pass::begin(command_buffer* a_command_buffer, VkFramebuffer a_framebuffer) {
@@ -107,7 +107,7 @@ namespace myl::vulkan {
 			.framebuffer = a_framebuffer,
 			.renderArea = {
 				.offset = { static_cast<i32>(m_x), static_cast<i32>(m_y) },
-				.extent = { static_cast<u32>(m_w), static_cast<u32>(m_h) }
+				.extent = m_extent
 			},
 			.clearValueCount = static_cast<u32>(clear_values.size()),
 			.pClearValues = clear_values.data()

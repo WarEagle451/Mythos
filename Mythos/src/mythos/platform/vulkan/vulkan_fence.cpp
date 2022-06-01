@@ -11,17 +11,17 @@ namespace myl::vulkan {
 			.flags = VK_FENCE_CREATE_SIGNALED_BIT
 		};
 
-		MYL_VK_ASSERT(vkCreateFence, m_context.m_device, &info, VK_NULL_HANDLE, &m_handle);
+		MYL_VK_ASSERT(vkCreateFence, m_context.device(), &info, VK_NULL_HANDLE, &m_handle);
 	}
 
 	fence::~fence() {
 		if (m_handle)
-			vkDestroyFence(m_context.m_device, m_handle, VK_NULL_HANDLE);
+			vkDestroyFence(m_context.device(), m_handle, VK_NULL_HANDLE);
 	}
 
 	bool fence::wait(u64 a_timeout_ns) {
 		if (!m_signaled) {
-			VkResult result = vkWaitForFences(m_context.m_device, 1, &m_handle, true, a_timeout_ns);
+			VkResult result = vkWaitForFences(m_context.device(), 1, &m_handle, true, a_timeout_ns);
 			switch (result) {
 				case VK_SUCCESS:
 					m_signaled = true;
@@ -49,7 +49,7 @@ namespace myl::vulkan {
 
 	void fence::reset() {
 		if (m_signaled) {
-			MYL_VK_ASSERT(vkResetFences, m_context.m_device, 1, &m_handle);
+			MYL_VK_ASSERT(vkResetFences, m_context.device(), 1, &m_handle);
 			m_signaled = false;
 		}
 	}

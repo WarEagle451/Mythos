@@ -1,8 +1,8 @@
 #pragma once
 #include "vulkan_pipeline.hpp"
 #include "vulkan_swapchain.hpp"
+#include "vulkan_render_pass.hpp"
 
-#include <mythos/defines.hpp>
 #include <mythos/render/shader.hpp>
 
 #include <vulkan/vulkan.h>
@@ -19,7 +19,7 @@ namespace myl::vulkan {
 		std::unordered_map<render::shader_type, VkShaderModule> m_modules;
 		std::unique_ptr<pipeline> m_pipeline;
 	public:
-		shader(context&, const std::filesystem::path&, swapchain&);
+		shader(context&, const std::filesystem::path&, swapchain&, render_pass&);
 		~shader();
 
 		void bind() const override;

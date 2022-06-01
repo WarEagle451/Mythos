@@ -15,10 +15,8 @@
 #include "vulkan_fence.hpp"
 #include "vulkan_image.hpp"
 #include "vulkan_shader.hpp"
-#include "vulkan_render_pass.hpp"
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_framebuffer.hpp" /// MYTodo: Something is missing an include somewhere
-#include "vulkan_swapchain.hpp"
 
 namespace myl::vulkan {
 	struct device_requirements {
@@ -48,44 +46,30 @@ namespace myl::vulkan {
 	};
 
 	class context {
-	public: /// MYTodo: Temp for easy compatibility
 		VkInstance m_instance;
 
 		/// MYTodo: Compatibilty for kohi system, Redo and remove
-		u32 cached_framebuffer_width = 0;
-		u32 cached_framebuffer_height = 0;
-		u32 m_framebuffer_width;
-		u32 m_framebuffer_height;
-		u64 m_framebuffer_size_generation;
-		u64 m_framebuffer_size_last_generation;
-		u32 m_current_frame = 0;
 
-		std::unique_ptr<swapchain> swapchain;
-		std::unique_ptr<render_pass> main_renderpass;
+		std::unique_ptr<buffer> m_object_vertex_buffer;
+		std::unique_ptr<buffer> m_object_index_buffer;
 
-		std::unique_ptr<buffer> object_vertex_buffer;
-		std::unique_ptr<buffer> object_index_buffer;
+		std::vector<command_buffer> m_graphics_command_buffers;
+		std::vector<VkSemaphore> m_image_available_semaphores;
+		std::vector<VkSemaphore> m_queue_complete_semaphores;
 
-		std::vector<command_buffer> graphics_command_buffers;
+		std::vector<std::shared_ptr<fence>> m_in_flight_fences;
+		std::vector<std::weak_ptr<fence>> m_images_in_flight;
 
-		// darray
-		std::vector<VkSemaphore> image_available_semaphores;
+		VkExtent2D m_cached_framebuffer_extent;
+		VkExtent2D m_framebuffer_extent;
+		u64 m_framebuffer_size_generation; /// MYTemp: What do these do?
+		u64 m_framebuffer_size_last_generation; /// MYTemp: What do these do?
 
-		// darray
-		std::vector<VkSemaphore> queue_complete_semaphores;
+		u32 m_image_index;
+		bool m_recreating_swapchain = false;
 
-		u32 in_flight_fence_count;
-		std::vector<std::shared_ptr<fence>> in_flight_fences;
-
-		// Holds pointers to fences which exist and are owned elsewhere.
-		std::vector<std::weak_ptr<fence>> images_in_flight;
-
-		u32 image_index;
-		bool recreating_swapchain = false;
-		std::unique_ptr<shader> object_shader;
-
-		u64 geometry_vertex_offset;
-		u64 geometry_index_offset;
+		u64 m_geometry_vertex_offset;
+		u64 m_geometry_index_offset;
 		///
 
 #ifdef MYL_VK_ENABLE_VALIDATION_LAYERS
@@ -108,6 +92,8 @@ namespace myl::vulkan {
 
 		VkCommandPool m_graphics_command_pool;
 		VkFormat m_depth_format;
+
+		u32 m_current_frame = 0;
 	public:
 		context();
 		~context();
@@ -115,10 +101,37 @@ namespace myl::vulkan {
 		context(const context&) = delete;
 		context& operator=(const context&) = delete;
 
+		const VkDevice& device() const { return m_device; }
+		u32& current_frame() { return m_current_frame; }
+		u32& image_index() { return m_image_index; }
+		VkQueue& graphics_queue() { return m_graphics_queue; }
+		VkQueue& transfer_queue() { return m_transfer_queue; }
+		VkQueue& present_queue() { return m_present_queue; }
+		VkQueue& compute_queue() { return m_compute_queue; }
+		VkCommandPool& graphics_cmd_pool() { return m_graphics_command_pool; }
+		std::unique_ptr<buffer>& object_vertex_buffer() { return m_object_vertex_buffer; }
+		std::unique_ptr<buffer>& object_index_buffer() { return m_object_index_buffer; }
+		std::vector<command_buffer>& graphics_command_buffers() { return m_graphics_command_buffers; }
+		std::vector<VkSemaphore>& image_available_semaphores() { return m_image_available_semaphores; }
+		std::vector<VkSemaphore>& queue_complete_semaphores() { return m_queue_complete_semaphores; }
+		std::vector<std::shared_ptr<fence>>& in_flight_fences() { return m_in_flight_fences; }
+		std::vector<std::weak_ptr<fence>>& images_in_flight() { return m_images_in_flight; }
+		VkSurfaceKHR& surface() { return m_surface; }
+		bool& recreating_swapchain() { return m_recreating_swapchain; }
+		swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
+		device_queue_indices& queue_indices() { return m_queue_indices; }
+		VkFormat& depth_format() { return m_depth_format; }
+		VkExtent2D& cached_framebuffer_extent() { return m_cached_framebuffer_extent; }
+		VkExtent2D& framebuffer_extent() { return m_framebuffer_extent; }
+		u64& framebuffer_size_generation() { return m_framebuffer_size_generation; }
+		u64& framebuffer_size_last_generation() { return m_framebuffer_size_last_generation; }
+		u64& geometry_vertex_offset() { return m_geometry_vertex_offset; }
+		u64& geometry_index_offset() { return m_geometry_index_offset; }
+
 		u32 find_memory_index(u32 a_type_filter, u32 a_property_flags) const;
 
 		//@return Swapchain support info for a physical device
-		swapchain_support_info query_swapchain_support(VkPhysicalDevice) const;
+		vulkan::swapchain_support_info query_swapchain_support(VkPhysicalDevice) const;
 		//@brief Updates context's swapchain support info
 		void query_swapchain_support() { m_swapchain_support_info = query_swapchain_support(m_physical_device); }
 

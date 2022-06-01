@@ -43,12 +43,12 @@ namespace myl::vulkan {
 		};
 
 		m_state = command_buffer_state::not_allocated;
-		MYL_VK_ASSERT(vkAllocateCommandBuffers, m_context.m_device, &alloc_info, &m_handle);
+		MYL_VK_ASSERT(vkAllocateCommandBuffers, m_context.device(), &alloc_info, &m_handle);
 		m_state = command_buffer_state::ready;
 	}
 
 	void command_buffer::deallocate(VkCommandPool a_pool) {
-		vkFreeCommandBuffers(m_context.m_device, a_pool, 1, &m_handle);
+		vkFreeCommandBuffers(m_context.device(), a_pool, 1, &m_handle);
 
 		m_handle = VK_NULL_HANDLE;
 		m_state = command_buffer_state::not_allocated;
