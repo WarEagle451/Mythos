@@ -1,8 +1,5 @@
 #pragma once
-#include "vulkan_utils.hpp"
 #include "vulkan_render_pass.hpp"
-
-#include <mythos/math/vec2.hpp>
 
 #include <vector>
 
@@ -10,17 +7,14 @@ namespace myl::vulkan {
 	class context; // fwd declaration
 
 	class framebuffer {
-		context& m_context; // Context must outlive framebuffer
+		context& m_context;
 
-		VkFramebuffer m_handle;
+		VkFramebuffer m_handle = VK_NULL_HANDLE;
 		std::vector<VkImageView> m_attachments;
-		render_pass& m_render_pass; // render_pass must outlive framebuffer
+		render_pass& m_render_pass;
 	public:
-		framebuffer(context&, render_pass&, const u32vec2& a_size, const std::vector<VkImageView>&);
+		framebuffer(context&, render_pass&, u32 a_width, u32 a_height, const std::vector<VkImageView>& a_attachments);
 		~framebuffer();
-
-		framebuffer(const framebuffer&) = delete;
-		framebuffer& operator=(const framebuffer&) = delete;
 
 		VkFramebuffer& handle() { return m_handle; }
 	};

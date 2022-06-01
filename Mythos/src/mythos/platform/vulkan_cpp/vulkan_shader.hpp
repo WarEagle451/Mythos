@@ -10,7 +10,7 @@
 #include <unordered_map>
 #include <memory>
 
-namespace myl::vulkan4 {
+namespace myl::vulkane {
 	class context; // fwd declaration
 
 	class shader : public render::shader {

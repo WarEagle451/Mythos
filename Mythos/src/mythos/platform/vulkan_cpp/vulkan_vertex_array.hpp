@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace myl::vulkan4 { /// MYBug: Redo this or get rid of it
+namespace myl::vulkane { /// MYBug: Redo this or get rid of it
 	struct vertex {
 		static std::vector<VkVertexInputBindingDescription> get_binding_descriptions();
 		static std::vector<VkVertexInputAttributeDescription> get_attribute_descriptions();

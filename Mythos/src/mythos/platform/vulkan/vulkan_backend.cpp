@@ -1,165 +1,394 @@
 #include "vulkan_backend.hpp"
-#include "vulkan_shader.hpp"
-#include "vulkan_vertex_array.hpp"
+#include "vulkan_utils.hpp"
+#include "vulkan_command_buffer.hpp"
 
 #include <mythos/core/log.hpp>
 #include <mythos/math/vec3.hpp>
 
-/// MYTodo: Vulkan contructors should throw if they fail
+void upload_data_range(myl::vulkan::context* context, VkCommandPool pool, VkFence fence, VkQueue queue, myl::vulkan::buffer* buffer, myl::u64 offset, myl::u64 size, void* data) {
+	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
+	VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+	myl::vulkan::buffer staging(*context, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, flags, true);
+
+	// Load the data into the staging buffer.
+	staging.load(0, size, 0, data);
+
+	// Perform the copy from staging to the device local buffer.
+	staging.copy_to(buffer->handle(), pool, fence, queue, offset, size);
+}
+
+void create_command_buffers(myl::vulkan::context& context) {
+	context.graphics_command_buffers.clear();
+	if (context.graphics_command_buffers.empty())
+		for (myl::u32 i = 0; i != context.swapchain->images().size(); ++i)
+			context.graphics_command_buffers.push_back(myl::vulkan::command_buffer(context));
+
+	for (auto& buf : context.graphics_command_buffers)
+		buf.allocate(context.m_graphics_command_pool, true);
+
+	MYL_CORE_DEBUG("Vulkan command buffers created.");
+}
+
+void regenerate_framebuffers(myl::vulkan::context& context, myl::vulkan::swapchain* swapchain, myl::vulkan::render_pass* renderpass) { /// MYTodo: Should probs have a regernate framebuffer thing
+	context.swapchain->framebuffers().clear();
+	context.swapchain->framebuffers().reserve(swapchain->images().size()); // If reserve does not happen, when context.swapchain.framebuffers.emplace_back tries to resize, it will crash
+	for (myl::u32 i = 0; i != swapchain->images().size(); ++i) {
+		// TODO: make this dynamic based on the currently configured attachments
+		myl::u32 attachment_count = 2;
+		std::vector<VkImageView> attachments{
+			swapchain->views()[i],
+			swapchain->depth_attachment().view()
+		};
+
+		context.swapchain->framebuffers().emplace_back(context, *renderpass, context.m_framebuffer_width, context.m_framebuffer_height, attachments);
+	}
+}
+
+bool recreate_swapchain(myl::vulkan::context& context) {
+	// If already being recreated, do not try again.
+	if (context.recreating_swapchain) {
+		MYL_CORE_DEBUG("recreate_swapchain called when already recreating. Booting.");
+		return false;
+	}
+
+	// Detect if the window is too small to be drawn to
+	if (context.m_framebuffer_width == 0 || context.m_framebuffer_height == 0) {
+		MYL_CORE_DEBUG("recreate_swapchain called when window is < 1 in a dimension. Booting.");
+		return false;
+	}
+
+	// Mark as recreating if the dimensions are valid.
+	context.recreating_swapchain = true;
+
+	// Wait for any operations to complete.
+	vkDeviceWaitIdle(context.m_device);
+
+	// Clear these out just in case.
+	for (myl::u32 i = 0; i < context.swapchain->images().size(); ++i) {
+		context.images_in_flight[i].reset();
+	}
+
+	// Requery support
+	context.query_swapchain_support();
+	context.detect_depth_format();
+
+	context.swapchain->recreate(context.cached_framebuffer_width, context.cached_framebuffer_height);
+
+	// Sync the framebuffer size with the cached sizes.
+	context.m_framebuffer_width = context.cached_framebuffer_width;
+	context.m_framebuffer_height = context.cached_framebuffer_height;
+	context.main_renderpass->m_w = context.m_framebuffer_width;
+	context.main_renderpass->m_h = context.m_framebuffer_height;
+	context.cached_framebuffer_width = 0;
+	context.cached_framebuffer_height = 0;
+
+	// Update framebuffer size generation.
+	context.m_framebuffer_size_last_generation = context.m_framebuffer_size_generation;
+
+	// cleanup swapchain
+	for (auto& buf : context.graphics_command_buffers)
+		buf.deallocate(context.m_graphics_command_pool);
+
+	// Framebuffers.
+	context.swapchain->framebuffers().clear();
+
+	context.main_renderpass->m_x = 0;
+	context.main_renderpass->m_y = 0;
+	context.main_renderpass->m_w = context.m_framebuffer_width;
+	context.main_renderpass->m_h = context.m_framebuffer_height;
+
+	regenerate_framebuffers(context, context.swapchain.get(), context.main_renderpass.get());
+
+	create_command_buffers(context);
+
+	// Clear the recreating flag.
+	context.recreating_swapchain = false;
+
+	return true;
+}
+
+bool create_buffers(myl::vulkan::context* context) {
+	VkMemoryPropertyFlagBits memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+
+	myl::u64 vertex_buffer_size = sizeof(myl::f32vec3) * 1024 * 1024;
+	context->object_vertex_buffer = std::make_unique<myl::vulkan::buffer>(
+		*context,
+		vertex_buffer_size,
+		static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT),
+		memory_property_flags,
+		true);
+	context->geometry_vertex_offset = 0;
+
+	const myl::u64 index_buffer_size = sizeof(myl::u32) * 1024 * 1024;
+	context->object_index_buffer = std::make_unique<myl::vulkan::buffer>(
+		*context,
+		index_buffer_size,
+		static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT),
+		memory_property_flags,
+		true);
+	context->geometry_index_offset = 0;
+
+	return true;
+}
 
 namespace myl::vulkan {
 	backend::backend()
-		: m_context()
-		, m_swapchain(m_context, 800, 600) { /// MYTodo: Have a configurable size to start
-		m_context.create_command_buffers(m_swapchain);
-		MYL_CORE_INFO("Created command buffers");
+		: m_context() {
+		// Swapchain
+		m_context.swapchain = std::make_unique<myl::vulkan::swapchain>(m_context, m_context.m_framebuffer_width, m_context.m_framebuffer_height);
 
-		m_shader = create_shader("resources/shaders/shader.glsl"); /// MYTodo: DO NOT HARD CODE THIS
+		m_context.main_renderpass = std::make_unique<render_pass>(m_context, f32vec4{ .2f, .2f, .2f, 1.f }, 0.f, 0.f, m_context.m_framebuffer_width, m_context.m_framebuffer_height, 1.f, 0);
 
-		/// MYTemp: Test geometry
-		const u32 vert_count = 3;
-		f32vec3 vertex_arrays[vert_count]{
+		// Swapchain framebuffers.
+		regenerate_framebuffers(m_context, m_context.swapchain.get(), m_context.main_renderpass.get());
+
+		// Create command buffers.
+		create_command_buffers(m_context);
+
+		// Create sync objects.
+		m_context.image_available_semaphores.resize(m_context.swapchain->max_frames_in_flight());
+		m_context.queue_complete_semaphores.resize(m_context.swapchain->max_frames_in_flight());
+		m_context.in_flight_fences.resize(m_context.swapchain->max_frames_in_flight());
+
+		for (u8 i = 0; i < m_context.swapchain->max_frames_in_flight(); ++i) {
+			VkSemaphoreCreateInfo semaphore_create_info = { VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+			vkCreateSemaphore(m_context.m_device, &semaphore_create_info, VK_NULL_HANDLE, &m_context.image_available_semaphores[i]);
+			vkCreateSemaphore(m_context.m_device, &semaphore_create_info, VK_NULL_HANDLE, &m_context.queue_complete_semaphores[i]);
+
+			// Create the fence in a signaled state, indicating that the first frame has already been "rendered".
+			// This will prevent the application from waiting indefinitely for the first frame to render since it
+			// cannot be rendered until a frame is "rendered" before it.
+			m_context.in_flight_fences[i] = std::make_shared<vulkan::fence>(m_context, true);
+		}
+
+		// In flight fences should not yet exist at this point, so clear the list. These are stored in pointers
+		// because the initial state should be 0, and will be 0 when not in use. Acutal fences are not owned
+		// by this list.
+		m_context.images_in_flight.resize(m_context.swapchain->images().size());
+
+		// Create builtin shaders
+
+		m_context.object_shader = std::make_unique<myl::vulkan::shader>(m_context, "resources/shaders/shader.glsl", *m_context.swapchain);
+
+		create_buffers(&m_context);
+
+		// TODO: temporary test code
+		const myl::u32 vert_count = 4;
+		myl::f32vec3 verts[vert_count]{
 			{ 0.f, -.5f, 0.f },
 			{ .5f, .5f, 0.f },
-			{ 0.f, .5f, 0.f }
+			{ 0.f, .5f, 0.f },
+			{ .5f, -.5f, 0.f }
 		};
-		
-		const u32 index_count = 3;
-		u32 indices[index_count]{ 0, 1, 2 };
-		
-		m_context.upload_data_range(m_context.device().graphics_command_pool(), nullptr, m_context.device().graphics_queue(), m_context.vertex_buffer(), 0, sizeof(f32vec3) * vert_count, &vertex_arrays);
-		m_context.upload_data_range(m_context.device().graphics_command_pool(), nullptr, m_context.device().graphics_queue(), m_context.index_buffer(), 0, sizeof(u32) * index_count, &indices);
-		/// End of temp code
 
-		MYL_CORE_INFO("Created Vulkan backend");
+		const myl::u32 index_count = 6;
+		myl::u32 indices[index_count] = { 0, 1, 2, 0, 3, 1 };
+
+		upload_data_range(&m_context, m_context.m_graphics_command_pool, 0, m_context.m_graphics_queue, m_context.object_vertex_buffer.get(), 0, sizeof(myl::f32vec3) * vert_count, verts);
+		upload_data_range(&m_context, m_context.m_graphics_command_pool, 0, m_context.m_graphics_queue, m_context.object_index_buffer.get(), 0, sizeof(myl::u32) * index_count, indices);
+		// TODO: end temp code
+
+		MYL_CORE_INFO("Vulkan renderer initialized successfully.");
 	}
 
-	backend::~backend() { // C++ standard has members destructors called in opposite order of creation
-		vkDeviceWaitIdle(m_context.device().logical()); // Waits for all graphics operations to cease
+	backend::~backend() {
+		vkDeviceWaitIdle(m_context.m_device);
 
-		MYL_CORE_INFO("Destroying Vulkan backend");
-		m_shader.reset(); // Deleting shader object
+		// Destroy in the opposite order of creation.
+		// Destroy buffers
+		m_context.object_vertex_buffer.reset();
+		m_context.object_index_buffer.reset();
+
+		m_context.object_shader.reset();
+
+		// Sync objects
+		for (u8 i = 0; i < m_context.swapchain->max_frames_in_flight(); ++i) {
+			if (m_context.image_available_semaphores[i]) {
+				vkDestroySemaphore(
+					m_context.m_device,
+					m_context.image_available_semaphores[i],
+					VK_NULL_HANDLE);
+				m_context.image_available_semaphores[i] = 0;
+			}
+			if (m_context.queue_complete_semaphores[i]) {
+				vkDestroySemaphore(
+					m_context.m_device,
+					m_context.queue_complete_semaphores[i],
+					VK_NULL_HANDLE);
+				m_context.queue_complete_semaphores[i] = 0;
+			}
+			m_context.in_flight_fences[i].reset();
+		}
+
+		// Command buffers
+		for (auto& buf : m_context.graphics_command_buffers) {
+			if (buf.handle())
+				buf.deallocate(m_context.m_graphics_command_pool);
+		}
+
+		// Destroy framebuffers
+		m_context.swapchain->framebuffers().clear();
+
+		// Renderpass
+		m_context.main_renderpass.reset();
+
+		// Swapchain
+		m_context.swapchain.reset();
+
+		/// Destroy of context
 	}
 
 	bool backend::begin() {
-		device& device = m_context.device();
-
-		if (m_swapchain.recreating()) {
-			VkResult result = vkDeviceWaitIdle(device.logical());
-			if (!result_is_success(result)) {
-				MYL_CORE_ERROR("Vulkan backend vkDeviceWaitIdle failed: {}", VkResult_to_string(result, true));
+		// Check if recreating swap chain and boot out.
+		if (m_context.recreating_swapchain) {
+			VkResult result = vkDeviceWaitIdle(m_context.m_device);
+			if (!myl::vulkan::result_is_success(result)) {
+				MYL_CORE_ERROR("vulkan_renderer_backend_begin_frame vkDeviceWaitIdle (1) failed: '{}'", myl::vulkan::VkResult_to_string(result, true));
 				return false;
 			}
-			MYL_CORE_INFO("Recreating swapchain, exiting render loop");
+			MYL_CORE_INFO("Recreating swapchain, booting.");
 			return false;
 		}
 
-		/// MYTodo: Kohi 21 31:30; Has swapchain recreating code here. But I don't think it's needed for the way I've done it
-		/// MYTodo: Should this be the only place where the swapchain can be recreated?
+		// Check if the framebuffer has been resized. If so, a new swapchain must be created.
+		if (m_context.m_framebuffer_size_generation != m_context.m_framebuffer_size_last_generation) {
+			VkResult result = vkDeviceWaitIdle(m_context.m_device);
+			if (!myl::vulkan::result_is_success(result)) {
+				MYL_CORE_ERROR("vulkan_renderer_backend_begin_frame vkDeviceWaitIdle (2) failed: '{}'", myl::vulkan::VkResult_to_string(result, true));
+				return false;
+			}
 
-		// Wait for the execution of the current frame to complete. The fence being free will allow this one to move on
-		if (!m_swapchain.in_flight_fences()[m_swapchain.current_frame()]->wait(std::numeric_limits<u64>::max())) {
-			MYL_CORE_WARN("In-flight fence wait failure");
+			// If the swapchain recreation failed (because, for example, the window was minimized),
+			// boot out before unsetting the flag.
+			if (!recreate_swapchain(m_context)) {
+				return false;
+			}
+
+			MYL_CORE_INFO("Resized, booting.");
 			return false;
 		}
 
-		// Acquire the next image from the swapchain. Pass along the semaphore that should signal when this completes
-		// This same semaphore will later be waited on by the queue submission to ensure this image is available
-		u32 image_index = 0;
-		if (!m_swapchain.acquire_next_image(std::numeric_limits<u64>::max(), m_swapchain.image_available_semaphores()[m_swapchain.current_frame()], nullptr, &image_index))
+		if (!m_context.in_flight_fences[m_context.m_current_frame]->wait()) {
+			MYL_CORE_WARN("In-flight fence wait failure!");
 			return false;
-		m_context.set_image_index(image_index);
+		}
 
-		// Begin recording command buffers
-		auto& command_buffer = m_context.get_graphics_command_buffer(m_context.image_index());
-		command_buffer.reset();
+		// Acquire the next image from the swap chain. Pass along the semaphore that should signaled when this completes.
+		// This same semaphore will later be waited on by the queue submission to ensure this image is available.
+		if (!m_context.swapchain->acquire_next_image_index(UINT64_MAX, m_context.image_available_semaphores[m_context.m_current_frame], VK_NULL_HANDLE, &m_context.image_index))
+			return false;
 
-		command_buffer.begin(false, false, false);
+		// Begin recording commands.
+		command_buffer& cmd_buffer = m_context.graphics_command_buffers[m_context.image_index];
+		cmd_buffer.reset();
+		cmd_buffer.begin(false, false, false);
 
-		/// MYTodo: This makes it so it renders from the bottom left, like opengl, but I want it to be rendered from the top left BECAUSE IT MAKES MORE SENSE
-		const VkExtent2D& swapchain_extent = m_swapchain.swapchain_extent();
+		// Dynamic state
+		VkViewport viewport;
+		viewport.x = 0.0f;
+		viewport.y = (f32)m_context.m_framebuffer_height;
+		viewport.width = (f32)m_context.m_framebuffer_width;
+		viewport.height = -(f32)m_context.m_framebuffer_height;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
 
-		m_swapchain.render_pass().begin(command_buffer, m_swapchain.framebuffers()[m_context.image_index()]->handle());
+		// Scissor
+		VkRect2D scissor;
+		scissor.offset.x = scissor.offset.y = 0;
+		scissor.extent.width = m_context.m_framebuffer_width;
+		scissor.extent.height = m_context.m_framebuffer_height;
 
-		VkViewport viewport{ // Dynamic state
-			.x = 0.f,
-			.y = static_cast<f32>(swapchain_extent.height),
-			.width = static_cast<f32>(swapchain_extent.width),
-			.height = -static_cast<f32>(swapchain_extent.height),
-			.minDepth = 0.f,
-			.maxDepth = 1.f
-		};
-		vkCmdSetViewport(command_buffer.handle(), 0, 1, &viewport);
+		vkCmdSetViewport(cmd_buffer.handle(), 0, 1, &viewport);
+		vkCmdSetScissor(cmd_buffer.handle(), 0, 1, &scissor);
 
-		VkRect2D scissor{ // Scissor
-			.offset{.x = 0, .y = 0 },
-			.extent = swapchain_extent
-		};
-		vkCmdSetScissor(command_buffer.handle(), 0, 1, &scissor);
+		m_context.main_renderpass->m_w = m_context.m_framebuffer_width;
+		m_context.main_renderpass->m_h = m_context.m_framebuffer_height;
 
-		/// MYTemp: Test code
-		m_shader->bind();
+		// Begin the render pass.
+		m_context.main_renderpass->begin(&cmd_buffer, m_context.swapchain->framebuffers()[m_context.image_index].handle());
+		// TODO: temporary test code
+		m_context.object_shader->bind();
 
-		// Bind vertex buffer at offset
-		VkDeviceSize offsets[]{ 0 };
-		vkCmdBindVertexBuffers(command_buffer.handle(), 0, 1, &m_context.vertex_buffer().handle(), offsets);
-		vkCmdBindIndexBuffer(command_buffer.handle(), m_context.index_buffer().handle(), 0, VK_INDEX_TYPE_UINT32);
-		vkCmdDrawIndexed(command_buffer.handle(), 3, 1, 0, 0, 0);
-		/// End of temp code
+		// Bind vertex buffer at offset.
+		VkDeviceSize offsets[1] = { 0 };
+		vkCmdBindVertexBuffers(cmd_buffer.handle(), 0, 1, &m_context.object_vertex_buffer->handle(), (VkDeviceSize*)offsets);
+
+		// Bind index buffer at offset.
+		vkCmdBindIndexBuffer(cmd_buffer.handle(), m_context.object_index_buffer->handle(), 0, VK_INDEX_TYPE_UINT32);
+
+		// Issue the draw.
+		vkCmdDrawIndexed(cmd_buffer.handle(), 6, 1, 0, 0, 0);
+		// TODO: end temporary test code
 
 		return true;
 	}
 
 	void backend::end() {
-		command_buffer& command_buffer = m_context.get_graphics_command_buffer(m_context.image_index());
-		
-		m_swapchain.render_pass().end(command_buffer);
-		command_buffer.end();
+		command_buffer& cmd_buffer = m_context.graphics_command_buffers[m_context.image_index];
 
-		auto& image_in_flight = m_swapchain.images_in_flight()[m_context.image_index()];
-		// Make sure a previous frame is not using this image, eg, its fence is being waited on
-		if (!image_in_flight.expired()) // was frame
-			image_in_flight.lock()->wait(std::numeric_limits<u64>::max());
-		
-		// Mark the image fence as in use by this frame
-		image_in_flight = m_swapchain.in_flight_fences()[m_swapchain.current_frame()];
-		
+		// End renderpass
+		m_context.main_renderpass->end(&cmd_buffer);
+
+		cmd_buffer.end();
+
+		// Make sure the previous frame is not using this image (i.e. its fence is being waited on)
+		if (!m_context.images_in_flight[m_context.image_index].expired())
+			m_context.images_in_flight[m_context.image_index].lock()->wait();
+
+		// Mark the image fence as in-use by this frame.
+		m_context.images_in_flight[m_context.image_index] = m_context.in_flight_fences[m_context.m_current_frame];
+
+
 		// Reset the fence for use on the next frame
-		m_swapchain.in_flight_fences()[m_swapchain.current_frame()]->reset();
-		
-		// Submit the queue and wait for the operation to complete
-		// Begin queue submission
-		VkSubmitInfo submit_info{
-			.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-			.waitSemaphoreCount = 1,
-			.pWaitSemaphores = &m_swapchain.image_available_semaphores()[m_swapchain.current_frame()],
-			.commandBufferCount = 1,
-			.pCommandBuffers = &command_buffer.handle(),
-			.signalSemaphoreCount = 1,
-			.pSignalSemaphores = &m_swapchain.queue_complete_semaphores()[m_swapchain.current_frame()],
-		};
-		
-		// Each semaphore waits on the corresponding pipeline stage to complete. 1:1 ratio
-		// VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT prevents subsequent color attachment
-		// Writes from executing until the semaphore signals (i.e one frame is presented at a time)
-		VkPipelineStageFlags flags[1]{ VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		submit_info.pWaitDstStageMask = flags;
-		
-		VkResult result = vkQueueSubmit(m_context.device().graphics_queue(), 1, &submit_info, m_swapchain.in_flight_fences()[m_swapchain.current_frame()]->handle());
-		if (result != VK_SUCCESS)
-			MYL_CORE_ERROR("vkQueueSubmit failed, result: {}", VkResult_to_string(result));
-		
-		command_buffer.update_submitted();
-		
-		// Give the image back to the swapchain
-		m_swapchain.present(m_context.device().graphics_queue(), m_context.device().present_queue(), m_swapchain.queue_complete_semaphores()[m_swapchain.current_frame()], m_context.image_index());
-	}
+		m_context.in_flight_fences[m_context.m_current_frame]->reset();
 
-	std::shared_ptr<render::shader> backend::create_shader(const std::filesystem::path& a_file) {
-		return std::make_shared<vulkan::shader>(m_context, a_file, m_swapchain);
+		// Submit the queue and wait for the operation to complete.
+		// Begin queue submission
+		VkSubmitInfo submit_info = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+
+		// Command buffer(s) to be executed.
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &cmd_buffer.handle();
+
+		// The semaphore(s) to be signaled when the queue is complete.
+		submit_info.signalSemaphoreCount = 1;
+		submit_info.pSignalSemaphores = &m_context.queue_complete_semaphores[m_context.m_current_frame];
+
+		// Wait semaphore ensures that the operation cannot begin until the image is available.
+		submit_info.waitSemaphoreCount = 1;
+		submit_info.pWaitSemaphores = &m_context.image_available_semaphores[m_context.m_current_frame];
+
+		// Each semaphore waits on the corresponding pipeline stage to complete. 1:1 ratio.
+		// VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT prevents subsequent colour attachment
+		// writes from executing until the semaphore signals (i.e. one frame is presented at a time)
+		VkPipelineStageFlags flags[1] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		submit_info.pWaitDstStageMask = flags;
+
+		VkResult result = vkQueueSubmit(
+			m_context.m_graphics_queue,
+			1,
+			&submit_info,
+			m_context.in_flight_fences[m_context.m_current_frame]->handle());
+		if (result != VK_SUCCESS) {
+			MYL_CORE_ERROR("vkQueueSubmit failed with result: {}", myl::vulkan::VkResult_to_string(result, true));
+		}
+
+		cmd_buffer.update_submitted();
+		// End queue submission
+
+		// Give the image back to the swapchain.
+		m_context.swapchain->present(m_context.m_graphics_queue, m_context.m_present_queue, m_context.queue_complete_semaphores[m_context.m_current_frame], m_context.image_index);
 	}
 
 	void backend::on_window_resize(const u32vec2& a_size) {
-		m_swapchain.recreate(a_size.w, a_size.h);
+		// Update the "framebuffer size generation", a counter which indicates when the
+		// framebuffer size has been updated.
+		m_context.cached_framebuffer_width = a_size.w;
+		m_context.cached_framebuffer_height = a_size.h;
+		m_context.m_framebuffer_size_generation++;
+	}
+
+	std::shared_ptr<render::shader> backend::create_shader(const std::filesystem::path&) {
+		return nullptr;
 	}
 }

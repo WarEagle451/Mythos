@@ -1,4 +1,5 @@
 #include "vulkan_vertex_array.hpp"
+
 #include <mythos/math/vec3.hpp>
 
 namespace myl::vulkan {

@@ -4,7 +4,6 @@
 #include <mythos/core/except.hpp>
 
 #include <mythos/platform/vulkan/vulkan_backend.hpp>
-#include <mythos/platform/vulkan4/vulkan_backend.hpp>
 
 namespace myl::render {
 	std::unique_ptr<backend> backend::create(api a_api) {
@@ -12,9 +11,7 @@ namespace myl::render {
 		switch (a_api) {
 			using enum api;
 			case none: MYL_CORE_ASSERT("No rendering api selected"); break;
-			case vulkan:
-				///backend = std::make_unique<vulkan::backend>(); break;
-				backend = std::make_unique<vulkan4::backend>(); break;
+			case vulkan: backend = std::make_unique<vulkan::backend>(); break;
 			default: MYL_CORE_ASSERT("Invalid rendering api"); break;
 		}
 

@@ -6,93 +6,36 @@
 
 namespace myl::vulkan {
 	swapchain::swapchain(context& a_context, u32 a_width, u32 a_height)
-		: m_context(a_context)
-		, m_current_frame(0) {
-		create_swapchain(a_width, a_height);
-		MYL_CORE_INFO("Created Vulkan Swapchain");
-		create_image_views();
-		create_depth_resources();
-		create_render_pass();
-		MYL_CORE_INFO("Created render pass");
-		regenerate_framebuffers();
-		MYL_CORE_INFO("Created framebuffers");
-		create_sync_objects();
-		MYL_CORE_INFO("Created Vulkan sync objects");
+		: m_context(a_context) {
+		create(a_width, a_height);
 	}
 
 	swapchain::~swapchain() {
-		vkDeviceWaitIdle(m_context.device().logical());
-
-		for (u32 i = 0; i != m_max_frames_in_flight; ++i) {
-			vkDestroySemaphore(m_context.device().logical(), m_image_available_semaphores[i], nullptr);
-			vkDestroySemaphore(m_context.device().logical(), m_queue_complete_semaphores[i], nullptr);
-		}
-
-		m_framebuffers.clear();
-		m_render_pass.reset();
-		m_depth_attachment.reset();
-		destroy_image_views();
-		vkDestroySwapchainKHR(m_context.device().logical(), m_handle, nullptr);
+		destroy();
 	}
 
-	static VkFormat detect_depth_format(device& device) {
-		VkFormat format = device.find_supported_format(
-			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-		if (format == VK_FORMAT_UNDEFINED)
-			MYL_CORE_FATAL("Failed to find a supported depth format");
-		return format;
-	}
+	bool swapchain::acquire_next_image_index(u64 a_timeout_ns, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_image_index) {
+		VkResult result = vkAcquireNextImageKHR(m_context.m_device, m_handle, a_timeout_ns, a_image_available_semaphore, a_fence, a_image_index);
 
-	void swapchain::recreate(u32 a_width, u32 a_height) {
-		if (m_recreating)
-			return; // Already recreating swapchain
-		if (a_width == 0 || a_height == 0)
-			return; // Cannot recreate swapchain when width or height is 0
-
-		vkDeviceWaitIdle(m_context.device().logical());
-		m_recreating = true;
-
-		// Clearing just in case
-		m_images_in_flight.clear();
-
-		m_context.graphics_command_buffers().clear();
-		m_framebuffers.clear();
-		m_render_pass.reset();
-		destroy_image_views();
-		vkDestroySwapchainKHR(m_context.device().logical(), m_handle, nullptr);
-
-		m_context.device().query_swapchain_support(); // In case things have changed
-		m_depth_format = detect_depth_format(m_context.device()); // In case somehow this changes
-
-		/// MYTodo: Pass the old swapchain. Figure out what it does
-		create_swapchain(a_width, a_height); // Sets m_swapchain_extent
-		create_image_views();
-		create_render_pass();
-		regenerate_framebuffers();
-		m_context.create_command_buffers(*this);
-
-		m_images_in_flight.resize(m_images.size());
-
-		m_recreating = false;
-	}
-
-	bool swapchain::acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index) {
-		VkResult result = vkAcquireNextImageKHR(m_context.device().logical(), m_handle, a_nanoseconds_timeout, a_image_available_semaphore, a_fence, a_out_image_index);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR) { // Trigger swapchain creation then exit render loop
-			recreate(m_swapchain_extent.width, m_swapchain_extent.height);
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			// Trigger swapchain recreation, then boot out of the render loop.
+			recreate(m_context.m_framebuffer_width, m_context.m_framebuffer_height);
 			return false;
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-			MYL_CORE_FATAL("Failed to acquire swapchain image");
+			MYL_CORE_FATAL("Failed to acquire swapchain image!");
 			return false;
 		}
 
 		return true;
 	}
 
+	void swapchain::recreate(u32 a_width, u32 a_height) {
+		destroy();
+		create(a_width, a_height);
+	}
+
 	void swapchain::present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index) {
-		// return The image to the swapchain for presentaion
 		VkPresentInfoKHR present_info{
 			.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
 			.waitSemaphoreCount = 1,
@@ -100,167 +43,159 @@ namespace myl::vulkan {
 			.swapchainCount = 1,
 			.pSwapchains = &m_handle,
 			.pImageIndices = &a_present_image_index,
-			.pResults = VK_NULL_HANDLE
+			.pResults = VK_NULL_HANDLE,
 		};
 
 		VkResult result = vkQueuePresentKHR(a_present_queue, &present_info);
-		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-			// Swapchain is out of date, suboptimal or a framebuffer resize has occurred. Recreate swapchain
-			recreate(m_swapchain_extent.width, m_swapchain_extent.height);
-		else if (result != VK_SUCCESS)
-			MYL_CORE_FATAL("Failed to present swapchain image");
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+			// Swapchain is out of date, suboptimal or a framebuffer resize has occurred. Trigger swapchain recreation.
+			recreate(m_context.m_framebuffer_width, m_context.m_framebuffer_height);
+		}
+		else if (result != VK_SUCCESS) {
+			MYL_CORE_FATAL("Failed to present swap chain image!");
+		}
 
-		m_current_frame = (m_current_frame + 1) % m_max_frames_in_flight;
+		// Increment (and loop) the index.
+		m_context.m_current_frame = (m_context.m_current_frame + 1) % m_max_frames_in_flight;
 	}
 
-	static MYL_NO_DISCARD VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& formats) {
-		for (const auto& format : formats)
-			if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // Preferred formats
-				return format;
-		return formats[0];
-	}
+	void swapchain::create(u32 a_width, u32 a_height) {
+		VkExtent2D swapchain_extent = { a_width, a_height };
 
-	static MYL_NO_DISCARD VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_modes) {
-		for (const auto& mode : available_modes)
-			if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
-				return mode;
-		return VK_PRESENT_MODE_FIFO_KHR;
-	}
+		// Choose a swap surface format.
+		bool found = false;
+		for (u32 i = 0; i < m_context.m_swapchain_support_info.formats.size(); ++i) {
+			VkSurfaceFormatKHR format = m_context.m_swapchain_support_info.formats[i];
+			// Preferred formats
+			if (format.format == VK_FORMAT_B8G8R8A8_UNORM &&
+				format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+				m_image_format = format;
+				found = true;
+				break;
+			}
+		}
 
-	static MYL_NO_DISCARD VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height) {
-		if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
-			return capabilities.currentExtent;
-		else 
-			return VkExtent2D{ // Clamp to the value allowed by the gpu
-				.width = clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-				.height = clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-		};
-	}
+		if (!found) {
+			m_image_format = m_context.m_swapchain_support_info.formats[0];
+		}
 
-	void swapchain::create_swapchain(u32 a_width, u32 a_height) {
-		auto& swapchain_support = m_context.device().swapchain_support_info();
+		VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+		for (u32 i = 0; i < m_context.m_swapchain_support_info.present_modes.size(); ++i) {
+			VkPresentModeKHR mode = m_context.m_swapchain_support_info.present_modes[i];
+			if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+				present_mode = mode;
+				break;
+			}
+		}
 
-		m_image_format = choose_surface_format(swapchain_support.formats);
-		VkPresentModeKHR present_mode = choose_present_mode(swapchain_support.present_modes);
+		// Requery swapchain support.
+		m_context.query_swapchain_support();
 
-		/// MYTodo: Got rid of requry that was probs there because of recreating the swapchain
-		m_swapchain_extent = choose_swap_extent(swapchain_support.capabilites, a_width, a_height);
+		// Swapchain extent
+		if (m_context.m_swapchain_support_info.capabilities.currentExtent.width != UINT32_MAX) {
+			swapchain_extent = m_context.m_swapchain_support_info.capabilities.currentExtent;
+		}
 
-		u32 image_count = swapchain_support.capabilites.minImageCount + 1;
-		if (swapchain_support.capabilites.maxImageCount > 0 && image_count > swapchain_support.capabilites.maxImageCount) // Safe guard
-			image_count = swapchain_support.capabilites.maxImageCount;
+		// Clamp to the value allowed by the GPU.
+		VkExtent2D min = m_context.m_swapchain_support_info.capabilities.minImageExtent;
+		VkExtent2D max = m_context.m_swapchain_support_info.capabilities.maxImageExtent;
+		swapchain_extent.width = myl::clamp(swapchain_extent.width, min.width, max.width);
+		swapchain_extent.height = myl::clamp(swapchain_extent.height, min.height, max.height);
+
+		u32 image_count = m_context.m_swapchain_support_info.capabilities.minImageCount + 1;
+		if (m_context.m_swapchain_support_info.capabilities.maxImageCount > 0 && image_count > m_context.m_swapchain_support_info.capabilities.maxImageCount) {
+			image_count = m_context.m_swapchain_support_info.capabilities.maxImageCount;
+		}
 
 		m_max_frames_in_flight = image_count - 1;
 
-		VkSwapchainCreateInfoKHR create_info{
-			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-			.surface = m_context.surface(),
-			.minImageCount = image_count,
-			.imageFormat = m_image_format.format,
-			.imageColorSpace = m_image_format.colorSpace,
-			.imageExtent = m_swapchain_extent,
-			.imageArrayLayers = 1,
-			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, // AKA color buffer in opengl
-			.preTransform = swapchain_support.capabilites.currentTransform,
-			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-			.presentMode = present_mode,
-			.clipped = VK_TRUE,
-			.oldSwapchain = VK_NULL_HANDLE,
-		};
+		// Swapchain create info
+		VkSwapchainCreateInfoKHR swapchain_create_info = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+		swapchain_create_info.surface = m_context.m_surface;
+		swapchain_create_info.minImageCount = image_count;
+		swapchain_create_info.imageFormat = m_image_format.format;
+		swapchain_create_info.imageColorSpace = m_image_format.colorSpace;
+		swapchain_create_info.imageExtent = swapchain_extent;
+		swapchain_create_info.imageArrayLayers = 1;
+		swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-		// Setup queue family indices
-		auto& queue_indices = m_context.device().queue_indices();
-		if (queue_indices.graphics != queue_indices.present) {
-			u32 queue_family_indices[]{
-				queue_indices.graphics,
-				queue_indices.present
-			};
-
-			create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-			create_info.queueFamilyIndexCount = 2;
-			create_info.pQueueFamilyIndices = queue_family_indices;
+		// Setup the queue family indices
+		if (m_context.m_queue_indices.graphics_index != m_context.m_queue_indices.present_index) {
+			u32 queueFamilyIndices[] = {
+				(u32)m_context.m_queue_indices.graphics_index,
+				(u32)m_context.m_queue_indices.present_index };
+			swapchain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+			swapchain_create_info.queueFamilyIndexCount = 2;
+			swapchain_create_info.pQueueFamilyIndices = queueFamilyIndices;
 		}
 		else {
-			create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-			create_info.queueFamilyIndexCount = 0;
-			create_info.pQueueFamilyIndices = nullptr;
+			swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+			swapchain_create_info.queueFamilyIndexCount = 0;
+			swapchain_create_info.pQueueFamilyIndices = 0;
 		}
 
-		MYL_VK_CHECK(vkCreateSwapchainKHR, m_context.device().logical(), &create_info, nullptr, &m_handle);
+		swapchain_create_info.preTransform = m_context.m_swapchain_support_info.capabilities.currentTransform;
+		swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+		swapchain_create_info.presentMode = present_mode;
+		swapchain_create_info.clipped = VK_TRUE;
+		swapchain_create_info.oldSwapchain = 0;
+
+		MYL_VK_ASSERT(vkCreateSwapchainKHR, m_context.m_device, &swapchain_create_info, VK_NULL_HANDLE, &m_handle);
+
+		// Start with a zero frame index.
+		m_context.m_current_frame = 0;
 
 		// Images
-		u32 image_amount = 0;
-		MYL_VK_CHECK(vkGetSwapchainImagesKHR, m_context.device().logical(), m_handle, &image_amount, nullptr);
-		m_images.resize(image_amount);
-		MYL_VK_CHECK(vkGetSwapchainImagesKHR, m_context.device().logical(), m_handle, &image_amount, m_images.data());
-	}
+		u32 image_count2 = 0;
+		m_views.clear();
+		m_images.clear();
+		MYL_VK_ASSERT(vkGetSwapchainImagesKHR, m_context.m_device, m_handle, &image_count2, 0);
+		m_images.resize(image_count2);
+		MYL_VK_ASSERT(vkGetSwapchainImagesKHR, m_context.m_device, m_handle, &image_count2, m_images.data());
 
-	void swapchain::create_image_views() {
+		// Views
 		m_views.resize(m_images.size());
-		for (u32 i = 0; i != m_images.size(); ++i) {
-			VkImageViewCreateInfo view_info{
-				.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-				.image = m_images[i],
-				.viewType = VK_IMAGE_VIEW_TYPE_2D,
-				.format = m_image_format.format,
-				.subresourceRange = {
-					.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-					.baseMipLevel = 0,
-					.levelCount = 1,
-					.baseArrayLayer = 0,
-					.layerCount = 1
-				}
-			};
+		for (u32 i = 0; i < m_images.size(); ++i) {
+			VkImageViewCreateInfo view_info = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
+			view_info.image = m_images[i];
+			view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+			view_info.format = m_image_format.format;
+			view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			view_info.subresourceRange.baseMipLevel = 0;
+			view_info.subresourceRange.levelCount = 1;
+			view_info.subresourceRange.baseArrayLayer = 0;
+			view_info.subresourceRange.layerCount = 1;
 
-			MYL_VK_CHECK(vkCreateImageView, m_context.device().logical(), &view_info, nullptr, &m_views[i]);
-		}
-	}
-
-	void swapchain::create_depth_resources() {
-		m_depth_format = detect_depth_format(m_context.device());
-		m_depth_attachment = std::make_unique<image>(m_context, VK_IMAGE_TYPE_2D, m_swapchain_extent.width, m_swapchain_extent.height, m_depth_format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, true, VK_IMAGE_ASPECT_DEPTH_BIT);
-	}
-
-	void swapchain::create_render_pass() {
-		m_render_pass = std::make_unique<vulkan::render_pass>(*this, m_context, 0.f, 0.f, static_cast<f32>(m_swapchain_extent.width), static_cast<f32>(m_swapchain_extent.height), f32vec4{ .5f, .5f, .5f, 1.f }, 1.f, 0); /// MYTodo: This is a temp clear color
-	}
-
-	void swapchain::regenerate_framebuffers() {
-		m_framebuffers.clear();
-		for (int i = 0; i != m_images.size(); ++i) { /// MYTodo: Make this dynamic based on current configured attachments
-			std::vector<VkImageView> attachments{
-				m_views[i], // color attachment
-				m_depth_attachment->view()
-			};
-
-			m_framebuffers.emplace_back(std::make_unique<framebuffer>(m_context, *m_render_pass, u32vec2{ m_swapchain_extent.width, m_swapchain_extent.height }, attachments));
-		}
-	}
-
-	void swapchain::create_sync_objects() {
-		m_image_available_semaphores.resize(m_max_frames_in_flight);
-		m_queue_complete_semaphores.resize(m_max_frames_in_flight);
-		for (u32 i = 0; i != m_max_frames_in_flight; ++i) {
-			VkSemaphoreCreateInfo create_info{
-				.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-			};
-
-			vkCreateSemaphore(m_context.device().logical(), &create_info, nullptr, &m_image_available_semaphores[i]);
-			vkCreateSemaphore(m_context.device().logical(), &create_info, nullptr, &m_queue_complete_semaphores[i]);
-
-			// Create a fence in a signaled state, indicating that the first frame has already been rendered
-			// this will prevent the app from waiting forever for the first frame to render
-			// cannot be rendered until a frame is "rendered" before it
-			m_in_flight_fences.emplace_back(std::make_shared<fence>(m_context, true));
+			MYL_VK_ASSERT(vkCreateImageView, m_context.m_device, &view_info, VK_NULL_HANDLE, &m_views[i]);
 		}
 
-		// In flight fences should not yet exist at this point.
-		m_images_in_flight.resize(m_images.size());
+		// Depth resources
+		m_context.detect_depth_format();
+		if (m_context.m_depth_format == VK_FORMAT_UNDEFINED)
+			MYL_CORE_FATAL("Failed to find a supported format!");
+
+		// Create depth image and its view.
+		m_depth_attachment = std::make_unique<image>(m_context, VK_IMAGE_TYPE_2D,
+			swapchain_extent.width,
+			swapchain_extent.height,
+			m_context.m_depth_format,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+			true,
+			VK_IMAGE_ASPECT_DEPTH_BIT);
+		MYL_CORE_INFO("Swapchain created successfully.");
 	}
 
-	void swapchain::destroy_image_views() {
-		// Only destory the views, not the images, since those are owned by the swapchain and are destroyed when it is
-		for (auto& view : m_views)
-			vkDestroyImageView(m_context.device().logical(), view, nullptr);
+	void swapchain::destroy() {
+		vkDeviceWaitIdle(m_context.m_device);
+		m_depth_attachment.reset();
+
+		// Only destroy the views, not the images, since those are owned by the swapchain and are thus
+		// destroyed when it is.
+		for (u32 i = 0; i < m_images.size(); ++i)
+			vkDestroyImageView(m_context.m_device, m_views[i], VK_NULL_HANDLE);
+
+		vkDestroySwapchainKHR(m_context.m_device,  m_handle, VK_NULL_HANDLE);
 	}
 }

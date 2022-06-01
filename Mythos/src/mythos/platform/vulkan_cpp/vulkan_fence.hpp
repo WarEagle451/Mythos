@@ -1,0 +1,27 @@
+#pragma once
+#include <mythos/defines.hpp>
+
+#include <vulkan/vulkan.h>
+
+namespace myl::vulkane {
+	class context; // fwd declaration
+
+	class fence {
+		context& m_context; // Fence must outlive context
+
+		VkFence m_handle;
+		bool m_signaled;
+	public:
+		fence(context&, bool a_signaled);
+		~fence();
+
+		fence(const fence&) = delete;
+		fence& operator=(const fence&) = delete;
+
+		VkFence& handle() { return m_handle; }
+
+		//@brief Waits in nanoseconds
+		bool wait(u64 a_max);
+		void reset();
+	};
+}

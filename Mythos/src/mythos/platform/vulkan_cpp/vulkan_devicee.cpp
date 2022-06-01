@@ -7,7 +7,7 @@
 #include <string>
 #include <string.h>
 
-namespace myl::vulkan {
+namespace myl::vulkane {
 	device::device(context& a_context)
 		: m_context(a_context) {
 		select_physical_device();
@@ -27,7 +27,7 @@ namespace myl::vulkan {
 	}
 
 	const swapchain_support_info device::query_swapchain_support(VkPhysicalDevice a_device) {
-		vulkan::swapchain_support_info info{};
+		vulkane::swapchain_support_info info{};
 		// Surface capabilities
 		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_context.surface(), &info.capabilites);
 		// Surface formats

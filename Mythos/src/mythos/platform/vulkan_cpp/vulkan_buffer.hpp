@@ -3,22 +3,25 @@
 
 #include <vulkan/vulkan.h>
 
-namespace myl::vulkan4 {
+namespace myl::vulkane {
 	class context; // fwd declaration
 
 	class buffer {
 		context& m_context;
 
 		VkBuffer m_handle;
-		VkBufferUsageFlagBits m_usage;
+		VkBufferUsageFlags m_usage;
 		u64 m_size;
 		VkDeviceMemory m_memory;
-		i32 m_memory_index;
-		u32 m_memory_property_flags;
 		bool m_locked;
+		u32 m_memory_index;
+		u32 m_memory_property_flags;
 	public:
-		buffer(context&, u64 a_size, VkBufferUsageFlagBits, u32 a_memory_property_flags, bool a_bind_on_create);
+		buffer(context&, VkDeviceSize, VkBufferUsageFlags, u32 a_memory_property_flags, bool a_bind_on_create);
 		~buffer();
+
+		buffer(const buffer&) = delete;
+		buffer& operator=(const buffer&) = delete;
 
 		VkBuffer& handle() { return m_handle; }
 
@@ -29,6 +32,6 @@ namespace myl::vulkan4 {
 		void unlock();
 
 		void load(u64 a_offset, u64 a_size, u32 a_flags, const void* a_data);
-		void copy_to(VkBuffer, VkCommandPool, VkFence, VkQueue, u64 a_offset, u64 a_size);
+		void copy_to(VkCommandPool, VkFence, VkQueue, VkBuffer&, u64 a_offset, u64 a_size); /// MYTodo: copy_to should take buffer first
 	};
 }

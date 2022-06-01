@@ -6,7 +6,7 @@
 #include <vector>
 #include <limits>
 
-namespace myl::vulkan {
+namespace myl::vulkane {
 	class context; // fwd declaration
 
 	struct swapchain_support_info {
@@ -68,7 +68,7 @@ namespace myl::vulkan {
 		MYL_NO_DISCARD VkQueue& transfer_queue() { return m_transfer_queue; }
 
 		//@return Swapchain support info for a given device
-		const vulkan::swapchain_support_info query_swapchain_support(VkPhysicalDevice);
+		const vulkane::swapchain_support_info query_swapchain_support(VkPhysicalDevice);
 		//@brief Updates the selcted device's swapchain support info
 		void query_swapchain_support();
 		MYL_NO_DISCARD VkFormat find_supported_format(const std::vector<VkFormat>&, VkFormatFeatureFlags);

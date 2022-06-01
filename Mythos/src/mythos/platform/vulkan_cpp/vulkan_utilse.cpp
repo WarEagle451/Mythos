@@ -2,7 +2,7 @@
 
 #define MYL_VKRESULT_TO_STRING(result, extended, extended_msg) case result: return std::string(extended ? #result##": "##extended_msg : #result)
 
-namespace myl::vulkan4 {
+namespace myl::vulkane {
 	std::string VkResult_to_string(VkResult result, bool extended) {
 		// From https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkResult.html
 		switch (result) {
@@ -88,7 +88,7 @@ namespace myl::vulkan4 {
 			case VK_ERROR_INVALID_EXTERNAL_HANDLE: MYL_FALLTHROUGH;
 			case VK_ERROR_FRAGMENTATION: MYL_FALLTHROUGH;
 			case VK_ERROR_INVALID_DEVICE_ADDRESS_EXT: MYL_FALLTHROUGH;
-				// Same as above case // VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS: MYL_FALLTHROUGH;
+			// Same as above case // VK_ERROR_INVALID_OPAQUE_CAPTURE_ADDRESS: MYL_FALLTHROUGH;
 			case VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT: MYL_FALLTHROUGH;
 			case VK_ERROR_UNKNOWN: MYL_FALLTHROUGH;
 			default:
