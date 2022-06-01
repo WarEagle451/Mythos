@@ -17,8 +17,8 @@ namespace myl::render {
 		virtual bool begin() = 0;
 		virtual void end() = 0;
 
-		virtual std::shared_ptr<shader> create_shader(const std::filesystem::path&) = 0;
-
 		virtual void on_window_resize(const u32vec2&) = 0;
+
+		virtual std::shared_ptr<shader> create_shader(const std::filesystem::path&) = 0;
 	};
 }

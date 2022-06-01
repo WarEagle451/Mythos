@@ -41,10 +41,14 @@ namespace myl::vulkan {
 		context(const context&) = delete;
 		context& operator=(const context&) = delete;
 
-		MYL_NO_DISCARD VkInstance instance() { return m_instance; }
-		MYL_NO_DISCARD VkSurfaceKHR surface() { return m_surface; }
+		MYL_NO_DISCARD VkInstance& instance() { return m_instance; }
+		MYL_NO_DISCARD VkSurfaceKHR& surface() { return m_surface; }
 		MYL_NO_DISCARD device& device() { return *m_device; }
-		MYL_NO_DISCARD u32& image_index() { return m_image_index; }
+		MYL_NO_DISCARD u32 image_index() const { return m_image_index; }
+		MYL_NO_DISCARD buffer& vertex_buffer() { return *m_vertex_buffer; }
+		MYL_NO_DISCARD buffer& index_buffer() { return *m_index_buffer; }
+
+		void set_image_index(u32 a_index) { m_image_index = a_index; }
 
 		MYL_NO_DISCARD u32 find_memory_index(u32 a_type_filter, VkMemoryPropertyFlags a_property_flags);
 		MYL_NO_DISCARD std::vector<command_buffer>& graphics_command_buffers() { return m_graphics_command_buffers; }
@@ -52,6 +56,9 @@ namespace myl::vulkan {
 
 		void create_command_buffers(swapchain&);
 		void create_buffers();
+
+		/// MYTemp: KOHI says this is temp, figure out of to replace it
+		void upload_data_range(VkCommandPool, VkFence, VkQueue, buffer&, u64 a_offset, u64 a_size, void* a_data);
 	private:
 		void create_instance();
 

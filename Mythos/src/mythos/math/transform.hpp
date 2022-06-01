@@ -7,6 +7,8 @@
 /// MYBug: This will only be correct if kohi has the matrices as 0-3 = column 1, etc, if 0-3 = row 1 might have issues
 
 namespace myl {
+	using transform = mat4x4<float>;
+
 	template<typename T>
 	MYL_NO_DISCARD constexpr mat4x4<T> matrix_translation(const vec3<T>& position) {
 		return mat4x4<T>( /// MYTodo: Make sure this is good for a left handed cord system

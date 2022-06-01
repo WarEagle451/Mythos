@@ -227,7 +227,7 @@ namespace myl::vulkan {
 		std::vector<VkPhysicalDevice> physical_devices(count);
 		MYL_VK_CHECK(vkEnumeratePhysicalDevices, m_context.instance(), &count, physical_devices.data());
 
-		for (auto& device : physical_devices) {
+		for (auto& device : physical_devices) { /// MYTodo: Should probs just have a func for below
 			VkPhysicalDeviceProperties properties{};
 			vkGetPhysicalDeviceProperties(device, &properties);
 

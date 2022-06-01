@@ -18,7 +18,7 @@ namespace myl::vulkan {
 		fence(const fence&) = delete;
 		fence& operator=(const fence&) = delete;
 
-		VkFence handle() { return m_handle; }
+		VkFence& handle() { return m_handle; }
 
 		//@brief Waits in nanoseconds
 		bool wait(u64 a_max);

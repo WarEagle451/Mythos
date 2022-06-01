@@ -6,6 +6,8 @@
 #include <fstream>
 
 namespace myl {
+	/// MYTodo: Read as bytes
+
 	template<class CharT = char>
 	MYL_NO_DISCARD std::basic_string<CharT> load_into_memory(const std::filesystem::path& file, std::ios_base::openmode mode = std::ios::binary) {
 		if (std::basic_ifstream<CharT> in(file, mode); in.is_open())

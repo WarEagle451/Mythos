@@ -11,7 +11,7 @@ namespace myl::vulkan {
 			.flags = m_signaled ? VK_FENCE_CREATE_SIGNALED_BIT : static_cast<VkFenceCreateFlags>(0)
 		}; 
 
-		MYL_VK_CHECK(vkCreateFence, m_context.device().logical(), &info, nullptr, &m_handle);
+		MYL_VK_CHECK(vkCreateFence, m_context.device().logical(), &info, VK_NULL_HANDLE, &m_handle);
 	}
 
 	fence::~fence() {
@@ -27,7 +27,7 @@ namespace myl::vulkan {
 				m_signaled = true;
 				return true;
 			case VK_TIMEOUT:
-				MYL_CORE_WARN("Vulkan fence - timed out");
+				MYL_CORE_WARN("Vulkan fence - Timed out");
 				break;
 			case VK_ERROR_DEVICE_LOST:
 				MYL_CORE_ERROR("Vulkan fence - VK_ERROR_DEVICE_LOST");
@@ -39,7 +39,7 @@ namespace myl::vulkan {
 				MYL_CORE_ERROR("Vulkan fence - VK_ERROR_OUT_OF_DEVICE_MEMORY");
 				break;
 			default:
-				MYL_CORE_ERROR("Vulkan fence - unknown error");
+				MYL_CORE_ERROR("Vulkan fence - Unknown error");
 				break;
 		}
 		return false;

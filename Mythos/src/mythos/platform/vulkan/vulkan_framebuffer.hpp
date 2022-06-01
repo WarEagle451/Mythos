@@ -22,6 +22,6 @@ namespace myl::vulkan {
 		framebuffer(const framebuffer&) = delete;
 		framebuffer& operator=(const framebuffer&) = delete;
 
-		VkFramebuffer handle() { return m_handle; }
+		VkFramebuffer& handle() { return m_handle; }
 	};
 }

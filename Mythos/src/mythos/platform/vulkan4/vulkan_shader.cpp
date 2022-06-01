@@ -11,7 +11,7 @@
 #include <vector>
 #include <fstream>
 
-namespace myl::vulkan {
+namespace myl::vulkan4 {
 	static const std::filesystem::path cached_directory() { /// MYTemp:
 		return "cache/shaders";
 	}
@@ -144,7 +144,10 @@ namespace myl::vulkan {
 		/// MYTodo: Descriptors
 
 		// Pipeline creation
-		auto& swapchain_extent = a_swapchain.swapchain_extent();
+		VkExtent2D swapchain_extent{
+			.width = m_context.m_framebuffer_width,
+			.height = m_context.m_framebuffer_height
+		};
 
 		VkViewport viewport{
 			.x = 0.f,
@@ -156,7 +159,7 @@ namespace myl::vulkan {
 		};
 
 		VkRect2D scissor{
-			.offset = { .x = 0, .y = 0 },
+			.offset = {.x = 0, .y = 0 },
 			.extent = swapchain_extent
 		};
 
@@ -177,17 +180,17 @@ namespace myl::vulkan {
 				});
 
 		/// MYTodo: a_swapchain.render_pass() is in context as main_render_pass for KOHI
-		m_pipeline = std::make_unique<pipeline>(m_context, a_swapchain.render_pass(), attribute_descriptions, std::vector<VkDescriptorSetLayout>(), shader_stages, viewport, scissor, false);
+		m_pipeline = std::make_unique<pipeline>(m_context, *m_context.main_renderpass, attribute_descriptions, std::vector<VkDescriptorSetLayout>(), shader_stages, viewport, scissor, false);
 	}
 
 	shader::~shader() {
 		for (auto&& [type, module] : m_modules)
 			if (module != VK_NULL_HANDLE)
-				vkDestroyShaderModule(m_context.device().logical(), module, nullptr);
+				vkDestroyShaderModule(m_context.m_device, module, nullptr);
 	}
 
 	void shader::bind() const {
-		m_pipeline->bind(m_context.graphics_command_buffers()[m_context.image_index()], VK_PIPELINE_BIND_POINT_GRAPHICS);
+		m_pipeline->bind(m_context.graphics_command_buffers[m_context.image_index], VK_PIPELINE_BIND_POINT_GRAPHICS);
 	}
 
 	void shader::unbind() const {
@@ -195,7 +198,7 @@ namespace myl::vulkan {
 	}
 
 	void shader::create_module(VkShaderModuleCreateInfo& a_create_info, VkShaderModule* a_module) {
-		if (vkCreateShaderModule(m_context.device().logical(), &a_create_info, nullptr, a_module) != VK_SUCCESS)
+		if (vkCreateShaderModule(m_context.m_device, &a_create_info, nullptr, a_module) != VK_SUCCESS)
 			MYL_CORE_ERROR("Failed to create Vulkan shader module");
 	}
 }

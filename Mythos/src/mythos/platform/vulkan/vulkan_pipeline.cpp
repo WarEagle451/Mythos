@@ -40,7 +40,7 @@ namespace myl::vulkan {
 			.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
 			.sampleShadingEnable = VK_FALSE,
 			.minSampleShading = 1.f,
-			.pSampleMask = nullptr,
+			.pSampleMask = VK_NULL_HANDLE,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable = VK_FALSE
 		};
@@ -49,7 +49,7 @@ namespace myl::vulkan {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
 			.depthTestEnable = VK_TRUE,
 			.depthWriteEnable = VK_TRUE,
-			.depthCompareOp = VK_COMPARE_OP_LESS,
+			.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
 			.depthBoundsTestEnable = VK_FALSE,
 			.stencilTestEnable = VK_FALSE
 		};
@@ -64,7 +64,6 @@ namespace myl::vulkan {
 			.alphaBlendOp = VK_BLEND_OP_ADD,
 			.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
 		};
-
 		VkPipelineColorBlendStateCreateInfo color_blend_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
 			.logicOpEnable = VK_FALSE,
@@ -79,14 +78,13 @@ namespace myl::vulkan {
 			VK_DYNAMIC_STATE_SCISSOR,
 			VK_DYNAMIC_STATE_LINE_WIDTH
 		};
-
 		VkPipelineDynamicStateCreateInfo dynamic_state_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
 			.dynamicStateCount = static_cast<u32>(dynamic_states.size()),
 			.pDynamicStates = dynamic_states.data()
 		};
 
-		auto binding_descriptions = vertex_array::vertex::get_binding_descriptions();
+		auto binding_descriptions = vertex::get_binding_descriptions();
 
 		VkPipelineVertexInputStateCreateInfo vertex_input_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -108,7 +106,7 @@ namespace myl::vulkan {
 			.pSetLayouts = a_descriptor_set_layouts.data(),
 		};
 
-		MYL_VK_CHECK(vkCreatePipelineLayout, m_context.device().logical(), &layout_info, nullptr, &m_layout);
+		MYL_VK_CHECK(vkCreatePipelineLayout, m_context.device().logical(), &layout_info, VK_NULL_HANDLE, &m_layout);
 
 		VkGraphicsPipelineCreateInfo pipeline_info{
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,

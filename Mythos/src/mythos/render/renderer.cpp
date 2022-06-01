@@ -2,6 +2,8 @@
 
 #include <mythos/platform/detection.hpp>
 
+#include <mythos/core/log.hpp>
+
 namespace myl::render {
 	std::unique_ptr<backend> renderer::s_backend = nullptr;
 	api renderer::s_api = api::none;

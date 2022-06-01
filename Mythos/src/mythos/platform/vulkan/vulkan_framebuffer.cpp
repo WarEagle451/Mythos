@@ -11,8 +11,8 @@ namespace myl::vulkan {
 			.renderPass = m_render_pass.handle(),
 			.attachmentCount = static_cast<u32>(m_attachments.size()),
 			.pAttachments = m_attachments.data(),
-			.width = a_size.x,
-			.height = a_size.y,
+			.width = a_size.w,
+			.height = a_size.h,
 			.layers = 1
 		};
 

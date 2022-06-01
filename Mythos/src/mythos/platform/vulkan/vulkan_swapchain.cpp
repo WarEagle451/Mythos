@@ -100,7 +100,7 @@ namespace myl::vulkan {
 			.swapchainCount = 1,
 			.pSwapchains = &m_handle,
 			.pImageIndices = &a_present_image_index,
-			.pResults = nullptr
+			.pResults = VK_NULL_HANDLE
 		};
 
 		VkResult result = vkQueuePresentKHR(a_present_queue, &present_info);
@@ -222,7 +222,7 @@ namespace myl::vulkan {
 	}
 
 	void swapchain::create_render_pass() {
-		m_render_pass = std::make_unique<vulkan::render_pass>(*this, m_context, 0.f, 0.f, static_cast<f32>(m_swapchain_extent.width), static_cast<f32>(m_swapchain_extent.height), f32vec4{ .1f, .1f, .1f, 1.f }, 1.f, 0); /// MYTodo: This is a temp clear color
+		m_render_pass = std::make_unique<vulkan::render_pass>(*this, m_context, 0.f, 0.f, static_cast<f32>(m_swapchain_extent.width), static_cast<f32>(m_swapchain_extent.height), f32vec4{ .5f, .5f, .5f, 1.f }, 1.f, 0); /// MYTodo: This is a temp clear color
 	}
 
 	void swapchain::regenerate_framebuffers() {

@@ -5,6 +5,7 @@
 #include "vulkan_vertex_array.hpp"
 
 #include <mythos/core/app.hpp>
+#include <mythos/math/vec3.hpp>
 
 namespace myl::vulkan {
 	context::context() {
@@ -46,7 +47,7 @@ namespace myl::vulkan {
 			// Check each memory type to see if its bit is set
 			if ((a_type_filter & (1 << i)) && (properties.memoryTypes[i].propertyFlags & a_property_flags) == a_property_flags)
 				return i;
-
+		/// MYTodo: SHould probs throw here instead of below
 		MYL_CORE_WARN("Unable to find suitable memory type");
 		return -1; /// MYTodo: Need a better way to have a invalid number, macro maybe?
 	}
@@ -119,6 +120,8 @@ namespace myl::vulkan {
 			.ppEnabledExtensionNames = extensions.data()
 		};
 
+		/// @brief  MYTodo: Make debug messenger here and creat_info.createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
+		/// Should be trhow below
 		MYL_VK_CHECK(vkCreateInstance, &create_info, nullptr, &m_instance);
 		MYL_CORE_INFO("Created Vulkan instance");
 	}
@@ -150,12 +153,11 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Destroyed command buffers");
 	}
 
-	/// MYTodo: The amount of memory allocated for geometry needs to be the same across all platforms
 	void context::create_buffers() {
 		VkMemoryPropertyFlagBits memory_prop_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
 		/// MYTodo: This should be dynamic later on
-		const u64 vertex_buffer_size = sizeof(vertex_array::vertex) * 1024 * 1024;
+		const u64 vertex_buffer_size = sizeof(f32vec3) * 1024 * 1024;
 		m_vertex_buffer = std::make_unique<buffer>(*this, vertex_buffer_size,
 			VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			memory_prop_flags, true);
@@ -167,6 +169,18 @@ namespace myl::vulkan {
 			VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
 			memory_prop_flags, true);
 		m_geometry_index_offset = 0;
+	}
+
+	void context::upload_data_range(VkCommandPool a_pool, VkFence a_fence, VkQueue a_queue, buffer& a_buffer, u64 a_offset, u64 a_size, void* a_data) {
+		// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
+		VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		buffer staging(*this, a_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, flags, true);
+
+		// Load the data into the staging buffer.
+		staging.load(0, a_size, 0, a_data);
+
+		// Perform the copy from staging to the device local buffer.
+		staging.copy_to(a_pool, a_fence, a_queue, a_buffer.handle(), a_offset, a_size);
 	}
 
 #ifdef MYL_ENABLE_VALIDATION_LAYERS
@@ -184,7 +198,7 @@ namespace myl::vulkan {
 	void context::create_debug_messenger() {
 		VkDebugUtilsMessengerCreateInfoEXT create_info{
 			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
-			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT, // | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,// | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT,
 			.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
 			.pfnUserCallback = debug_callback,
 			.pUserData = nullptr  // Optional

@@ -57,15 +57,15 @@ namespace myl::vulkan {
 		device(const device&) = delete;
 		device& operator=(const device&) = delete;
 
-		MYL_NO_DISCARD VkDevice logical() { return m_logical_device; }
-		MYL_NO_DISCARD VkPhysicalDevice physical() { return m_physical_device; }
+		MYL_NO_DISCARD VkDevice& logical() { return m_logical_device; }
+		MYL_NO_DISCARD VkPhysicalDevice& physical() { return m_physical_device; }
 
 		MYL_NO_DISCARD const swapchain_support_info& swapchain_support_info() const { return m_swapchain_support_info; }
 		MYL_NO_DISCARD const queue_family_indices& queue_indices() const { return m_queue_indices; }
-		MYL_NO_DISCARD VkCommandPool graphics_command_pool() { return m_graphics_command_pool; }
-		MYL_NO_DISCARD VkQueue graphics_queue() { return m_graphics_queue; }
-		MYL_NO_DISCARD VkQueue present_queue() { return m_present_queue; }
-		MYL_NO_DISCARD VkQueue transfer_queue() { return m_transfer_queue; }
+		MYL_NO_DISCARD VkCommandPool& graphics_command_pool() { return m_graphics_command_pool; }
+		MYL_NO_DISCARD VkQueue& graphics_queue() { return m_graphics_queue; }
+		MYL_NO_DISCARD VkQueue& present_queue() { return m_present_queue; }
+		MYL_NO_DISCARD VkQueue& transfer_queue() { return m_transfer_queue; }
 
 		//@return Swapchain support info for a given device
 		const vulkan::swapchain_support_info query_swapchain_support(VkPhysicalDevice);

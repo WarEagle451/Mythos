@@ -25,5 +25,6 @@ namespace myl::vulkan {
 		~pipeline();
 
 		void bind(command_buffer&, VkPipelineBindPoint);
+
 	};
 }

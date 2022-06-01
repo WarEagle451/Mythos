@@ -8,7 +8,8 @@ namespace myl::vulkan {
 		: m_context(a_context)
 		, m_size(a_size)
 		, m_usage(a_usage)
-		, m_memory_property_flags(a_memory_property_flags) {
+		, m_memory_property_flags(a_memory_property_flags)
+		, m_locked(false) {
 		VkBufferCreateInfo create_info{
 			.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
 			.size = m_size,
@@ -87,22 +88,24 @@ namespace myl::vulkan {
 
 	void* buffer::lock(u64 a_offset, u64 a_size, u32 a_flags) {
 		void* pdata = nullptr;
+		m_locked = true;
 		MYL_VK_CHECK(vkMapMemory, m_context.device().logical(), m_memory, a_offset, a_size, a_flags, &pdata);
 		return pdata;
 	}
 
 	void buffer::unlock() {
 		vkUnmapMemory(m_context.device().logical(), m_memory);
+		m_locked = false;
 	}
 
-	void buffer::load(u64 a_offset, u64 a_size, u32 a_flags, void* a_data) {
-		void* pdata = nullptr;
+	void buffer::load(u64 a_offset, u64 a_size, u32 a_flags, const void* a_data) {
+		void* pdata;
 		MYL_VK_CHECK(vkMapMemory, m_context.device().logical(), m_memory, a_offset, a_size, a_flags, &pdata);
-		memcpy(a_data, pdata, a_size);
+		memcpy(pdata, a_data, a_size);
 		vkUnmapMemory(m_context.device().logical(), m_memory);
 	}
 
-	void buffer::copy_to(VkCommandPool a_command_pool, VkFence a_fence, VkQueue a_queue, VkBuffer a_buffer, u64 a_offset, u64 a_size) {
+	void buffer::copy_to(VkCommandPool a_command_pool, VkFence a_fence, VkQueue a_queue, VkBuffer& a_buffer, u64 a_offset, u64 a_size) {
 		vkQueueWaitIdle(a_queue);
 
 		command_buffer temp_cmd_buf(m_context, a_command_pool);

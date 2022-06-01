@@ -17,11 +17,6 @@ namespace myl::vulkan {
 		, m_stencil(a_stencil)
 		, m_state(render_pass_state::not_allocated) {
 
-		// Main subpass
-		VkSubpassDescription subpass{
-			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS
-		};
-
 		// Attachments
 		/// MYTodo: Make render_pass attachments configurable
 		const u32 attachment_description_count = 2;
@@ -46,9 +41,6 @@ namespace myl::vulkan {
 			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		};
 
-		subpass.colorAttachmentCount = 1;
-		subpass.pColorAttachments = &color_attachment_ref;
-
 		// Depth attachment
 		attachment_description.push_back(VkAttachmentDescription{
 				.flags = 0,
@@ -67,20 +59,19 @@ namespace myl::vulkan {
 			.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		};
 
-		subpass.pDepthStencilAttachment = &depth_attachment_ref;
-
 		/// MYTodo: Other attachment types, input, resolve, preserve
 
-		// Input from a shader
-		subpass.inputAttachmentCount = 0;
-		subpass.pInputAttachments = nullptr;
-
-		// Attachments used for multisampling color attachments
-		subpass.pResolveAttachments = nullptr;
-
-		// Attachments not used in this subpass but used in the next subpass
-		subpass.preserveAttachmentCount = 0;
-		subpass.pPreserveAttachments = nullptr;
+		VkSubpassDescription subpass{
+			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+			.inputAttachmentCount = 0,
+			.pInputAttachments = nullptr,
+			.colorAttachmentCount = 1,
+			.pColorAttachments = &color_attachment_ref,
+			.pResolveAttachments = nullptr,
+			.pDepthStencilAttachment = &depth_attachment_ref,
+			.preserveAttachmentCount = 0,
+			.pPreserveAttachments = nullptr,
+		};
 
 		// render_pass dependencies
 		/// MYTodo: configurable

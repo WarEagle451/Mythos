@@ -2,7 +2,9 @@
 #define MYL_VERSION_MAJOR 0
 #define MYL_VERSION_MINOR 0
 #define MYL_VERSION_PATCH 0
-#define MYL_VERSION (MYL_VERSION_MAJOR * 1000000 + MYL_VERSION_MINOR * 1000 + MYL_VERSION_PATCH)
+#define MYL_VERSION (MYL_VERSION_MAJOR * 10000 + MYL_VERSION_MINOR * 100 + MYL_VERSION_PATCH)
+
+#define MYL_ENGINE_NAME "Mythos Engine"
 
 #define MYL_NO_RETURN [[noreturn]]
 #define MYL_CARRIES_DEPENDENCY [[carries_dependency]]
@@ -43,7 +45,7 @@ namespace myl {
 	using f32 = float;
 	using f64 = double;
 
-	using size = u64; /// MYTodo: Go through and implement
+	using size = u64; /// MYTodo: Go through and implement and should this be the final
 }
 
 #if defined(__clang__) || defined(__gcc__)
