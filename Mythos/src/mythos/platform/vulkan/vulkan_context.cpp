@@ -1,9 +1,11 @@
 #include "vulkan_context.hpp"
 #include "vulkan_platform.hpp"
 #include "vulkan_utils.hpp"
+#include "vulkan_swapchain.hpp"
 
 #include <mythos/core/app.hpp>
 #include <mythos/core/log.hpp>
+#include <mythos/math/vec3.hpp>
 
 #include <string.h> /// MYTodo: strcmp
 
@@ -11,7 +13,7 @@
 /// MYTodo: All of the throws might cause destructor to try to destroy some stuff that isn't created yet
 
 namespace myl::vulkan {
-	static std::vector<const char*> required_validation_layers() {
+	MYL_NO_DISCARD static std::vector<const char*> required_validation_layers() {
 		std::vector<const char*> required_layers;
 #ifdef MYL_VK_ENABLE_VALIDATION_LAYERS
 		required_layers.push_back("VK_LAYER_KHRONOS_validation");
@@ -40,7 +42,7 @@ namespace myl::vulkan {
 		return required_layers;
 	}
 
-	static std::vector<const char*> required_extensions() {
+	MYL_NO_DISCARD static std::vector<const char*> required_extensions() {
 		std::vector<const char*> extensions;
 		extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME); // Generic surface extension
 		required_platform_extensions(&extensions);
@@ -66,7 +68,7 @@ namespace myl::vulkan {
 		return VK_FALSE;
 	}
 #endif
-	constexpr std::string VkPhysicalDeviceType_to_string(VkPhysicalDeviceType type) {
+	MYL_NO_DISCARD constexpr std::string VkPhysicalDeviceType_to_string(VkPhysicalDeviceType type) {
 		switch (type) {
 			case VK_PHYSICAL_DEVICE_TYPE_OTHER: return "Other";
 			case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: return "Integrated";
@@ -85,27 +87,27 @@ namespace myl::vulkan {
 		create_device();
 		obtain_queues();
 		create_command_pool();
+		create_buffers();
 	}
 
-	context::~context() {
+	context::~context() { // Must destory in opposite order of creation
+		destroy_buffers();
 		destroy_command_pool();
 		destroy_device();
 		destroy_surface();
 		destroy_instance();
 	}
 
-	u32 context::find_memory_index(u32 a_type_filter, u32 a_property_flags) const { /// MYTodo: Redo my way
-		VkPhysicalDeviceMemoryProperties memory_properties;
+	u32 context::find_memory_index(u32 a_type_filter, u32 a_property_flags) const {
+		VkPhysicalDeviceMemoryProperties memory_properties{};
 		vkGetPhysicalDeviceMemoryProperties(m_physical_device, &memory_properties);
 
-		for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i) {
-			// Check each memory type to see if its bit is set to 1.
-			if (a_type_filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & a_property_flags) == a_property_flags) {
+		for (u32 i = 0; i < memory_properties.memoryTypeCount; ++i)
+			// Check each memory type to see if its bit is set
+			if (a_type_filter & (1 << i) && (memory_properties.memoryTypes[i].propertyFlags & a_property_flags) == a_property_flags)
 				return i;
-			}
-		}
-
-		return ~0u;
+		MYL_CORE_WARN("Unable to find suitable memory type");
+		return ~0;
 	}
 
 	swapchain_support_info context::query_swapchain_support(VkPhysicalDevice a_device) const {
@@ -177,10 +179,10 @@ namespace myl::vulkan {
 			return false;
 
 		const device_queue_indices queue_indices = get_queue_family_indices(a_device);
-		if ((a_requirements.graphics && queue_indices.graphics_index == ~0u) && // Requires index and that index is not valid
-			(a_requirements.present && queue_indices.present_index == ~0u) &&
-			(a_requirements.compute && queue_indices.compute_index == ~0u) &&
-			(a_requirements.transfer && queue_indices.transfer_index == ~0u))
+		if ((a_requirements.graphics && queue_indices.graphics_index == ~0) && // Requires index and that index is not valid
+			(a_requirements.present && queue_indices.present_index == ~0) &&
+			(a_requirements.compute && queue_indices.compute_index == ~0) &&
+			(a_requirements.transfer && queue_indices.transfer_index == ~0))
 			return false;
 
 		MYL_CORE_INFO("'{}' meets requirements", std::string(a_properties.deviceName));
@@ -251,9 +253,9 @@ namespace myl::vulkan {
 			device_queue_indices queue_indices{};
 			if (device_meets_requirements(device, requirements, properties, features, &queue_indices)) {
 				MYL_CORE_INFO("Selected device '{}'", std::string(properties.deviceName));
-				MYL_CORE_INFO("\t- Type: {}", VkPhysicalDeviceType_to_string(properties.deviceType));
-				MYL_CORE_INFO("\t- Driver version: {}.{}.{}", VK_VERSION_MAJOR(properties.driverVersion), VK_VERSION_MINOR(properties.driverVersion), VK_VERSION_PATCH(properties.driverVersion));
-				MYL_CORE_INFO("\t- API version: {}.{}.{}", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
+				MYL_CORE_INFO("\t- GPU Type: {}", VkPhysicalDeviceType_to_string(properties.deviceType));
+				MYL_CORE_INFO("\t- GPU driver version: {}.{}.{}", VK_VERSION_MAJOR(properties.driverVersion), VK_VERSION_MINOR(properties.driverVersion), VK_VERSION_PATCH(properties.driverVersion));
+				MYL_CORE_INFO("\t- Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(properties.apiVersion), VK_VERSION_MINOR(properties.apiVersion), VK_VERSION_PATCH(properties.apiVersion));
 
 				for (u32 i = 0; i != memory.memoryHeapCount; ++i) {
 					f32 mem_size_gib = static_cast<f32>(memory.memoryHeaps[i].size) / 1024.f / 1024.f / 1024.f; // bytes to gibibytes
@@ -271,7 +273,7 @@ namespace myl::vulkan {
 		}
 
 		if (!m_physical_device)
-			throw vulkan_error("No devices meant requirements");
+			throw vulkan_error("No devices meant requirements"); /// MYTodo: Should try to select a different rendering backend
 	}
 
 	void context::obtain_queues() {
@@ -301,13 +303,56 @@ namespace myl::vulkan {
 		m_depth_format = VK_FORMAT_UNDEFINED;
 	}
 
+	void context::upload(VkCommandPool a_pool, VkFence a_fence, VkQueue a_queue, buffer& a_buffer, u64 a_offset, u64 a_size, void* a_data) {
+		// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
+		VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+		buffer staging(*this, a_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, flags, true);
+
+		// Load the data into the staging buffer.
+		staging.load(0, a_size, 0, a_data);
+
+		// Perform the copy from staging to the device local buffer.
+		staging.copy_to(a_buffer.handle(), a_pool, a_fence, a_queue, a_offset, a_size);
+	}
+
+	void context::create_command_buffers(swapchain& a_swapchain) {
+		m_graphics_command_buffers.clear();
+		if (m_graphics_command_buffers.empty())
+			for (u32 i = 0; i != a_swapchain.images().size(); ++i)
+				m_graphics_command_buffers.push_back(command_buffer(*this));
+
+		for (auto& buf : m_graphics_command_buffers)
+			buf.allocate(m_graphics_command_pool, true);
+
+		MYL_CORE_DEBUG("Vulkan command buffers created.");
+	}
+
+	void context::create_buffers() {
+		VkMemoryPropertyFlagBits memory_prop_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	
+		/// MYTodo: This should be dynamic later on
+		const u64 vertex_buffer_size = sizeof(f32vec3) * 1024 * 1024;
+		m_vertex_buffer = std::make_unique<buffer>(*this, vertex_buffer_size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, memory_prop_flags, true);
+		m_geometry_vertex_offset = 0;
+	
+		/// MYTodo: This should be dynamic later on
+		const u64 index_buffer_size = sizeof(u32) * 1024 * 1024;
+		m_index_buffer = std::make_unique<buffer>(*this, index_buffer_size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, memory_prop_flags, true);
+		m_geometry_index_offset = 0;
+	}
+
+	void context::destroy_buffers() {
+		m_vertex_buffer.reset();
+		m_index_buffer.reset();
+	}
+
 	void context::create_instance() {
-		auto& mythos_info = app::get().info();
-		VkApplicationInfo app_info{
+		auto& app_info = app::get().info();
+		VkApplicationInfo vk_app_info{
 			.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 			.pNext = VK_NULL_HANDLE,
-			.pApplicationName = mythos_info.name.c_str(),
-			.applicationVersion = VK_MAKE_VERSION(mythos_info.major, mythos_info.minor, mythos_info.patch),
+			.pApplicationName = app_info.name.c_str(),
+			.applicationVersion = VK_MAKE_VERSION(app_info.major, app_info.minor, app_info.patch),
 			.pEngineName = MYL_ENGINE_NAME,
 			.engineVersion = VK_MAKE_VERSION(MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH),
 			.apiVersion = VK_API_VERSION_1_3
@@ -318,7 +363,7 @@ namespace myl::vulkan {
 
 		VkInstanceCreateInfo create_info{
 			.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
-			.pApplicationInfo = &app_info,
+			.pApplicationInfo = &vk_app_info,
 			.enabledLayerCount = static_cast<u32>(validation_layers.size()),
 			.ppEnabledLayerNames = validation_layers.data(),
 			.enabledExtensionCount = static_cast<u32>(extensions.size()),
@@ -330,7 +375,8 @@ namespace myl::vulkan {
 			.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 			.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT,
 			.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
-			.pfnUserCallback = debug_callback
+			.pfnUserCallback = debug_callback,
+			.pUserData = VK_NULL_HANDLE
 		};
 
 		create_info.pNext = &debug_create_info;
@@ -340,7 +386,7 @@ namespace myl::vulkan {
 
 #ifdef MYL_VK_ENABLE_VALIDATION_LAYERS
 		PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
-		MYL_CORE_ASSERT(func, "Failed to create debug messenger");
+		MYL_CORE_ASSERT(func, "Failed to create debug messenger"); /// MYTodo: Should not be a core assert
 		MYL_VK_ASSERT(func, m_instance, &debug_create_info, VK_NULL_HANDLE, &m_debug_messenger);
 		MYL_CORE_INFO("Created Vulkan debugger");
 #endif
@@ -388,12 +434,11 @@ namespace myl::vulkan {
 			std::vector<VkExtensionProperties> available_extensions(available_extension_count);
 			MYL_VK_ASSERT(vkEnumerateDeviceExtensionProperties, m_physical_device, nullptr, &available_extension_count, available_extensions.data());
 
-			for (auto& available : available_extensions) {
+			for (auto& available : available_extensions)
 				if (strcmp(available.extensionName, "VK_KHR_portability_subset") == 0) {
 					extensions.push_back("VK_KHR_portability_subset");
 					break;
 				}
-			}
 		}
 
 		/// MYTodo: Should be config driven
@@ -426,6 +471,12 @@ namespace myl::vulkan {
 	}
 
 	void context::destroy_command_pool() {
+		for (auto& buffer : m_graphics_command_buffers) // Must destroy buffers before the pool
+			if (buffer.handle() != VK_NULL_HANDLE)
+				buffer.deallocate(m_graphics_command_pool);
+		m_graphics_command_buffers.clear();
+		MYL_CORE_INFO("Destroyed command buffers");
+
 		vkDestroyCommandPool(m_device, m_graphics_command_pool, VK_NULL_HANDLE);
 		MYL_CORE_INFO("Destroyed graphics command pool");
 	}

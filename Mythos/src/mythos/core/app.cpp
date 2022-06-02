@@ -36,7 +36,7 @@ namespace myl {
 
 		render::renderer::shutdown();
 		m_window.reset();
-		MYL_CORE_INFO("Application terminated");
+		MYL_CORE_INFO("Terminated application");
 	}
 
 	void app::run() {

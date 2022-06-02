@@ -102,7 +102,7 @@ namespace myl::vulkan {
 		memcpy(data_ptr, a_data, a_size); /// MYTodo: Temp
 		vkUnmapMemory(m_context.device(), m_memory);
 	}
-
+	/// MYTodo: Take buffer not VkBuffer
 	void buffer::copy_to(VkBuffer a_buffer, VkCommandPool a_pool, VkFence a_fence, VkQueue a_queue, u64 a_offset, u64 a_size) {
 		vkQueueWaitIdle(a_queue);
 

@@ -1,6 +1,7 @@
 #include "vulkan_pipeline.hpp"
 #include "vulkan_context.hpp"
 #include "vulkan_utils.hpp"
+#include "vulkan_vertex_array.hpp"
 
 #include <mythos/math/vec3.hpp>
 
@@ -23,18 +24,18 @@ namespace myl::vulkan {
 			.cullMode = VK_CULL_MODE_BACK_BIT,
 			.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
 			.depthBiasEnable = VK_FALSE,
-			.depthBiasConstantFactor = 0.0f,
-			.depthBiasClamp = 0.0f,
-			.depthBiasSlopeFactor = 0.0f,
-			.lineWidth = 1.0f
+			.depthBiasConstantFactor = 0.f,
+			.depthBiasClamp = 0.f,
+			.depthBiasSlopeFactor = 0.f,
+			.lineWidth = 1.f
 		};
 
 		VkPipelineMultisampleStateCreateInfo multisampling_create_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
 			.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
 			.sampleShadingEnable = VK_FALSE,
-			.minSampleShading = 1.0f,
-			.pSampleMask = 0,
+			.minSampleShading = 1.f,
+			.pSampleMask = VK_NULL_HANDLE,
 			.alphaToCoverageEnable = VK_FALSE,
 			.alphaToOneEnable = VK_FALSE
 		};
@@ -43,7 +44,7 @@ namespace myl::vulkan {
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
 			.depthTestEnable = VK_TRUE,
 			.depthWriteEnable = VK_TRUE,
-			.depthCompareOp = VK_COMPARE_OP_LESS,
+			.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
 			.depthBoundsTestEnable = VK_FALSE,
 			.stencilTestEnable = VK_FALSE
 		};
@@ -79,16 +80,12 @@ namespace myl::vulkan {
 			.pDynamicStates = dynamic_states.data()
 		};
 
-		VkVertexInputBindingDescription binding_description{
-			.binding = 0,
-			.stride = sizeof(f32vec3),
-			.inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-		};
+		auto binding_descriptions = vertex::get_binding_descriptions();
 
 		VkPipelineVertexInputStateCreateInfo vertex_input_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-			.vertexBindingDescriptionCount = 1,
-			.pVertexBindingDescriptions = &binding_description,
+			.vertexBindingDescriptionCount = static_cast<u32>(binding_descriptions.size()),
+			.pVertexBindingDescriptions = binding_descriptions.data(),
 			.vertexAttributeDescriptionCount = static_cast<u32>(a_attributes.size()),
 			.pVertexAttributeDescriptions = a_attributes.data(),
 		};
@@ -109,6 +106,7 @@ namespace myl::vulkan {
 
 		VkGraphicsPipelineCreateInfo pipeline_create_info{
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+			.pNext = VK_NULL_HANDLE,
 			.stageCount = static_cast<u32>(a_stages.size()),
 			.pStages = a_stages.data(),
 			.pVertexInputState = &vertex_input_info,
@@ -127,17 +125,14 @@ namespace myl::vulkan {
 			.basePipelineIndex = -1,
 		};
 
-		VkResult result = vkCreateGraphicsPipelines(m_context.device(), VK_NULL_HANDLE, 1, &pipeline_create_info, VK_NULL_HANDLE, &m_handle);
-		result_is_success(result) ?
-			MYL_CORE_DEBUG("Graphics pipeline created!") :
-			throw vulkan_error(std::format("vkCreateGraphicsPipelines failed with {}.", VkResult_to_string(result, true)));
+		MYL_VK_VERIFY(vkCreateGraphicsPipelines, m_context.device(), VK_NULL_HANDLE, 1, &pipeline_create_info, VK_NULL_HANDLE, &m_handle);
 	}
 
 	pipeline::~pipeline() {
-		if (m_handle)
-			vkDestroyPipeline(m_context.device(), m_handle, VK_NULL_HANDLE);
 		if (m_pipeline_layout)
 			vkDestroyPipelineLayout(m_context.device(), m_pipeline_layout, VK_NULL_HANDLE);
+		if (m_handle)
+			vkDestroyPipeline(m_context.device(), m_handle, VK_NULL_HANDLE);
 	}
 
 	void pipeline::bind(command_buffer& a_command_buffer, VkPipelineBindPoint a_bind_point) {

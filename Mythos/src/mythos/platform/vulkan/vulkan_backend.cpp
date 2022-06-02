@@ -5,30 +5,6 @@
 #include <mythos/core/log.hpp>
 #include <mythos/math/vec3.hpp>
 
-void upload_data_range(myl::vulkan::context* context, VkCommandPool pool, VkFence fence, VkQueue queue, myl::vulkan::buffer* buffer, myl::u64 offset, myl::u64 size, void* data) {
-	// Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
-	VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	myl::vulkan::buffer staging(*context, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, flags, true);
-
-	// Load the data into the staging buffer.
-	staging.load(0, size, 0, data);
-
-	// Perform the copy from staging to the device local buffer.
-	staging.copy_to(buffer->handle(), pool, fence, queue, offset, size);
-}
-
-void create_command_buffers(myl::vulkan::context& context, myl::vulkan::swapchain& swapchain) {
-	context.graphics_command_buffers().clear();
-	if (context.graphics_command_buffers().empty())
-		for (myl::u32 i = 0; i != swapchain.images().size(); ++i)
-			context.graphics_command_buffers().push_back(myl::vulkan::command_buffer(context));
-
-	for (auto& buf : context.graphics_command_buffers())
-		buf.allocate(context.graphics_cmd_pool(), true);
-
-	MYL_CORE_DEBUG("Vulkan command buffers created.");
-}
-
 void regenerate_framebuffers(myl::vulkan::context& context, myl::vulkan::swapchain& swapchain, myl::vulkan::render_pass* renderpass) { /// MYTodo: Should probs have a regernate framebuffer thing
 	swapchain.framebuffers().clear();
 	swapchain.framebuffers().reserve(swapchain.images().size()); // If reserve does not happen, when context.swapchain.framebuffers.emplace_back tries to resize, it will crash
@@ -95,34 +71,10 @@ bool recreate_swapchain(myl::vulkan::context& context, myl::vulkan::swapchain& s
 
 	regenerate_framebuffers(context, swapchain, &main_render_pass);
 
-	create_command_buffers(context, swapchain);
+	context.create_command_buffers(swapchain);
 
 	// Clear the recreating flag.
 	context.recreating_swapchain() = false;
-
-	return true;
-}
-
-bool create_buffers(myl::vulkan::context* context) {
-	VkMemoryPropertyFlagBits memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-
-	myl::u64 vertex_buffer_size = sizeof(myl::f32vec3) * 1024 * 1024;
-	context->object_vertex_buffer() = std::make_unique<myl::vulkan::buffer>(
-		*context,
-		vertex_buffer_size,
-		static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT),
-		memory_property_flags,
-		true);
-	context->geometry_vertex_offset() = 0;
-
-	const myl::u64 index_buffer_size = sizeof(myl::u32) * 1024 * 1024;
-	context->object_index_buffer() = std::make_unique<myl::vulkan::buffer>(
-		*context,
-		index_buffer_size,
-		static_cast<VkBufferUsageFlagBits>(VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT),
-		memory_property_flags,
-		true);
-	context->geometry_index_offset() = 0;
 
 	return true;
 }
@@ -136,8 +88,7 @@ namespace myl::vulkan {
 		// Swapchain framebuffers.
 		regenerate_framebuffers(m_context, m_swapchain, &m_main_render_pass);
 
-		// Create command buffers.
-		create_command_buffers(m_context, m_swapchain);
+		m_context.create_command_buffers(m_swapchain);
 
 		// Create sync objects.
 		m_context.image_available_semaphores().resize(m_swapchain.max_frames_in_flight());
@@ -164,9 +115,7 @@ namespace myl::vulkan {
 
 		m_shader = std::make_unique<shader>(m_context, "resources/shaders/shader.glsl", m_swapchain, m_main_render_pass); /// MYTemp
 
-		create_buffers(&m_context);
-
-		// TODO: temporary test code
+		/// MYTODO: temporary test code
 		const u32 vert_count = 4;
 		f32vec3 verts[vert_count]{
 			{ 0.f, -.5f, 0.f },
@@ -178,20 +127,17 @@ namespace myl::vulkan {
 		const u32 index_count = 6;
 		u32 indices[index_count] = { 0, 1, 2, 0, 3, 1 };
 
-		upload_data_range(&m_context, m_context.graphics_cmd_pool(), 0, m_context.graphics_queue(), m_context.object_vertex_buffer().get(), 0, sizeof(f32vec3)* vert_count, verts);
-		upload_data_range(&m_context, m_context.graphics_cmd_pool(), 0, m_context.graphics_queue(), m_context.object_index_buffer().get(), 0, sizeof(u32) * index_count, indices);
-		// TODO: end temp code
+		m_context.upload(m_context.graphics_cmd_pool(), 0, m_context.graphics_queue(), *m_context.vertex_buffer(), 0, sizeof(f32vec3) * vert_count, verts);
+		m_context.upload(m_context.graphics_cmd_pool(), 0, m_context.graphics_queue(), *m_context.index_buffer(), 0, sizeof(u32) * index_count, indices);
+		
+		/// MYTODO: end temp code
 
 		MYL_CORE_INFO("Vulkan renderer initialized successfully.");
 	}
 
 	backend::~backend() {
 		vkDeviceWaitIdle(m_context.device());
-
 		// Destroy in the opposite order of creation.
-		// Destroy buffers
-		m_context.object_vertex_buffer().reset();
-		m_context.object_index_buffer().reset();
 
 		m_shader.reset();
 
@@ -302,10 +248,10 @@ namespace myl::vulkan {
 
 		// Bind vertex buffer at offset.
 		VkDeviceSize offsets[1] = { 0 };
-		vkCmdBindVertexBuffers(cmd_buffer.handle(), 0, 1, &m_context.object_vertex_buffer()->handle(), (VkDeviceSize*)offsets);
+		vkCmdBindVertexBuffers(cmd_buffer.handle(), 0, 1, &m_context.vertex_buffer()->handle(), (VkDeviceSize*)offsets);
 
 		// Bind index buffer at offset.
-		vkCmdBindIndexBuffer(cmd_buffer.handle(), m_context.object_index_buffer()->handle(), 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(cmd_buffer.handle(), m_context.index_buffer()->handle(), 0, VK_INDEX_TYPE_UINT32);
 
 		// Issue the draw.
 		vkCmdDrawIndexed(cmd_buffer.handle(), 6, 1, 0, 0, 0);
