@@ -4,33 +4,21 @@
 
 #include <mythos/algorithm.hpp>
 
-/// MYTodo: Below
-
-///static MYL_NO_DISCARD VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& formats) {
-///	for (const auto& format : formats)
-///		if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // Preferred formats
-///			return format;
-///	return formats[0];
-///}
-
-///static MYL_NO_DISCARD VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_modes) {
-///	for (const auto& mode : available_modes)
-///		if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
-///			return mode;
-///	return VK_PRESENT_MODE_FIFO_KHR;
-///}
-
-///static MYL_NO_DISCARD VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height) {
-///	if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
-///		return capabilities.currentExtent;
-///	else 
-///		return VkExtent2D{ // Clamp to the value allowed by the gpu
-///			.width = clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-///			.height = clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-///	};
-///}
-
 namespace myl::vulkan {
+	MYL_NO_DISCARD constexpr VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& formats) {
+		for (const auto& format : formats)
+			if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // Preferred formats
+				return format;
+		return formats[0];
+	}
+
+	MYL_NO_DISCARD constexpr VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_modes) {
+		for (const auto& mode : available_modes)
+			if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+				return mode;
+		return VK_PRESENT_MODE_FIFO_KHR;
+	}
+ 
 	swapchain::swapchain(context& a_context, render_pass* a_render_pass, const VkExtent2D& a_extent)
 		: m_context(a_context)
 		, m_render_pass(a_render_pass) {
@@ -59,7 +47,7 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Destroyed sync objects");
 		destroy_framebuffers();
 		MYL_CORE_INFO("Destroyed framebuffers");
-		destroy_images();
+		destroy_image_views();
 		MYL_CORE_INFO("Destroyed images");
 		destroy_depth_resources();
 		MYL_CORE_INFO("Destroyed depth resources");
@@ -67,26 +55,56 @@ namespace myl::vulkan {
 		MYL_CORE_INFO("Destroyed swapchain");
 	}
 
-	void swapchain::recreate(const VkExtent2D& a_extent) { /// MYTodo: Redo, have a way to incoruptate the old swapchain
-		///if (m_recreating) // If already being recreated, do not try again
-		///	return;
-		/// MYBug: Renable above when recreate swapchain in backend is removed
+	bool swapchain::recreate(const VkExtent2D& a_extent) {
+		if (m_recreating)
+			return false; // If already being recreated, do not try again
+		if (a_extent.width == 0 || a_extent.height == 0)
+			return false; // Can't recreate swapchain when width or height is 0
 
 		m_recreating = true;
 		vkDeviceWaitIdle(m_context.device()); // Wait for Vulkan operations to be done
 
+		m_images_in_flight.clear();
+
+		// Requry in case things have changed
+		m_context.query_swapchain_support();
+		m_context.detect_depth_format();
+
 		destroy_sync_objects();
 		destroy_framebuffers();
 		destroy_depth_resources();
-		destroy_images();
+		destroy_image_views();
 		destroy_swapchain();
-
+		
 		create_swapchain(a_extent);
 		create_images();
 		create_depth_resources(a_extent);
 		regenerate_framebuffers(a_extent);
 		create_sync_objects();
+
+		/// MYTodo: Clean up here down
+
+		m_context.framebuffer_extent() = m_context.cached_framebuffer_extent(); /// MYTodo: This is not ideal
+		m_render_pass->extent() = m_context.framebuffer_extent();
+		m_context.cached_framebuffer_extent() = VkExtent2D{ 0, 0 };
+		m_context.framebuffer_size_last_generation() = m_context.framebuffer_size_generation();
+
+		for (auto& cmd_buf : m_context.graphics_command_buffers())
+			cmd_buf.deallocate(m_context.graphics_cmd_pool());
+
+		destroy_framebuffers();
+
+		m_render_pass->x() = 0;
+		m_render_pass->y() = 0;
+		m_render_pass->extent() = m_context.framebuffer_extent();
+
+		regenerate_framebuffers(m_render_pass->extent());
+
+		m_context.create_command_buffers(*this);
+
 		m_recreating = false;
+
+		return true;
 	}
 
 	void swapchain::present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index) {
@@ -139,42 +157,20 @@ namespace myl::vulkan {
 		}
 	}
 
-	void swapchain::create_swapchain(const VkExtent2D& a_extent) { /// MYTodo: Redo
+	void swapchain::create_swapchain(const VkExtent2D& a_extent) {
 		VkExtent2D swapchain_extent = a_extent;
 
 		// Choose a swap surface format.
-		bool found = false;
-		for (u32 i = 0; i < m_context.swapchain_support_info().formats.size(); ++i) {
-			VkSurfaceFormatKHR format = m_context.swapchain_support_info().formats[i];
-			// Preferred formats
-			if (format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-				format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
-				m_image_format = format;
-				found = true;
-				break;
-			}
-		}
+		m_image_format = choose_surface_format(m_context.swapchain_support_info().formats);
 
-		if (!found) {
-			m_image_format = m_context.swapchain_support_info().formats[0];
-		}
-
-		VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
-		for (u32 i = 0; i < m_context.swapchain_support_info().present_modes.size(); ++i) {
-			VkPresentModeKHR mode = m_context.swapchain_support_info().present_modes[i];
-			if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
-				present_mode = mode;
-				break;
-			}
-		}
+		VkPresentModeKHR present_mode = choose_present_mode(m_context.swapchain_support_info().present_modes);
 
 		// Requery swapchain support.
 		m_context.query_swapchain_support();
 
 		// Swapchain extent
-		if (m_context.swapchain_support_info().capabilities.currentExtent.width != UINT32_MAX) {
+		if (m_context.swapchain_support_info().capabilities.currentExtent.width != UINT32_MAX)
 			swapchain_extent = m_context.swapchain_support_info().capabilities.currentExtent;
-		}
 
 		// Clamp to the value allowed by the GPU.
 		VkExtent2D min = m_context.swapchain_support_info().capabilities.minImageExtent;
@@ -183,27 +179,34 @@ namespace myl::vulkan {
 		swapchain_extent.height = myl::clamp(swapchain_extent.height, min.height, max.height);
 
 		u32 image_count = m_context.swapchain_support_info().capabilities.minImageCount + 1;
-		if (m_context.swapchain_support_info().capabilities.maxImageCount > 0 && image_count > m_context.swapchain_support_info().capabilities.maxImageCount) {
+		if (m_context.swapchain_support_info().capabilities.maxImageCount > 0 && image_count > m_context.swapchain_support_info().capabilities.maxImageCount)
 			image_count = m_context.swapchain_support_info().capabilities.maxImageCount;
-		}
 
 		m_max_frames_in_flight = image_count - 1;
 
 		// Swapchain create info
-		VkSwapchainCreateInfoKHR swapchain_create_info = { VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-		swapchain_create_info.surface = m_context.surface();
-		swapchain_create_info.minImageCount = image_count;
-		swapchain_create_info.imageFormat = m_image_format.format;
-		swapchain_create_info.imageColorSpace = m_image_format.colorSpace;
-		swapchain_create_info.imageExtent = swapchain_extent;
-		swapchain_create_info.imageArrayLayers = 1;
-		swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+		VkSwapchainCreateInfoKHR swapchain_create_info{
+			.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+			.surface = m_context.surface(),
+			.minImageCount = image_count,
+			.imageFormat = m_image_format.format,
+			.imageColorSpace = m_image_format.colorSpace,
+			.imageExtent = swapchain_extent,
+			.imageArrayLayers = 1,
+			.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+			.preTransform = m_context.swapchain_support_info().capabilities.currentTransform,
+			.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+			.presentMode = present_mode,
+			.clipped = VK_TRUE,
+			.oldSwapchain = VK_NULL_HANDLE
+		};
 
 		// Setup the queue family indices
 		if (m_context.queue_indices().graphics_index != m_context.queue_indices().present_index) {
-			u32 queueFamilyIndices[] = {
-				(u32)m_context.queue_indices().graphics_index,
-				(u32)m_context.queue_indices().present_index };
+			u32 queueFamilyIndices[]{
+				m_context.queue_indices().graphics_index,
+				m_context.queue_indices().present_index
+			};
 			swapchain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
 			swapchain_create_info.queueFamilyIndexCount = 2;
 			swapchain_create_info.pQueueFamilyIndices = queueFamilyIndices;
@@ -213,12 +216,6 @@ namespace myl::vulkan {
 			swapchain_create_info.queueFamilyIndexCount = 0;
 			swapchain_create_info.pQueueFamilyIndices = 0;
 		}
-
-		swapchain_create_info.preTransform = m_context.swapchain_support_info().capabilities.currentTransform;
-		swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-		swapchain_create_info.presentMode = present_mode;
-		swapchain_create_info.clipped = VK_TRUE;
-		swapchain_create_info.oldSwapchain = 0;
 
 		MYL_VK_ASSERT(vkCreateSwapchainKHR, m_context.device(), &swapchain_create_info, VK_NULL_HANDLE, &m_handle);
 
@@ -287,15 +284,13 @@ namespace myl::vulkan {
 		for (u8 i = 0; i < m_max_frames_in_flight; ++i) {
 			if (m_image_available_semaphores[i]) {
 				vkDestroySemaphore(m_context.device(), m_image_available_semaphores[i], VK_NULL_HANDLE);
-				m_image_available_semaphores[i] = 0;
+				m_image_available_semaphores[i] = VK_NULL_HANDLE;
 			}
 
 			if (m_queue_complete_semaphores[i]) {
 				vkDestroySemaphore(m_context.device(), m_queue_complete_semaphores[i], VK_NULL_HANDLE);
-				m_queue_complete_semaphores[i] = 0;
+				m_queue_complete_semaphores[i] = VK_NULL_HANDLE;
 			}
-
-			m_in_flight_fences[i].reset();
 		}
 	}
 
@@ -303,7 +298,7 @@ namespace myl::vulkan {
 		m_framebuffers.clear();
 	}
 
-	void swapchain::destroy_images() { // Only destroy the views, not the images, since those are owned by the swapchain and are thus destroyed when it is.
+	void swapchain::destroy_image_views() { // Only destroy the views, not the images, since those are owned by the swapchain and are thus destroyed when it is.
 		for (u32 i = 0; i < m_images.size(); ++i)
 			vkDestroyImageView(m_context.device(), m_views[i], VK_NULL_HANDLE);
 		m_views.clear();

@@ -49,13 +49,13 @@ namespace myl::vulkan {
 		std::vector<VkSemaphore>& queue_complete_semaphores() { return m_queue_complete_semaphores; }
 		std::vector<std::shared_ptr<fence>>& in_flight_fences() { return m_in_flight_fences; }
 		std::vector<std::weak_ptr<fence>>& images_in_flight() { return m_images_in_flight; }
-		u32 current_frame() { return m_current_frame; }
-		bool& recreating() { return m_recreating = false; } /// MYTodo: Should not be a reference
+		u32 current_frame() const { return m_current_frame; }
+		bool recreating() const { return m_recreating; }
 
 		//@brief Sets the render pass when it cannot be set in the constructor
 		void set_render_pass(render_pass* a_render_pass) { m_render_pass = a_render_pass; }
 
-		void recreate(const VkExtent2D&);
+		bool recreate(const VkExtent2D&);
 		void present(VkQueue a_graphics_queue, VkQueue a_present_queue, VkSemaphore a_render_complete_semaphore, u32 a_present_image_index);
 
 		bool acquire_next_image_index(u64 a_timeout_ns, VkSemaphore a_image_available_semaphore, VkFence, u32* a_image_index);
@@ -64,11 +64,12 @@ namespace myl::vulkan {
 		void create_swapchain(const VkExtent2D&);
 		void create_depth_resources(const VkExtent2D&);
 		void create_images();
+		// regenerate_frambuffers
 		void create_sync_objects();
 
 		void destroy_sync_objects();
 		void destroy_framebuffers();
-		void destroy_images();
+		void destroy_image_views();
 		void destroy_depth_resources();
 		void destroy_swapchain();
 	};
