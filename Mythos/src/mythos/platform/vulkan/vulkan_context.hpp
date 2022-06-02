@@ -2,10 +2,6 @@
 #include "vulkan_buffer.hpp"
 #include "vulkan_command_buffer.hpp"
 
-#include <mythos/defines.hpp>
-
-#include <vulkan/vulkan.h>
-
 #include <vector>
 #include <memory>
 
@@ -14,9 +10,7 @@
 #endif
 
 /// MYTodo: Remove, same with below
-#include "vulkan_fence.hpp"
-#include "vulkan_image.hpp"
-#include "vulkan_framebuffer.hpp" /// MYTodo: Something is missing an include somewhere
+///#include "vulkan_framebuffer.hpp" /// MYTodo: Something is missing an include somewhere
 
 namespace myl::vulkan {
 	struct device_requirements {
@@ -33,10 +27,10 @@ namespace myl::vulkan {
 
 	//@brief Invaild indices are set to the upper limit of u32
 	struct device_queue_indices {
-		u32 graphics_index = ~0;
-		u32 present_index = ~0;
-		u32 compute_index = ~0;
-		u32 transfer_index = ~0;
+		u32 graphics_index = ~0u;
+		u32 present_index = ~0u;
+		u32 compute_index = ~0u;
+		u32 transfer_index = ~0u;
 	};
 
 	struct swapchain_support_info {
@@ -51,23 +45,10 @@ namespace myl::vulkan {
 		VkInstance m_instance;
 
 		/// MYTodo: Compatibilty for kohi system, Redo and remove
-
-		std::vector<VkSemaphore> m_image_available_semaphores;
-		std::vector<VkSemaphore> m_queue_complete_semaphores;
-
-		std::vector<std::shared_ptr<fence>> m_in_flight_fences;
-		std::vector<std::weak_ptr<fence>> m_images_in_flight;
-
 		VkExtent2D m_cached_framebuffer_extent;
 		VkExtent2D m_framebuffer_extent;
 		u64 m_framebuffer_size_generation; /// MYTemp: What do these do?
 		u64 m_framebuffer_size_last_generation; /// MYTemp: What do these do?
-
-		u32 m_image_index;
-		bool m_recreating_swapchain = false;
-
-		u64 m_geometry_vertex_offset;
-		u64 m_geometry_index_offset;
 		///
 
 #ifdef MYL_VK_ENABLE_VALIDATION_LAYERS
@@ -90,12 +71,14 @@ namespace myl::vulkan {
 
 		VkCommandPool m_graphics_command_pool;
 		std::vector<command_buffer> m_graphics_command_buffers;
-		VkFormat m_depth_format;
+		VkFormat m_depth_format; /// MYTodo: SHould this be in swapchain?
 
 		std::unique_ptr<buffer> m_vertex_buffer; /// MYTodo: Put these in vertex array
 		std::unique_ptr<buffer> m_index_buffer;
+		u64 m_geometry_vertex_offset; /// MYTodo: What are these for, Should this be part of vertex array?
+		u64 m_geometry_index_offset; /// MYTodo: What are these for, Should this be part of vertex array?
 
-		u32 m_current_frame = 0;
+		u32 m_image_index; /// MYTodo: Should This be in swapchain?
 	public:
 		context();
 		~context();
@@ -104,7 +87,6 @@ namespace myl::vulkan {
 		context& operator=(const context&) = delete;
 
 		const VkDevice& device() const { return m_device; }
-		u32& current_frame() { return m_current_frame; }
 		u32& image_index() { return m_image_index; }
 		VkQueue& graphics_queue() { return m_graphics_queue; }
 		VkQueue& transfer_queue() { return m_transfer_queue; }
@@ -114,12 +96,7 @@ namespace myl::vulkan {
 		std::unique_ptr<buffer>& vertex_buffer() { return m_vertex_buffer; }
 		std::unique_ptr<buffer>& index_buffer() { return m_index_buffer; }
 		std::vector<command_buffer>& graphics_command_buffers() { return m_graphics_command_buffers; }
-		std::vector<VkSemaphore>& image_available_semaphores() { return m_image_available_semaphores; }
-		std::vector<VkSemaphore>& queue_complete_semaphores() { return m_queue_complete_semaphores; }
-		std::vector<std::shared_ptr<fence>>& in_flight_fences() { return m_in_flight_fences; }
-		std::vector<std::weak_ptr<fence>>& images_in_flight() { return m_images_in_flight; }
 		VkSurfaceKHR& surface() { return m_surface; }
-		bool& recreating_swapchain() { return m_recreating_swapchain; }
 		swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
 		device_queue_indices& queue_indices() { return m_queue_indices; }
 		VkFormat& depth_format() { return m_depth_format; }
@@ -127,8 +104,8 @@ namespace myl::vulkan {
 		VkExtent2D& framebuffer_extent() { return m_framebuffer_extent; }
 		u64& framebuffer_size_generation() { return m_framebuffer_size_generation; }
 		u64& framebuffer_size_last_generation() { return m_framebuffer_size_last_generation; }
-		u64& geometry_vertex_offset() { return m_geometry_vertex_offset; }
-		u64& geometry_index_offset() { return m_geometry_index_offset; }
+		///u64& geometry_vertex_offset() { return m_geometry_vertex_offset; }
+		///u64& geometry_index_offset() { return m_geometry_index_offset; }
 
 		u32 find_memory_index(u32 a_type_filter, u32 a_property_flags) const;
 

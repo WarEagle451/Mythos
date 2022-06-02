@@ -1,8 +1,6 @@
 #pragma once
 #include "vulkan_buffer.hpp"
 
-#include <vulkan/vulkan.h>
-
 #include <vector>
 
 namespace myl::vulkan { /// MYBug: Redo this or get rid of it

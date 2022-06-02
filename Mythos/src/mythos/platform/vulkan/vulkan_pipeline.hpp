@@ -2,8 +2,6 @@
 #include "vulkan_command_buffer.hpp"
 #include "vulkan_render_pass.hpp"
 
-#include <vulkan/vulkan.h>
-
 #include <vector>
 
 namespace myl::vulkan {

@@ -3,8 +3,6 @@
 
 #include <mythos/math/vec4.hpp>
 
-#include <vulkan/vulkan.h>
-
 namespace myl::vulkan {
 	class context; // fwd declaration
 	class swapchain; // fwd declaration

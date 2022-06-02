@@ -44,38 +44,38 @@ namespace myl::vulkane {
 		return format;
 	}
 
-	void swapchain::recreate(u32 a_width, u32 a_height) {
-		if (m_recreating)
-			return; // Already recreating swapchain
-		if (a_width == 0 || a_height == 0)
-			return; // Cannot recreate swapchain when width or height is 0
-
-		vkDeviceWaitIdle(m_context.device().logical());
-		m_recreating = true;
-
-		// Clearing just in case
-		m_images_in_flight.clear();
-
-		m_context.graphics_command_buffers().clear();
-		m_framebuffers.clear();
-		m_render_pass.reset();
-		destroy_image_views();
-		vkDestroySwapchainKHR(m_context.device().logical(), m_handle, nullptr);
-
-		m_context.device().query_swapchain_support(); // In case things have changed
-		m_depth_format = detect_depth_format(m_context.device()); // In case somehow this changes
-
-		/// MYTodo: Pass the old swapchain. Figure out what it does
-		create_swapchain(a_width, a_height); // Sets m_swapchain_extent
-		create_image_views();
-		create_render_pass();
-		regenerate_framebuffers();
-		m_context.create_command_buffers(*this);
-
-		m_images_in_flight.resize(m_images.size());
-
-		m_recreating = false;
-	}
+	///void swapchain::recreate(u32 a_width, u32 a_height) {
+	///	if (m_recreating)
+	///		return; // Already recreating swapchain
+	///	if (a_width == 0 || a_height == 0)
+	///		return; // Cannot recreate swapchain when width or height is 0
+	///
+	///	vkDeviceWaitIdle(m_context.device().logical());
+	///	m_recreating = true;
+	///
+	///	// Clearing just in case
+	///	m_images_in_flight.clear();
+	///
+	///	m_context.graphics_command_buffers().clear();
+	///	m_framebuffers.clear();
+	///	m_render_pass.reset();
+	///	destroy_image_views();
+	///	vkDestroySwapchainKHR(m_context.device().logical(), m_handle, nullptr);
+	///
+	///	m_context.device().query_swapchain_support(); // In case things have changed
+	///	m_depth_format = detect_depth_format(m_context.device()); // In case somehow this changes
+	///
+	///	/// MYTodo: Pass the old swapchain. Figure out what it does
+	///	create_swapchain(a_width, a_height); // Sets m_swapchain_extent
+	///	create_image_views();
+	///	create_render_pass();
+	///	regenerate_framebuffers();
+	///	m_context.create_command_buffers(*this);
+	///
+	///	m_images_in_flight.resize(m_images.size());
+	///
+	///	m_recreating = false;
+	///}
 
 	bool swapchain::acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index) {
 		VkResult result = vkAcquireNextImageKHR(m_context.device().logical(), m_handle, a_nanoseconds_timeout, a_image_available_semaphore, a_fence, a_out_image_index);
@@ -111,30 +111,6 @@ namespace myl::vulkane {
 			MYL_CORE_FATAL("Failed to present swapchain image");
 
 		m_current_frame = (m_current_frame + 1) % m_max_frames_in_flight;
-	}
-
-	static MYL_NO_DISCARD VkSurfaceFormatKHR choose_surface_format(const std::vector<VkSurfaceFormatKHR>& formats) {
-		for (const auto& format : formats)
-			if (format.format == VK_FORMAT_B8G8R8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) // Preferred formats
-				return format;
-		return formats[0];
-	}
-
-	static MYL_NO_DISCARD VkPresentModeKHR choose_present_mode(const std::vector<VkPresentModeKHR>& available_modes) {
-		for (const auto& mode : available_modes)
-			if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
-				return mode;
-		return VK_PRESENT_MODE_FIFO_KHR;
-	}
-
-	static MYL_NO_DISCARD VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, u32 width, u32 height) {
-		if (capabilities.currentExtent.width != std::numeric_limits<u32>::max())
-			return capabilities.currentExtent;
-		else 
-			return VkExtent2D{ // Clamp to the value allowed by the gpu
-				.width = clamp(width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-				.height = clamp(height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
-		};
 	}
 
 	void swapchain::create_swapchain(u32 a_width, u32 a_height) {

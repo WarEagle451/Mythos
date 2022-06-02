@@ -323,8 +323,6 @@ namespace myl::vulkan {
 
 		for (auto& buf : m_graphics_command_buffers)
 			buf.allocate(m_graphics_command_pool, true);
-
-		MYL_CORE_DEBUG("Vulkan command buffers created.");
 	}
 
 	void context::create_buffers() {

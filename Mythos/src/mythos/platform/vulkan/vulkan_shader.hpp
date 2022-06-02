@@ -5,8 +5,6 @@
 
 #include <mythos/render/shader.hpp>
 
-#include <vulkan/vulkan.h>
-
 #include <unordered_map>
 #include <memory>
 
