@@ -10,15 +10,18 @@ namespace myl::vulkan {
 		context& m_context;
 
 		VkBuffer m_handle;
-		VkBufferUsageFlagBits m_usage;
+		VkBufferUsageFlags m_usage;
 		u64 m_size;
 		VkDeviceMemory m_memory;
-		i32 m_memory_index;
+		u32 m_memory_index;
 		u32 m_memory_property_flags;
 		bool m_locked;
 	public:
-		buffer(context&, u64 a_size, VkBufferUsageFlagBits, u32 a_memory_property_flags, bool a_bind_on_create);
+		buffer(context&, u64 a_size, VkBufferUsageFlags, u32 a_memory_property_flags, bool a_bind_on_create);
 		~buffer();
+
+		buffer(const buffer&) = delete;
+		buffer& operator=(const buffer&) = delete;
 
 		VkBuffer& handle() { return m_handle; }
 

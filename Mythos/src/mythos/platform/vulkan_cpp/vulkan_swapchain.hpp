@@ -1,8 +1,8 @@
 #pragma once
 #include "vulkan_image.hpp"
 #include "vulkan_render_pass.hpp"
-#include "vulkan_framebuffer.hpp"
-#include "vulkan_fence.hpp"
+#include <mythos/platform/vulkan/vulkan_framebuffer.hpp>
+#include <mythos/platform/vulkan/vulkan_fence.hpp>
 
 #include <vector>
 #include <memory>
@@ -24,13 +24,13 @@ namespace myl::vulkane {
 
 		std::unique_ptr<render_pass> m_render_pass;
 
-		std::vector<std::unique_ptr<framebuffer>> m_framebuffers;
+		std::vector<std::unique_ptr<vulkan::framebuffer>> m_framebuffers;
 
 		std::vector<VkSemaphore> m_image_available_semaphores;
 		std::vector<VkSemaphore> m_queue_complete_semaphores;
 
-		std::vector<std::shared_ptr<fence>> m_in_flight_fences;
-		std::vector<std::weak_ptr<fence>> m_images_in_flight;
+		std::vector<std::shared_ptr<vulkan::fence>> m_in_flight_fences;
+		std::vector<std::weak_ptr<vulkan::fence>> m_images_in_flight;
 
 		VkExtent2D m_swapchain_extent;
 
@@ -51,13 +51,13 @@ namespace myl::vulkane {
 
 		MYL_NO_DISCARD bool recreating() const { return m_recreating; }
 		MYL_NO_DISCARD u8 current_frame() const { return m_current_frame; }
-		MYL_NO_DISCARD std::vector<std::shared_ptr<fence>>& in_flight_fences() { return m_in_flight_fences; }
+		MYL_NO_DISCARD std::vector<std::shared_ptr<vulkan::fence>>& in_flight_fences() { return m_in_flight_fences; }
 		MYL_NO_DISCARD std::vector<VkSemaphore>& image_available_semaphores() { return m_image_available_semaphores; }
 		MYL_NO_DISCARD std::vector<VkSemaphore>& queue_complete_semaphores() { return m_queue_complete_semaphores; }
-		MYL_NO_DISCARD std::vector<std::unique_ptr<framebuffer>>& framebuffers() { return m_framebuffers; }
+		MYL_NO_DISCARD std::vector<std::unique_ptr<vulkan::framebuffer>>& framebuffers() { return m_framebuffers; }
 		MYL_NO_DISCARD const VkExtent2D& swapchain_extent() const { return m_swapchain_extent; }
 		MYL_NO_DISCARD render_pass& render_pass() { return *m_render_pass; }
-		MYL_NO_DISCARD std::vector<std::weak_ptr<fence>>& images_in_flight() { return m_images_in_flight; }
+		MYL_NO_DISCARD std::vector<std::weak_ptr<vulkan::fence>>& images_in_flight() { return m_images_in_flight; }
 
 		void recreate(u32 a_width, u32 a_height);
 		MYL_NO_DISCARD bool acquire_next_image(u64 a_nanoseconds_timeout, VkSemaphore a_image_available_semaphore, VkFence a_fence, u32* a_out_image_index);

@@ -1,6 +1,6 @@
 #include "vulkan_device.hpp"
 #include "vulkan_context.hpp"
-#include "vulkan_utils.hpp"
+#include <mythos/platform/vulkan/vulkan_utils.hpp>
 
 #include <mythos/core/except.hpp>
 
@@ -29,23 +29,23 @@ namespace myl::vulkane {
 	const swapchain_support_info device::query_swapchain_support(VkPhysicalDevice a_device) {
 		vulkane::swapchain_support_info info{};
 		// Surface capabilities
-		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_context.surface(), &info.capabilites);
+		MYL_VK_ASSERT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR, a_device, m_context.surface(), &info.capabilites);
 		// Surface formats
 		u32 format_count = 0;
-		MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, nullptr);
+		MYL_VK_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, nullptr);
 		if (format_count != 0) {
 			if (info.formats.size() == 0)
 				info.formats.resize(format_count);
-			MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, info.formats.data());
+			MYL_VK_ASSERT(vkGetPhysicalDeviceSurfaceFormatsKHR, a_device, m_context.surface(), &format_count, info.formats.data());
 		}
 
 		// Present modes
 		u32 present_mode_count = 0;
-		MYL_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, nullptr);
+		MYL_VK_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, nullptr);
 		if (present_mode_count != 0) {
 			if (info.present_modes.size() == 0)
 				info.present_modes.resize(present_mode_count);
-			MYL_VK_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, info.present_modes.data());
+			MYL_VK_ASSERT(vkGetPhysicalDeviceSurfacePresentModesKHR, a_device, m_context.surface(), &present_mode_count, info.present_modes.data());
 		}
 
 		return info;
@@ -88,7 +88,7 @@ namespace myl::vulkane {
 
 				// If the graphics queue is also a present queue (AMD cards), this prioritizes grouping of the 2
 				VkBool32 supports_present = VK_FALSE;
-				MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
+				MYL_VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
 				if (supports_present) {
 					indices.present = i;
 					++current_transfer_score;
@@ -113,7 +113,7 @@ namespace myl::vulkane {
 			if (indices.present == std::numeric_limits<u32>::max())
 				for (u32 i = 0; i != queue_family_count; ++i) {
 					VkBool32 supports_present = VK_FALSE;
-					MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
+					MYL_VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
 					if (supports_present) {
 						indices.present = i;
 
@@ -124,7 +124,7 @@ namespace myl::vulkane {
 				}
 
 			VkBool32 supports_present = VK_FALSE;
-			MYL_VK_CHECK(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
+			MYL_VK_ASSERT(vkGetPhysicalDeviceSurfaceSupportKHR, a_device, i, m_context.surface(), &supports_present);
 			if (supports_present)
 				indices.present = i;
 		}
@@ -169,10 +169,10 @@ namespace myl::vulkane {
 			// Dvice extensions
 			if (!a_requirements.extensions.empty()) {
 				u32 available_extension_count = 0;
-				MYL_VK_CHECK(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, nullptr);
+				MYL_VK_ASSERT(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, nullptr);
 				if (available_extension_count != 0) {
 					std::vector<VkExtensionProperties> available_extensions(available_extension_count);
-					MYL_VK_CHECK(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, available_extensions.data());
+					MYL_VK_ASSERT(vkEnumerateDeviceExtensionProperties, a_device, nullptr, &available_extension_count, available_extensions.data());
 
 					u32 required_extension_count = static_cast<u32>(a_requirements.extensions.size());
 					for (auto& required : a_requirements.extensions) {
@@ -219,13 +219,13 @@ namespace myl::vulkane {
 	void device::select_physical_device() {
 		MYL_CORE_INFO("Selecting physical device");
 		u32 count = 0;
-		MYL_VK_CHECK(vkEnumeratePhysicalDevices, m_context.instance(), &count, nullptr);
+		MYL_VK_ASSERT(vkEnumeratePhysicalDevices, m_context.instance(), &count, nullptr);
 		MYL_CORE_DEBUG("{} device{} available", count, count > 1 ? "s" : "");
 		if (count == 0) /// MYTodo: should try to select a different rendering backend
 			throw core_runtime_error("No devices with Vulkan support found");
 
 		std::vector<VkPhysicalDevice> physical_devices(count);
-		MYL_VK_CHECK(vkEnumeratePhysicalDevices, m_context.instance(), &count, physical_devices.data());
+		MYL_VK_ASSERT(vkEnumeratePhysicalDevices, m_context.instance(), &count, physical_devices.data());
 
 		for (auto& device : physical_devices) { /// MYTodo: Should probs just have a func for below
 			VkPhysicalDeviceProperties properties{};
@@ -329,7 +329,7 @@ namespace myl::vulkane {
 			.pEnabledFeatures = &device_features
 		};
 
-		MYL_VK_CHECK(vkCreateDevice, m_physical_device, &device_create_info, nullptr, &m_logical_device);
+		MYL_VK_ASSERT(vkCreateDevice, m_physical_device, &device_create_info, nullptr, &m_logical_device);
 		MYL_CORE_INFO("Created logical device");
 	}
 
@@ -347,7 +347,7 @@ namespace myl::vulkane {
 			.queueFamilyIndex = m_queue_indices.graphics
 		};
 
-		MYL_VK_CHECK(vkCreateCommandPool, m_logical_device, &info, nullptr, &m_graphics_command_pool);
+		MYL_VK_ASSERT(vkCreateCommandPool, m_logical_device, &info, nullptr, &m_graphics_command_pool);
 		MYL_CORE_INFO("Created graphics command pool");
 	}
 }

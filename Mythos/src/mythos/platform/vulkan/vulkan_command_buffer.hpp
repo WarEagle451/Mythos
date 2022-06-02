@@ -1,4 +1,6 @@
 #pragma once
+#include <mythos/defines.hpp>
+
 #include <vulkan/vulkan.h>
 
 namespace myl::vulkan {
@@ -25,7 +27,7 @@ namespace myl::vulkan {
 		command_buffer(context&);
 		~command_buffer();
 
-		VkCommandBuffer& handle() { return m_handle; }
+		MYL_NO_DISCARD VkCommandBuffer& handle() { return m_handle; }
 
 		void set_state(command_buffer_state a_state) { m_state = a_state; }
 

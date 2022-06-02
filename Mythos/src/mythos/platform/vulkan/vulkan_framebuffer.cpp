@@ -7,9 +7,7 @@ namespace myl::vulkan {
 		: m_context(a_context)
 		, m_render_pass(a_render_pass)
 		, m_attachments(a_attachments) {
-
-		// Creation info
-		VkFramebufferCreateInfo framebuffer_create_info{
+		VkFramebufferCreateInfo info{
 			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
 			.renderPass = m_render_pass.handle(),
 			.attachmentCount = static_cast<u32>(m_attachments.size()),
@@ -19,11 +17,10 @@ namespace myl::vulkan {
 			.layers = 1
 		};
 
-		MYL_VK_ASSERT(vkCreateFramebuffer, m_context.device(), &framebuffer_create_info, VK_NULL_HANDLE, &m_handle);
+		MYL_VK_ASSERT(vkCreateFramebuffer, m_context.device(), &info, VK_NULL_HANDLE, &m_handle);
 	}
 
 	framebuffer::~framebuffer() {
-		if (m_handle != VK_NULL_HANDLE)
-			vkDestroyFramebuffer(m_context.device(), m_handle, VK_NULL_HANDLE);
+		vkDestroyFramebuffer(m_context.device(), m_handle, VK_NULL_HANDLE);
 	}
 }

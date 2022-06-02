@@ -1,7 +1,7 @@
 #include "vulkan_pipeline.hpp"
 #include "vulkan_context.hpp"
-#include "vulkan_utils.hpp"
-#include "vulkan_vertex_array.hpp"
+#include <mythos/platform/vulkan/vulkan_utils.hpp>
+#include <mythos/platform/vulkan/vulkan_vertex_array.hpp>
 
 namespace myl::vulkane {
 	pipeline::pipeline(context& a_context, render_pass& a_render_pass,
@@ -84,7 +84,7 @@ namespace myl::vulkane {
 			.pDynamicStates = dynamic_states.data()
 		};
 
-		auto binding_descriptions = vertex::get_binding_descriptions();
+		auto binding_descriptions = vulkan::vertex::get_binding_descriptions();
 
 		VkPipelineVertexInputStateCreateInfo vertex_input_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -106,7 +106,7 @@ namespace myl::vulkane {
 			.pSetLayouts = a_descriptor_set_layouts.data(),
 		};
 
-		MYL_VK_CHECK(vkCreatePipelineLayout, m_context.device().logical(), &layout_info, VK_NULL_HANDLE, &m_layout);
+		MYL_VK_ASSERT(vkCreatePipelineLayout, m_context.device().logical(), &layout_info, VK_NULL_HANDLE, &m_layout);
 
 		VkGraphicsPipelineCreateInfo pipeline_info{
 			.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -130,8 +130,8 @@ namespace myl::vulkane {
 		};
 
 		VkResult result = vkCreateGraphicsPipelines(m_context.device().logical(), VK_NULL_HANDLE, 1, & pipeline_info, VK_NULL_HANDLE, & m_handle);
-		if (!result_is_success(result))
-			MYL_CORE_ERROR("Vulkan graphics pipline line creation failed. Result: {}", VkResult_to_string(result));
+		if (!vulkan::result_is_success(result))
+			MYL_CORE_ERROR("Vulkan graphics pipline line creation failed. Result: {}", vulkan::VkResult_to_string(result));
 	}
 
 	pipeline::~pipeline() {

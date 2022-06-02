@@ -1,8 +1,7 @@
 #include "vulkan_context.hpp"
-#include "vulkan_utils.hpp"
 #include "vulkan_platform.hpp"
 #include "vulkan_swapchain.hpp"
-#include "vulkan_vertex_array.hpp"
+#include <mythos/platform/vulkan/vulkan_utils.hpp>
 
 #include <mythos/core/app.hpp>
 #include <mythos/math/vec3.hpp>
@@ -60,9 +59,9 @@ namespace myl::vulkane {
 		required_layers.push_back("VK_LAYER_KHRONOS_validation");
 
 		u32 available_layer_count = 0;
-		MYL_VK_CHECK(vkEnumerateInstanceLayerProperties, &available_layer_count, nullptr);
+		MYL_VK_ASSERT(vkEnumerateInstanceLayerProperties, &available_layer_count, nullptr);
 		std::vector<VkLayerProperties> available_layers(available_layer_count);
-		MYL_VK_CHECK(vkEnumerateInstanceLayerProperties, &available_layer_count, available_layers.data());
+		MYL_VK_ASSERT(vkEnumerateInstanceLayerProperties, &available_layer_count, available_layers.data());
 
 		MYL_CORE_DEBUG("{} available validation layers:", available_layer_count);
 		for (auto& layer : available_layers)
@@ -122,7 +121,7 @@ namespace myl::vulkane {
 
 		/// @brief  MYTodo: Make debug messenger here and creat_info.createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
 		/// Should be trhow below
-		MYL_VK_CHECK(vkCreateInstance, &create_info, nullptr, &m_instance);
+		MYL_VK_ASSERT(vkCreateInstance, &create_info, nullptr, &m_instance);
 		MYL_CORE_INFO("Created Vulkan instance");
 	}
 

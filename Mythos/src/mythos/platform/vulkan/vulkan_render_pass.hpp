@@ -37,8 +37,8 @@ namespace myl::vulkan {
 
 		VkRenderPass& handle() { return m_handle; }
 		VkExtent2D& extent() { return m_extent; }
-		f32& x() { return m_x; }
-		f32& y() { return m_y; }
+		f32& x() { return m_x; } /// MYTodo: Rid
+		f32& y() { return m_y; } /// MYTodo: Rid
 
 		void begin(command_buffer*, VkFramebuffer);
 		void end(command_buffer*);

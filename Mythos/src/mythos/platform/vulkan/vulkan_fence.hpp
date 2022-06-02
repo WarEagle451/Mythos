@@ -12,10 +12,13 @@ namespace myl::vulkan {
 		VkFence m_handle;
 		bool m_signaled;
 	public:
-		fence(context&, bool a_create_signaled);
+		fence(context&, bool a_signaled);
 		~fence();
 
-		VkFence handle() { return m_handle; }
+		fence(const fence&) = delete;
+		fence& operator=(const fence&) = delete;
+
+		VkFence& handle() { return m_handle; }
 
 		bool wait(u64 a_timeout_ns = ~0);
 		void reset();

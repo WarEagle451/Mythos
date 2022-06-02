@@ -176,8 +176,7 @@ namespace myl::vulkan {
 
 		// Create depth image and its view.
 		m_depth_attachment = std::make_unique<image>(m_context, VK_IMAGE_TYPE_2D,
-			swapchain_extent.width,
-			swapchain_extent.height,
+			swapchain_extent,
 			m_context.depth_format(),
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,

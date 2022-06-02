@@ -3,20 +3,15 @@
 #include "vulkan_utils.hpp"
 
 namespace myl::vulkan {
-	image::image(context& a_context, VkImageType a_image_type, u32 a_width, u32 a_height, VkFormat a_format, VkImageTiling a_tiling, VkImageUsageFlags a_usage, VkMemoryPropertyFlags a_memory_flags, bool a_create_view, VkImageAspectFlags a_view_aspect_flags)
+	image::image(context& a_context, VkImageType a_image_type, const VkExtent2D& a_extent, VkFormat a_format, VkImageTiling a_tiling, VkImageUsageFlags a_usage, VkMemoryPropertyFlags a_memory_flags, bool a_create_view, VkImageAspectFlags a_view_aspect_flags)
 		: m_context(a_context)
-		, m_width(a_width)
-		, m_height(a_height) {
+		, m_extent(a_extent)  {
 
 		VkImageCreateInfo info = {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.imageType = VK_IMAGE_TYPE_2D,
 			.format = a_format,
-			.extent = {
-				.width = m_width,
-				.height = m_height,
-				.depth = 1 /// MYTODO: Support configurable depth.
-			},
+			.extent = { .width = m_extent.width, .height = m_extent.height, .depth = 1 }, /// MYTODO: Support configurable depth.
 			.mipLevels = 4, /// MYTODO: Support mip mapping
 			.arrayLayers = 1, /// MYTODO: Support number of layers in the image.
 			.samples = VK_SAMPLE_COUNT_1_BIT, /// MYTODO: Configurable sample count.
@@ -28,25 +23,26 @@ namespace myl::vulkan {
 
 		MYL_VK_ASSERT(vkCreateImage, m_context.device(), &info, VK_NULL_HANDLE, &m_handle);
 
-		// Query memory requirements.
-		VkMemoryRequirements memory_requirements;
+		VkMemoryRequirements memory_requirements{};
 		vkGetImageMemoryRequirements(m_context.device(), m_handle, &memory_requirements);
 
 		u32 memory_type = m_context.find_memory_index(memory_requirements.memoryTypeBits, a_memory_flags);
-		if (memory_type == ~0) {
-			MYL_CORE_ERROR("Required memory type not found. Image not valid.");
-		}
+		if (memory_type == ~0)
+			MYL_CORE_ERROR("Invaild image, required memory type not found");
 
 		// Allocate memory
-		VkMemoryAllocateInfo memory_allocate_info = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
-		memory_allocate_info.allocationSize = memory_requirements.size;
-		memory_allocate_info.memoryTypeIndex = memory_type;
+		VkMemoryAllocateInfo memory_allocate_info{
+			.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+			.allocationSize = memory_requirements.size,
+			.memoryTypeIndex = memory_type
+		};
 		MYL_VK_ASSERT(vkAllocateMemory, m_context.device(), &memory_allocate_info, VK_NULL_HANDLE, &m_memory);
 
 		// Bind the memory
-		MYL_VK_ASSERT(vkBindImageMemory, m_context.device(), m_handle, m_memory, 0);  /// MyTODO: configurable memory offset.
+		MYL_VK_ASSERT(vkBindImageMemory, m_context.device(), m_handle, m_memory, 0);/// MYTodo: Configurable memory offset
 
-		create_view(a_format, a_view_aspect_flags);
+		if (a_create_view)
+			create_view(a_format, a_view_aspect_flags);
 	}
 
 	image::~image() {

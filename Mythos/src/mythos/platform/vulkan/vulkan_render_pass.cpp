@@ -3,6 +3,8 @@
 #include "vulkan_utils.hpp"
 #include "vulkan_swapchain.hpp"
 
+#include <vector>
+
 namespace myl::vulkan {
 	render_pass::render_pass(context& a_context, swapchain& a_swapchain, const f32vec4& a_color, f32 a_x, f32 a_y, const VkExtent2D& a_extent, f32 a_depth, u32 a_stencil)
 		: m_context(a_context)
@@ -26,12 +28,13 @@ namespace myl::vulkan {
 			.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR // Transitioned to after the render pass
 		});
 
-		VkAttachmentReference color_attachment_reference{
-			.attachment = 0,
+		VkAttachmentReference color_attachment_ref{
+			.attachment = 0, // Attachment array index
 			.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
 		};
 
 		attachment_descriptions.push_back(VkAttachmentDescription{ // Depth attachment
+			.flags = 0,
 			.format = m_context.depth_format(),
 			.samples = VK_SAMPLE_COUNT_1_BIT,
 			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -42,25 +45,26 @@ namespace myl::vulkan {
 			.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		});
 		
-		VkAttachmentReference depth_attachment_reference{
-			.attachment = 1,
+		VkAttachmentReference depth_attachment_ref{
+			.attachment = 1, // Attachment array index
 			.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
 		};
 
-		/// MYTODO: other attachment types (input, resolve, preserve)
+		/// MYTodo: Other attachment types, input, resolve, preserve
+
 		VkSubpassDescription subpass{
 			.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
 			.inputAttachmentCount = 0,
 			.pInputAttachments = nullptr,
 			.colorAttachmentCount = 1,
-			.pColorAttachments = &color_attachment_reference,
+			.pColorAttachments = &color_attachment_ref,
 			.pResolveAttachments = nullptr,
-			.pDepthStencilAttachment = &depth_attachment_reference,
+			.pDepthStencilAttachment = &depth_attachment_ref,
 			.preserveAttachmentCount = 0,
 			.pPreserveAttachments = nullptr
 		};
 
-		/// Render pass dependencies. MYTODO: make this configurable.
+		/// MYTodo: configurable
 		VkSubpassDependency dependency{
 			.srcSubpass = VK_SUBPASS_EXTERNAL,
 			.dstSubpass = 0,
@@ -71,7 +75,7 @@ namespace myl::vulkan {
 			.dependencyFlags = 0
 		};
 
-		VkRenderPassCreateInfo render_pass_create_info{
+		VkRenderPassCreateInfo create_info{
 			.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
 			.pNext = VK_NULL_HANDLE,
 			.flags = 0,
@@ -83,7 +87,8 @@ namespace myl::vulkan {
 			.pDependencies = &dependency,
 		};
 
-		MYL_VK_ASSERT(vkCreateRenderPass, m_context.device(), &render_pass_create_info, VK_NULL_HANDLE, &m_handle);
+		MYL_VK_ASSERT(vkCreateRenderPass, m_context.device(), &create_info, VK_NULL_HANDLE, &m_handle);
+		m_state = render_pass_state::ready;
 	}
 
 	render_pass::~render_pass() {

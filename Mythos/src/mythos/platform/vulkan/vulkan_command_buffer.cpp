@@ -25,21 +25,22 @@ namespace myl::vulkan {
 
 	command_buffer::command_buffer(context& a_context)
 		: m_context(a_context)
-		, m_state(command_buffer_state::not_allocated) {
-
-	}
+		, m_state(command_buffer_state::not_allocated)
+		, m_handle(VK_NULL_HANDLE) {}
 
 	command_buffer::~command_buffer() {
 		/// MYTodo: What to do if its recording or allocated
+		//if (m_state != command_buffer_state::not_allocated)
+		//	deallocate();
 	}
 
 	void command_buffer::allocate(VkCommandPool a_pool, bool a_is_primary) {
 		VkCommandBufferAllocateInfo alloc_info{
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-			.pNext = 0,
+			.pNext = VK_NULL_HANDLE,
 			.commandPool = a_pool,
 			.level = a_is_primary ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY,
-			.commandBufferCount = 1,
+			.commandBufferCount = 1
 		};
 
 		m_state = command_buffer_state::not_allocated;
@@ -59,12 +60,10 @@ namespace myl::vulkan {
 			.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
 			.flags = 0
 		};
-		if (a_is_single_use)
-			begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		if (a_is_render_pass_continue)
-			begin_info.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
-		if (a_is_simultaneous_use)
-			begin_info.flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+
+		if (a_is_single_use)			begin_info.flags |= VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		if (a_is_render_pass_continue)	begin_info.flags |= VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+		if (a_is_simultaneous_use)		begin_info.flags |= VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
 		MYL_VK_ASSERT(vkBeginCommandBuffer, m_handle, &begin_info);
 		m_state = command_buffer_state::recording;
