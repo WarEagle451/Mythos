@@ -32,7 +32,7 @@ namespace myl::vulkan {
 #ifdef MYL_BUILD_DEBUG 
 #	define MYL_VK_ASSERT(func, ...) {\
 		const VkResult t5p9 = func(__VA_ARGS__);\
-		MYL_CORE_ASSERT(t5p9 == VK_SUCCESS, std::format("Vulkan - '{}' failed. Result: {}", #func, myl::vulkan::VkResult_to_string(t5p9)));\
+		MYL_CORE_ASSERT(t5p9 == VK_SUCCESS, std::format("Vulkan - '"###func##"' failed. Result: {}", myl::vulkan::VkResult_to_string(t5p9)));\
 	}
 #else
 #	define MYL_VK_ASSERT(func, ...) func(__VA_ARGS__)

@@ -1,8 +1,9 @@
 #include "renderer.hpp"
 
 #include <mythos/platform/detection.hpp>
-
 #include <mythos/core/log.hpp>
+#include <mythos/math/projection.hpp>
+#include <mythos/math/transform.hpp>
 
 namespace myl::render {
 	std::unique_ptr<backend> renderer::s_backend = nullptr;
@@ -23,13 +24,19 @@ namespace myl::render {
 
 	void renderer::shutdown() {
 		/// MYTodo: All shaders must be destroyed before backend is destroyed
-		/// MYTodo: Should probs unbind the shader being used if there is one
 
-		s_backend.reset(); // Deletes the backend
+		s_backend.reset();
 	}
 
-	void renderer::draw_frame() { /// MYTodo: This should draw all of the submited data using the draw functions, aka make it a batch renderer
+	static f32 z = -1.f; /// MYTemp:
+
+	void renderer::draw_frame() {
 		if (s_backend->begin()) {
+			f32mat4x4 projection = perspective(radians(45.f), 1280.f / 720.f, .1f, 1000.f); /// MYTemp:
+			f32mat4x4 view = translation(f32vec3{ 0, 0, z });
+			z -= .1f;
+
+			s_backend->update_global_state(projection, view, f32vec3::zero(), f32vec4::one(), 0); /// MYTemp:
 			s_backend->end();
 		}
 	}

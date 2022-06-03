@@ -42,7 +42,7 @@ namespace myl {
 		constexpr T _1 = static_cast<T>(1);
 		constexpr T _2 = static_cast<T>(2);
 
-		return mat4x4<T>( /// MYTodo: Make sure this is good for a left handed cord system
+		return mat4x4<T>(
 			{ _1 - _2 * n.y * n.y - _2 * n.z * n.z, _2 * n.x * n.y - _2 * n.z * n.w, _2 * n.x * n.z + _2 * n.y * n.w, 0 },
 			{ _2 * n.x * n.y + _2 * n.z * n.w, _1 - _2 * n.x * n.x - _2 * n.z * n.z, _2 * n.y * n.z - _2 * n.x * n.w, 0 },
 			{ _2 * n.x * n.z - _2 * n.y * n.w, _2 * n.y * n.z + _2 * n.x * n.w, _1 - _2 * n.x * n.x - _2 * n.y * n.y, 0 },
@@ -71,7 +71,7 @@ namespace myl {
 
 		out[3] = { 0, 0, 0, 1 };
 
-		return out; /// MYTodo: Make sure this is good for a left handed cord system
+		return out;
 	}
 
 	//@brief Spherical linear interpolation

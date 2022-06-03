@@ -16,6 +16,8 @@ namespace myl::vulkan {
 		pipeline(context&, render_pass&, const std::vector<VkVertexInputAttributeDescription>&, const std::vector<VkDescriptorSetLayout>&, const std::vector<VkPipelineShaderStageCreateInfo>&, VkViewport&, VkRect2D& a_scissor, bool a_is_wireframe);
 		~pipeline();
 
+		VkPipelineLayout& layout() { return m_pipeline_layout; }
+
 		void bind(command_buffer&, VkPipelineBindPoint);
 	};
 }

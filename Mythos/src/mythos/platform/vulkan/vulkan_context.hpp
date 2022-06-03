@@ -73,12 +73,12 @@ namespace myl::vulkan {
 		std::vector<command_buffer> m_graphics_command_buffers;
 		VkFormat m_depth_format; /// MYTodo: SHould this be in swapchain?
 
-		std::unique_ptr<buffer> m_vertex_buffer; /// MYTodo: Put these in vertex array
+		std::unique_ptr<buffer> m_vertex_buffer;
 		std::unique_ptr<buffer> m_index_buffer;
-		u64 m_geometry_vertex_offset; /// MYTodo: What are these for, Should this be part of vertex array?
-		u64 m_geometry_index_offset; /// MYTodo: What are these for, Should this be part of vertex array?
+		u64 m_geometry_vertex_offset;
+		u64 m_geometry_index_offset;
 
-		u32 m_image_index; /// MYTodo: Should This be in swapchain?
+		u32 m_image_index;
 	public:
 		context();
 		~context();
@@ -87,7 +87,7 @@ namespace myl::vulkan {
 		context& operator=(const context&) = delete;
 
 		const VkDevice& device() const { return m_device; }
-		u32& image_index() { return m_image_index; }
+		u32& image_index() { return m_image_index; } /// MYTodo: Should not be a reference
 		VkQueue& graphics_queue() { return m_graphics_queue; }
 		VkQueue& transfer_queue() { return m_transfer_queue; }
 		VkQueue& present_queue() { return m_present_queue; }
@@ -99,13 +99,11 @@ namespace myl::vulkan {
 		VkSurfaceKHR& surface() { return m_surface; }
 		swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
 		device_queue_indices& queue_indices() { return m_queue_indices; }
-		VkFormat& depth_format() { return m_depth_format; }
+		VkFormat& depth_format() { return m_depth_format; } /// MYTodo: Should not be a reference
 		VkExtent2D& cached_framebuffer_extent() { return m_cached_framebuffer_extent; }
 		VkExtent2D& framebuffer_extent() { return m_framebuffer_extent; }
-		u64& framebuffer_size_generation() { return m_framebuffer_size_generation; }
-		u64& framebuffer_size_last_generation() { return m_framebuffer_size_last_generation; }
-		///u64& geometry_vertex_offset() { return m_geometry_vertex_offset; }
-		///u64& geometry_index_offset() { return m_geometry_index_offset; }
+		u64& framebuffer_size_generation() { return m_framebuffer_size_generation; } /// MYTodo: Should not be a reference
+		u64& framebuffer_size_last_generation() { return m_framebuffer_size_last_generation; } /// MYTodo: Should not be a reference
 
 		u32 find_memory_index(u32 a_type_filter, u32 a_property_flags) const;
 

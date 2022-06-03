@@ -20,12 +20,14 @@ namespace myl::vulkan {
 		m_shader = create_shader("resources/shaders/shader.glsl");
 
 		/// MYTemp: Test geometry
+		const f32 scale = 10.f;
+
 		const u32 vert_count = 4;
 		f32vec3 verts[vert_count]{
-			{ 0.f, -.5f, 0.f },
-			{ .5f, .5f, 0.f },
-			{ 0.f, .5f, 0.f },
-			{ .5f, -.5f, 0.f }
+			f32vec3{ -.5f, -.5f, 0.f } * scale,
+			f32vec3{ .5f, .5f, 0.f } * scale,
+			f32vec3{ -.5f, .5f, 0.f } * scale,
+			f32vec3{ .5f, -.5f, 0.f } * scale
 		};
 
 		const u32 index_count = 6;
@@ -116,16 +118,32 @@ namespace myl::vulkan {
 		// Begin the render pass.
 		m_main_render_pass.begin(&cmd_buffer, m_swapchain.framebuffers()[m_context.image_index()].handle());
 
+		return true;
+	}
+
+	// None of these are pointers or references so the engine does not have to wait for current frame is done rendering
+	void backend::update_global_state(f32mat4x4 a_projection, f32mat4x4 a_view, f32vec3 a_position, f32vec4 a_color, i32 a_mode) {
+		command_buffer& cmd_buf = m_context.graphics_command_buffers()[m_context.image_index()];
+		
+		auto shader = static_cast<vulkan::shader*>(m_shader.get()); /// MYTodo: Should not have to cast
+		shader->bind();
+
+		auto& global_ubo = shader->global_ubo();
+		global_ubo.projection = a_projection;
+		global_ubo.view = a_view;
+		/// MYTodo: Other properties
+		
+		shader->update_global_state();
+
 		/// MYTemp: Test code
 		m_shader->bind();
 
+		command_buffer& cmd_buffer = m_context.graphics_command_buffers()[m_context.image_index()];
 		VkDeviceSize offsets[]{ 0 };
 		vkCmdBindVertexBuffers(cmd_buffer.handle(), 0, 1, &m_context.vertex_buffer()->handle(), (VkDeviceSize*)offsets);
 		vkCmdBindIndexBuffer(cmd_buffer.handle(), m_context.index_buffer()->handle(), 0, VK_INDEX_TYPE_UINT32);
 		vkCmdDrawIndexed(cmd_buffer.handle(), 6, 1, 0, 0, 0);
 		/// End of temp code
-
-		return true;
 	}
 
 	void backend::end() {
