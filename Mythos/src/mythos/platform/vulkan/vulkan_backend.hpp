@@ -22,6 +22,7 @@ namespace myl::vulkan {
 
 		bool begin() override;
 		void update_global_state(f32mat4x4 a_projection, f32mat4x4 a_view, f32vec3 a_position, f32vec4 a_color, i32 a_mode) override;
+		void update_object(f32mat4x4) override;
 		void end() override;
 
 		void on_window_resize(const u32vec2&) override;

@@ -283,6 +283,13 @@ namespace myl::vulkan {
 		vkCmdBindDescriptorSets(cmd_buf, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->layout(), 0, 1, &global_descriptor, 0, VK_NULL_HANDLE);
 	}
 
+	void shader::update(f32mat4x4 a_model) {
+		u32 image_index = m_context.image_index();
+		VkCommandBuffer cmd_buf = m_context.graphics_command_buffers()[image_index].handle();
+
+		vkCmdPushConstants(cmd_buf, m_pipeline->layout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(f32mat4x4), &a_model); // Spec only guarantess 128 bytes
+	}
+
 	void shader::create_module(VkShaderModuleCreateInfo& a_create_info, VkShaderModule* a_module) {
 		if (vkCreateShaderModule(m_context.device(), &a_create_info, nullptr, a_module) != VK_SUCCESS)
 			MYL_CORE_ERROR("Failed to create Vulkan shader module");

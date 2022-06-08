@@ -134,6 +134,10 @@ namespace myl::vulkan {
 		/// MYTodo: Other properties
 		
 		shader->update_global_state();
+	}
+
+	void backend::update_object(f32mat4x4 a_model) {
+		static_cast<vulkan::shader*>(m_shader.get())->update(a_model);
 
 		/// MYTemp: Test code
 		m_shader->bind();

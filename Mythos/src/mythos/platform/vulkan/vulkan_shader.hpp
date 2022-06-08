@@ -35,6 +35,7 @@ namespace myl::vulkan {
 		void unbind() const override;
 
 		void update_global_state();
+		void update(f32mat4x4); /// MYTemp:
 	private:
 		void create_module(VkShaderModuleCreateInfo&, VkShaderModule*);
 	};

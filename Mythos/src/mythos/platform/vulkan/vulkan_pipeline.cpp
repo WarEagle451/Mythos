@@ -4,6 +4,7 @@
 #include "vulkan_vertex_array.hpp"
 
 #include <mythos/math/vec3.hpp>
+#include <mythos/math/mat4x4.hpp>
 
 namespace myl::vulkan {
 	pipeline::pipeline(context& a_context, render_pass& a_render_pass, const std::vector<VkVertexInputAttributeDescription>& a_attributes, const std::vector<VkDescriptorSetLayout>& a_descriptor_layouts, const std::vector<VkPipelineShaderStageCreateInfo>& a_stages, VkViewport& a_viewport, VkRect2D& a_scissor, bool a_is_wireframe)
@@ -96,10 +97,18 @@ namespace myl::vulkan {
 			.primitiveRestartEnable = VK_FALSE
 		};
 
+		VkPushConstantRange push_constant{
+			.stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+			.offset = sizeof(f32mat4x4) * 0,
+			.size = sizeof(f32mat4x4) * 2 // 128 hbytes
+		};
+
 		VkPipelineLayoutCreateInfo pipeline_layout_create_info{
 			.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
 			.setLayoutCount = static_cast<u32>(a_descriptor_layouts.size()),
-			.pSetLayouts = a_descriptor_layouts.data()
+			.pSetLayouts = a_descriptor_layouts.data(),
+			.pushConstantRangeCount = 1,
+			.pPushConstantRanges = &push_constant
 		};
 
 		MYL_VK_ASSERT(vkCreatePipelineLayout, m_context.device(), &pipeline_layout_create_info, VK_NULL_HANDLE, &m_pipeline_layout);

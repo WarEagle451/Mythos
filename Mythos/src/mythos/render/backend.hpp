@@ -17,6 +17,7 @@ namespace myl::render {
 
 		virtual bool begin() = 0;
 		virtual void update_global_state(f32mat4x4 a_projection, f32mat4x4 a_view, f32vec3 a_position, f32vec4 a_color, i32 a_mode) = 0; /// MYTodo: I do not like this design, ref to other vulkan tutorial
+		virtual void update_object(f32mat4x4 a_model) = 0; /// MYTodo: Get rid of this
 		virtual void end() = 0;
 
 		virtual void on_window_resize(const u32vec2&) = 0;

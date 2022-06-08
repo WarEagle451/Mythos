@@ -5,6 +5,8 @@
 #include <mythos/core/app.hpp>
 
 namespace myl::render {
+	void draw(); /// MYTodo: draw system like og mythos
+
 	struct statistics {
 		u64 draw_calls = 0;
 	};
