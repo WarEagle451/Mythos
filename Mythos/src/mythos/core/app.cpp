@@ -18,16 +18,16 @@ namespace myl {
 
 		MYL_CORE_INFO("Mythos version: {}", MYL_VERSION);
 
-		m_running = true;
-
 		input::init();
-
 		m_window = window::create(a_config.window);
+
 		m_event_callback = MYL_BIND_EVENT_FN(app::on_event);
 		set_event_callback(m_event_callback);
 
 		render::renderer::init();
 		MYL_CORE_INFO("Application initialized");
+
+		m_running = true;
 	}
 
 	app::~app() {
@@ -83,13 +83,16 @@ namespace myl {
 	}
 
 	bool app::on_window_resize(event_window_resize& a_event) {
-		/// MYTodo: This should return true if somehow the width and height don't actually change
+		if (m_window->size() == u32vec2{ 0, 0 })
+			return true; // Don't trigger a resize if no change
+
 		if (a_event.size().x == 0 || a_event.size().y == 0) { // Minimization
 			m_suspended = true;
 			return false;
 		}
-
+		
 		m_suspended = false;
+		m_window->on_resize(a_event.size());
 		render::renderer::on_window_resize(a_event.size());
 		return false;
 	}

@@ -9,6 +9,8 @@ namespace myl::windows {
 	class window : public myl::window {
 		HINSTANCE m_instance;
 		HWND m_handle;
+
+		u32vec2 m_size;
 	public:
 		window(const config&);
 		~window();
@@ -17,10 +19,13 @@ namespace myl::windows {
 		window& operator=(const window&) = delete;
 
 		MYL_API MYL_NO_DISCARD void* native() const override { return static_cast<void*>(m_handle); }
+		MYL_API MYL_NO_DISCARD const u32vec2& size() const override { return m_size; }
 		//@return Module handle of the window
 		MYL_NO_DISCARD HINSTANCE module() const { return m_instance; }
 
 		void update() override;
+
+		void on_resize(const u32vec2&) override;
 	};
 }
 #endif

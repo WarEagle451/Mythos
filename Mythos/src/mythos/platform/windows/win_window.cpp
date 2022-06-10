@@ -271,7 +271,8 @@ namespace myl::windows {
 	}
 
 	window::window(const config& a_config)
-		: myl::window() {
+		: myl::window()
+		, m_size(a_config.size) {
 		m_instance = GetModuleHandleA(0);
 
 		constexpr const char* window_class_name = "mythos_window_class";
@@ -294,33 +295,31 @@ namespace myl::windows {
 			throw core_runtime_error("Windows window registration failed");
 
 		// Create window
-		u32 client_x = a_config.postion.x;
-		u32 client_y = a_config.postion.y;
+		i32 client_x = a_config.postion.x;
+		i32 client_y = a_config.postion.y;
 		u32 client_width = a_config.size.w;
 		u32 client_height = a_config.size.h;
 
-		u32 window_x = client_x;
-		u32 window_y = client_y;
+		i32 window_x = client_x;
+		i32 window_y = client_y;
 		u32 window_width = client_width;
 		u32 window_height = client_height;
 
 		u32 window_style = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION;
 		u32 window_ex_style = WS_EX_APPWINDOW;
 
-		window_style |= WS_MAXIMIZE;
+		///window_style |= WS_MAXIMIZE;
 		window_style |= WS_MINIMIZEBOX;
 		window_style |= WS_MAXIMIZEBOX;
 		window_style |= WS_THICKFRAME;
 
-		/// MYTodo: When it is minimized it does not show the the buttons
-
 		// Obtain size of the border
 		RECT border_rect = { 0, 0, 0, 0 };
-		AdjustWindowRectEx(&border_rect, window_style, 0, window_ex_style);
-
+		AdjustWindowRectEx(&border_rect, window_style, FALSE, window_ex_style);
+		
 		// In this case, the border rect is negative
-		window_x += border_rect.left;
-		window_y += border_rect.top;
+		window_x -= border_rect.left;
+		window_y -= border_rect.top;
 
 		// Grow by the size of the OS bordering
 		window_width += border_rect.right - border_rect.left;
@@ -330,11 +329,20 @@ namespace myl::windows {
 		if (!m_handle)
 			throw core_runtime_error("Windows window creation failed");
 
+		if (window_style & WS_MAXIMIZE) { /// MYTodo: There has to be a better way to detect if the screen is maximized
+			RECT win_size{};
+			GetWindowRect(m_handle, &win_size);
+			m_size = {
+				static_cast<u32>(win_size.right - win_size.left - (border_rect.right - border_rect.left)),
+				static_cast<u32>(win_size.bottom - win_size.top - (border_rect.bottom - border_rect.top))
+			};
+		}
+
 		// Show the window
 		bool should_activate = true;
 		i32 show_window_command_flags = should_activate ? SW_SHOW : SW_SHOWNOACTIVATE;
 		// If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
-		// If initially mazimized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
+		// If initially maximized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
 	}
 
@@ -351,6 +359,10 @@ namespace myl::windows {
 			TranslateMessage(&message);
 			DispatchMessageA(&message);
 		}
+	}
+
+	void window::on_resize(const u32vec2& a_size) {
+		m_size = a_size;
 	}
 }
 #endif

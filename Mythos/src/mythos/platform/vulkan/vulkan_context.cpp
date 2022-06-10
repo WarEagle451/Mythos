@@ -80,7 +80,7 @@ namespace myl::vulkan {
 	}
 
 	context::context()
-		: m_cached_framebuffer_extent{ .width = 0, .height = 0 }
+		: m_cached_framebuffer_extent{ .width = app::get().window()->size().x, .height = app::get().window()->size().y }
 		, m_framebuffer_extent{ .width = (m_cached_framebuffer_extent.width == 0) ? 800 : m_cached_framebuffer_extent.width, .height = (m_cached_framebuffer_extent.height == 0) ? 600 : m_cached_framebuffer_extent.height } { /// MYTodo: Don't like this big piece of code
 		create_instance();
 		create_surface();

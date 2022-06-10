@@ -35,9 +35,9 @@ namespace myl::render {
 
 	void renderer::draw_frame() {
 		if (s_backend->begin()) {
-			/// MYTodo: should have a defered rendere, eg draw keeps adding indices to draw until flushed, batch renderer, no more of this update object / state shit
+			/// MYTodo: should have a defered renderer, eg draw keeps adding indices to draw until flushed, batch renderer, no more of this update object / state shit
 
-			f32mat4x4 projection = perspective(radians(45.f), 1280.f / 720.f, .1f, 1000.f); /// MYTemp: The screen
+			f32mat4x4 projection = perspective(radians(45.f), app::get().window()->aspect_ratio(), .1f, 1000.f); /// MYTemp: The screen
 			f32mat4x4 view = inverse(translation(f32vec3{ 0, 0, z })); /// MYTemp: Camera
 
 			f32quat rot(forward(f32mat4x4::identity()), angle, false);
