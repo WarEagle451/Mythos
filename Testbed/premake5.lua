@@ -41,6 +41,8 @@ project "Testbed"
 		defines "MYL_BUILD_RELEASE"
 		runtime "Release"
 		optimize "On"
+		kind "WindowedApp"
+		entrypoint "mainCRTStartup"
 
 	filter "configurations:Distribution"
 		defines "MYL_BUILD_DISTRIBUTION"
