@@ -34,7 +34,7 @@ namespace myl {
 		return normalize(conjugate(q));
 	}
 
-	template<typename T>
+	template<typename T> /// MYTodo: quats do not have handedness, but matrices do, this might not work with left handed matrices
 	MYL_NO_DISCARD constexpr mat4x4<T> quat_to_matrix(const quat<T>& q) { /// MYTodo: Make this a mat4x4 constructor
 		// https://stackoverflow.com/questions/1556260/convert-quaternion-rotation-to-rotation-matrix
 
@@ -49,7 +49,7 @@ namespace myl {
 			{ 0, 0, 0, 1 });
 	}
 
-	template<typename T>
+	template<typename T> /// MYTodo: quats do not have handedness, but matrices do, this might not work with left handed matrices
 	MYL_NO_DISCARD constexpr mat4x4<T> quat_to_rotation_matrix(const quat<T>& q, const vec3<T>& center) { /// MYTodo: Make this a mat4x4 constructor
 		constexpr T _2 = static_cast<T>(2);
 		mat4x4<T> out{};
@@ -84,7 +84,7 @@ namespace myl {
 		quat<T> v1 = normalize(b);
 
 		// Compute the cosine of the angle between the two vectors
-		f32 dot = myl::dot(v0, v1);
+		f32 dot = dot(v0, v1);
 
 		// If the dot product is negative, slerp won't take the shorter path
 		// Note that v1 and -v1 are equivalent when the negation is applied to all four components
@@ -175,7 +175,6 @@ namespace myl {
 		// Comparison operators
 		
 		MYL_NO_DISCARD constexpr bool operator==(const quat& rhs) const { return x == rhs.x && y = rhs.y && z == rhs.z && w == rhs.w; }
-		/// Spaceship?
 
 		// Unary operators
 		
