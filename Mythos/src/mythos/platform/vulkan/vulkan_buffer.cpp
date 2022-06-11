@@ -99,7 +99,7 @@ namespace myl::vulkan {
 	void buffer::load(u64 a_offset, u64 a_size, u32 a_flags, const void* a_data) {
 		void* data_ptr;
 		MYL_VK_ASSERT(vkMapMemory, m_context.device(), m_memory, a_offset, a_size, a_flags, &data_ptr);
-		memcpy(data_ptr, a_data, a_size); /// MYTodo: Temp
+		memcpy(data_ptr, a_data, a_size);
 		vkUnmapMemory(m_context.device(), m_memory);
 	}
 	/// MYTodo: Take buffer not VkBuffer

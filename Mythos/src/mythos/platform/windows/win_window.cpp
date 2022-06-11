@@ -27,60 +27,6 @@ namespace myl::windows {
 
 	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param, LPARAM l_param) {
 		switch (static_cast<u16>(w_param)) { // Key code it a u16 from the w_param
-			/// MYTodo: Figure out what to do with VK_KEY codes below
-			/// - VK_CLEAR
-			/// - VK_KANA
-			/// - VK_HANGUEL
-			/// - VK_HANGUL
-			/// - VK_IME_ON
-			/// - VK_JUNJA
-			/// - VK_FINAL
-			/// - VK_HANJA
-			/// - VK_KANJI
-			/// - VK_IME_OFF
-			/// - VK_CONVERT
-			/// - VK_NONCONVERT
-			/// - VK_ACCEPT
-			/// - VK_MODECHANGE
-			/// - VK_SELECT
-			/// - VK_PRINT
-			/// - VK_EXECUTE
-			/// - VK_HELP
-			/// - VK_APPS
-			/// - VK_SLEEP
-			/// - VK_SEPARATOR
-			/// - VK_BROWSER_BACK
-			/// - VK_BROWSER_FORWARD
-			/// - VK_BROWSER_REFRESH
-			/// - VK_BROWSER_STOP
-			/// - VK_BROWSER_SEARCH
-			/// - VK_BROWSER_FAVORITES
-			/// - VK_BROWSER_HOME
-			/// - VK_VOLUME_MUTE
-			/// - VK_VOLUME_DOWN
-			/// - VK_VOLUME_UP
-			/// - VK_MEDIA_NEXT_TRACK
-			/// - VK_MEDIA_PREV_TRACK
-			/// - VK_MEDIA_STOP
-			/// - VK_MEDIA_PLAY_PAUSE
-			/// - VK_LAUNCH_MAIL
-			/// - VK_LAUNCH_MEDIA_SELECT
-			/// - VK_LAUNCH_APP1
-			/// - VK_LAUNCH_APP2
-			/// - VK_OEM_8
-			/// - VK_OEM_102
-			/// - VK_PROCESSKEY
-			/// - VK_PACKET
-			/// - VK_ATTN
-			/// - VK_CRSEL
-			/// - VK_EXSEL
-			/// - VK_EREOF
-			/// - VK_PLAY
-			/// - VK_ZOOM
-			/// - VK_NONAME
-			/// - VK_PA1
-			/// - VK_OEM_CLEAR
-
 			using namespace key;
 			case VK_TAB: return tab;
 			case VK_RETURN: return enter;
@@ -259,7 +205,7 @@ namespace myl::windows {
 			case WM_MBUTTONUP: MYL_FALLTHROUGH;
 			case WM_RBUTTONUP: input::process_mouse_buttons(translate_mouse_code(w_param), input::state::up); break;
 			case WM_XBUTTONUP: input::process_mouse_buttons(translate_mouse_code(LOWORD(w_param)), input::state::up); break; // LOWORD contains the button
-#else /// MYHack: See bug note above
+#else /// MYHack: See bug above
 			case WM_LBUTTONUP: input::process_mouse_buttons(mouse_button::left, input::state::up); break;
 			case WM_MBUTTONUP: input::process_mouse_buttons(mouse_button::middle, input::state::up); break;
 			case WM_RBUTTONUP: input::process_mouse_buttons(mouse_button::right, input::state::up); break;

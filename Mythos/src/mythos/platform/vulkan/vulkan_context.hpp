@@ -9,9 +9,6 @@
 #	define MYL_VK_ENABLE_VALIDATION_LAYERS
 #endif
 
-/// MYTodo: Remove, same with below
-///#include "vulkan_framebuffer.hpp" /// MYTodo: Something is missing an include somewhere
-
 namespace myl::vulkan {
 	struct device_requirements {
 		bool graphics;
@@ -71,7 +68,7 @@ namespace myl::vulkan {
 
 		VkCommandPool m_graphics_command_pool;
 		std::vector<command_buffer> m_graphics_command_buffers;
-		VkFormat m_depth_format; /// MYTodo: SHould this be in swapchain?
+		VkFormat m_depth_format; /// MYTodo: Should this be in swapchain?
 
 		std::unique_ptr<buffer> m_vertex_buffer;
 		std::unique_ptr<buffer> m_index_buffer;

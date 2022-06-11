@@ -14,7 +14,7 @@ namespace myl::render {
 #ifdef MYL_PLATFORM_WINDOWS
 		return api::vulkan;
 #else
-		/// MYTodo: Should attempt opengl as last resort
+
 #endif
 	}
 
@@ -35,11 +35,9 @@ namespace myl::render {
 
 	void renderer::draw_frame() {
 		if (s_backend->begin()) {
-			/// MYTodo: should have a defered renderer, eg draw keeps adding indices to draw until flushed, batch renderer, no more of this update object / state shit
-
 			f32mat4x4 projection = perspective(radians(45.f), app::get().window()->aspect_ratio(), .1f, 1000.f); /// MYTemp: The screen
 			f32mat4x4 view = inverse(translation(f32vec3{ 0, 0, z })); /// MYTemp: Camera
-
+			MYL_CORE_DEBUG(z);
 			f32quat rot(forward(f32mat4x4::identity()), angle, false);
 			f32mat4x4 model = quat_to_rotation_matrix(rot, f32vec3::zero()); /// MYTemp: Position
 

@@ -44,8 +44,6 @@ namespace myl {
 
 	using f32 = float;
 	using f64 = double;
-
-	using size = u64; /// MYTodo: Go through and implement and should this be the final?
 }
 
 #if defined(__clang__) || defined(__gcc__)

@@ -11,13 +11,13 @@ namespace myl::vulkan {
 			.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
 			.imageType = VK_IMAGE_TYPE_2D,
 			.format = a_format,
-			.extent = { .width = m_extent.width, .height = m_extent.height, .depth = 1 }, /// MYTODO: Support configurable depth.
-			.mipLevels = 4, /// MYTODO: Support mip mapping
-			.arrayLayers = 1, /// MYTODO: Support number of layers in the image.
-			.samples = VK_SAMPLE_COUNT_1_BIT, /// MYTODO: Configurable sample count.
+			.extent = { .width = m_extent.width, .height = m_extent.height, .depth = 1 }, /// MYTodo: Support configurable depth.
+			.mipLevels = 4, /// MYTodo: Support mip mapping
+			.arrayLayers = 1, /// MYTodo: Support number of layers in the image.
+			.samples = VK_SAMPLE_COUNT_1_BIT, /// MYTodo: Configurable sample count.
 			.tiling = a_tiling,
 			.usage = a_usage,
-			.sharingMode = VK_SHARING_MODE_EXCLUSIVE, /// MYTODO: Configurable sharing mode.
+			.sharingMode = VK_SHARING_MODE_EXCLUSIVE, /// MYTodo: Configurable sharing mode.
 			.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 		};
 
@@ -55,9 +55,9 @@ namespace myl::vulkan {
 		VkImageViewCreateInfo info{
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 			.image = m_handle,
-			.viewType = VK_IMAGE_VIEW_TYPE_2D,  /// MYTODO: Make configurable.
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,  /// MYTodo: Make configurable.
 			.format = a_format,
-			.subresourceRange = { ///MYTodo: Make configurable
+			.subresourceRange = { /// MYTodo: Make configurable
 				.aspectMask = a_aspect_flags,
 				.baseMipLevel = 0,
 				.levelCount = 1,

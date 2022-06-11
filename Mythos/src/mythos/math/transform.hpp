@@ -4,8 +4,6 @@
 #include "trigonometry.hpp"
 #include "geometric.hpp"
 
-/// MYBug: This will only be correct if kohi has the matrices as 0-3 = column 1, etc, if 0-3 = row 1 might have issues
-
 namespace myl {
 	using transform = mat4x4<float>;
 

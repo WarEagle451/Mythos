@@ -1,7 +1,7 @@
 #include "log.hpp"
 
 #include <spdlog/sinks/ansicolor_sink.h>
-#include <spdlog/sinks/basic_file_sink.h> /// MYTodo: When I replace this should work by queuing up a lot of logs and outputing all at once to keep file writes down
+#include <spdlog/sinks/basic_file_sink.h>
 
 #include <vector>
 

@@ -7,10 +7,9 @@
 #include <mythos/core/log.hpp>
 #include <mythos/math/vec3.hpp>
 
-#include <string.h> /// MYTodo: strcmp
+#include <string.h>
 
 /// MYTodo: Try to minimize the use of dynamic allocation
-/// MYTodo: All of the throws might cause destructor to try to destroy some stuff that isn't created yet
 
 namespace myl::vulkan {
 	MYL_NO_DISCARD static std::vector<const char*> required_validation_layers() {
@@ -226,7 +225,7 @@ namespace myl::vulkan {
 		u32 count = 0;
 		MYL_VK_ASSERT(vkEnumeratePhysicalDevices, m_instance, &count, VK_NULL_HANDLE);
 		if (count == 0)
-			throw vulkan_error("No Vulkan supporting devices found"); /// MYTodo: Needs to try to create a different backend
+			throw vulkan_error("No Vulkan supporting devices found");
 
 		std::vector<VkPhysicalDevice> devices(count);
 		MYL_VK_ASSERT(vkEnumeratePhysicalDevices, m_instance, &count, devices.data());
@@ -273,7 +272,7 @@ namespace myl::vulkan {
 		}
 
 		if (!m_physical_device)
-			throw vulkan_error("No devices meant requirements"); /// MYTodo: Should try to select a different rendering backend
+			throw vulkan_error("No devices meant requirements");
 	}
 
 	void context::obtain_queues() {
@@ -411,8 +410,8 @@ namespace myl::vulkan {
 		if (!graphics_shares_transfer)
 			indices.push_back(m_queue_indices.transfer_index);
 		/// MYTodo: Bug above happens here, if it shares a queue, don't push back indice
-		//if (!graphics_shares_compute)
-		//	indices.push_back(m_queue_indices.compute_index);
+		///if (!graphics_shares_compute)
+		///	indices.push_back(m_queue_indices.compute_index);
 
 		std::vector<VkDeviceQueueCreateInfo> queue_create_infos(indices.size());
 		for (u32 i = 0; i != indices.size(); ++i) {

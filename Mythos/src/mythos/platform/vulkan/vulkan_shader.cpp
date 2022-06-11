@@ -12,7 +12,7 @@
 #include <fstream>
 
 namespace myl::vulkan {
-	static const std::filesystem::path cached_directory() { /// MYTemp:
+	static const std::filesystem::path cache_directory() { /// MYTemp:
 		return "cache/shaders";
 	}
 
@@ -85,26 +85,21 @@ namespace myl::vulkan {
 		std::unordered_map<render::shader_type, std::vector<u32>> binaries;
 		auto sources = process(load_into_memory(file));
 		for (auto&& [type, src] : sources) {
-			std::filesystem::create_directories(cached_directory()); // Ensures the cached directories exists
-			std::filesystem::path cached = cached_directory() / (file.stem().string() + ".vulk" + render::shader_type_to_extenstion(type) + ".spv");
+			std::filesystem::path cached = cache_directory() / (file.stem().string() + ".vulk" + render::shader_type_to_extenstion(type) + ".spv");
 
-			if (std::ifstream in(cached, std::ios::in | std::ios::binary); in.is_open()) {
-				in.seekg(0, std::ios::end);
-				auto size = in.tellg();
-				in.seekg(0, std::ios::beg);
-
-				binaries[type] = std::vector<u32>{};
-				binaries[type].resize(size / sizeof(u32));
-				in.read(reinterpret_cast<char*>(binaries[type].data()), size);
-			}
-			else {
+			if (std::string s = load_into_memory(cached); s.empty()) {
 				auto result = compiler.CompileGlslToSpv(src, shader_type_to_shaderc_shader_kind(type), file.string().c_str(), options);
 				MYL_CORE_ASSERT(result.GetCompilationStatus() == shaderc_compilation_status_success, "Failed to compile Vulkan shader");
 
 				binaries[type] = std::vector<u32>(result.begin(), result.end());
 
+				std::filesystem::create_directories(cache_directory()); // Ensures the caching directories exist
 				if (std::ofstream out(cached, std::ios::binary); out.is_open()) // caching binary for later
 					out.write(reinterpret_cast<char*>(binaries[type].data()), binaries[type].size() * sizeof(u32));
+			}
+			else {
+				binaries[type].resize(s.size() / sizeof(u32));
+				memcpy(binaries[type].data(), s.data(), s.size());
 			}
 		}
 
@@ -120,8 +115,8 @@ namespace myl::vulkan {
 			case geometry: return VK_SHADER_STAGE_GEOMETRY_BIT;
 			case tess_control: return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
 			case tess_evaluation: return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-			case unknown: return VK_SHADER_STAGE_MISS_BIT_KHR; /// MYTodo: I think these mean it's an error?
-			default: return VK_SHADER_STAGE_MISS_BIT_KHR; /// MYTodo: I think these mean it's an error?
+			case unknown: return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM; /// MYTemp: Is there an error bit?
+			default: return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM; /// MYTemp: Is there an error bit?
 		}
 	}
 

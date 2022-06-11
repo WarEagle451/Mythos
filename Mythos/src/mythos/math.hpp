@@ -8,6 +8,4 @@
 #include "math/projection.hpp"
 #include "math/transform.hpp"
 
-/// is power of 2
-/// 
-/// Compare the sized of vector by comparing their dot products
+/// MYTodo: Compare the sized of vector by comparing their dot products

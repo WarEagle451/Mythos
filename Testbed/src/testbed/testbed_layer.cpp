@@ -10,6 +10,8 @@
 
 #include "test_manager.hpp"
 
+#include <mythos/file.hpp>
+
 ///#define TESTBED_RUN_TESTS
 
 namespace tb {

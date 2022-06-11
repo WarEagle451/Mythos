@@ -1,8 +1,6 @@
 #include "shader.hpp"
 #include "renderer.hpp"
 
-/// MYTodo: Should have the default shaders built into a cpp file, therfore can not be modified or has to be put into the project directory
-
 namespace myl::render {
 	constexpr std::string shader_type_to_extenstion(shader_type stage) {
 		switch (stage) {
@@ -18,7 +16,7 @@ namespace myl::render {
 		}
 	}
 
-	std::shared_ptr<shader> shader::create(const std::filesystem::path& a_file) { /// MYTodo: Should test if shader has already been created
+	std::shared_ptr<shader> shader::create(const std::filesystem::path& a_file) {
 		return renderer::backend()->create_shader(a_file);
 	}
 }
