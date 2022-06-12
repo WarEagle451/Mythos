@@ -4,9 +4,9 @@
 #include <string>
 #include <filesystem>
 #include <fstream>
+#include <vector>
 
 namespace myl {
-	/// MYBug: This cannot read spv shader binary, why? Need to read it as char then convert to u32
 	template<typename CharT = char>
 	MYL_NO_DISCARD std::basic_string<CharT> load_into_memory(const std::filesystem::path& file) {
 		if (std::basic_ifstream<CharT> in(file, std::ios::binary); in) {
@@ -17,5 +17,19 @@ namespace myl {
 		}
 
 		return std::basic_string<CharT>{};
+	}
+
+	template<typename IntT = u8>
+	MYL_NO_DISCARD std::vector<IntT> load_into_memory_binary(const std::filesystem::path& file) {
+		if (std::ifstream in(file, std::ios::binary); in) {
+			std::vector<IntT> binary{};
+			auto size = std::filesystem::file_size(file);
+
+			binary.resize(size / sizeof(IntT));
+			in.read(reinterpret_cast<std::ifstream::char_type*>(binary.data()), size);
+			return binary;
+		}
+
+		return std::vector<IntT>{};
 	}
 }

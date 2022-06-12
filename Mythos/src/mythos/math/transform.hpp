@@ -26,7 +26,7 @@ namespace myl {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr mat4x4<T> euler_x(T radians) { /// MYTodo: roll
+	MYL_NO_DISCARD constexpr mat4x4<T> euler_x(T radians) {
 		T c = cos(radians);
 		T s = sin(radians);
 
@@ -38,7 +38,7 @@ namespace myl {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr mat4x4<T> euler_y(T radians) { /// MYTodo: pitch
+	MYL_NO_DISCARD constexpr mat4x4<T> euler_y(T radians) {
 		T c = cos(radians);
 		T s = sin(radians);
 
@@ -50,7 +50,7 @@ namespace myl {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr mat4x4<T> euler_z(T radians) { /// MYTodo: yaw
+	MYL_NO_DISCARD constexpr mat4x4<T> euler_z(T radians) {
 		T c = cos(radians);
 		T s = sin(radians);
 
@@ -62,7 +62,7 @@ namespace myl {
 	}
 
 	template<typename T>
-	MYL_NO_DISCARD constexpr mat4x4<T> euler_rotation(const vec3<T>& radians) {
+	MYL_NO_DISCARD constexpr mat4x4<T> euler_xyz(const vec3<T>& radians) {
 		return euler_x(radians.x) * euler_y(radians.y) * euler_z(radians.z);
 	}
 

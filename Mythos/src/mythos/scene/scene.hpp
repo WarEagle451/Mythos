@@ -26,7 +26,7 @@ namespace myl {
 		const f32mat4x4& view() const { return m_view; }
 
 		void recaculate_view() {
-			m_view = inverse(translation(m_position) * euler_rotation(m_rotation));
+			m_view = inverse(translation(m_position) * euler_xyz(m_rotation));
 		}
 
 		void update();

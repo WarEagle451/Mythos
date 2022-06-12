@@ -3,13 +3,10 @@
 #include "vulkan_utils.hpp"
 #include "vulkan_vertex_array.hpp"
 
-#include <mythos/file.hpp>
+#include <mythos/io.hpp>
 #include <mythos/core/log.hpp>
 
 #include <shaderc/shaderc.hpp> /// MYTodo: switch to c api
-
-#include <vector>
-#include <fstream>
 
 namespace myl::vulkan {
 	static const std::filesystem::path cache_directory() { /// MYTemp:
@@ -87,20 +84,16 @@ namespace myl::vulkan {
 		for (auto&& [type, src] : sources) {
 			std::filesystem::path cached = cache_directory() / (file.stem().string() + ".vulk" + render::shader_type_to_extenstion(type) + ".spv");
 
-			if (std::string s = load_into_memory(cached); s.empty()) {
+			if (std::vector<u32> bin = load_into_memory_binary<u32>(cached); bin.empty()) { // Compiling shader code
 				auto result = compiler.CompileGlslToSpv(src, shader_type_to_shaderc_shader_kind(type), file.string().c_str(), options);
 				MYL_CORE_ASSERT(result.GetCompilationStatus() == shaderc_compilation_status_success, "Failed to compile Vulkan shader");
-
 				binaries[type] = std::vector<u32>(result.begin(), result.end());
 
-				std::filesystem::create_directories(cache_directory()); // Ensures the caching directories exist
-				if (std::ofstream out(cached, std::ios::binary); out.is_open()) // caching binary for later
+				std::filesystem::create_directories(cache_directory()); // Ensure the caching directory exists
+				if (std::ofstream out(cached, std::ios::binary); out.is_open()) // Caching binary
 					out.write(reinterpret_cast<char*>(binaries[type].data()), binaries[type].size() * sizeof(u32));
 			}
-			else {
-				binaries[type].resize(s.size() / sizeof(u32));
-				memcpy(binaries[type].data(), s.data(), s.size());
-			}
+			else binaries[type] = std::move(bin);
 		}
 
 		return binaries;
