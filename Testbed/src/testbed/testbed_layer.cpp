@@ -12,9 +12,30 @@
 
 #include <mythos/file.hpp>
 
-///#define TESTBED_RUN_TESTS
+#define TESTBED_RUN_TESTS 0
+#define TESTBED_ENABLE_EVENT_TESTS 0
 
 namespace tb {
+	static bool key_pressed(myl::event_key_pressed& e) {
+		MYL_CORE_TRACE("Key '{}' pressed", key_to_string(e.key()));
+		return true;
+	}
+
+	static bool key_released(myl::event_key_released& e) {
+		MYL_CORE_TRACE("Key '{}' released", key_to_string(e.key()));
+		return true;
+	}
+
+	static bool mouse_pressed(myl::event_mouse_pressed& e) {
+		MYL_CORE_TRACE("Mouse button(s) '{}' pressed", mouse_buttons_to_string(e.buttons()));
+		return true;
+	}
+
+	static bool mouse_released(myl::event_mouse_released& e) {
+		MYL_CORE_TRACE("Mouse button(s) '{}' released", mouse_buttons_to_string(e.buttons()));
+		return true;
+	}
+
 	testbed_layer::testbed_layer()
 		: myl::layer("Testbed") {
 		MYL_CORE_TRACE("Testbed layer created");
@@ -26,7 +47,7 @@ namespace tb {
 
 	void testbed_layer::on_attach() {
 		MYL_CORE_TRACE("Testbed layer on_attach");
-#ifdef TESTBED_RUN_TESTS
+#if TESTBED_RUN_TESTS
 		test_manager tests;
 		tests.run();
 #endif
@@ -38,6 +59,12 @@ namespace tb {
 
 	void testbed_layer::on_event(myl::event& a_event) {
 		myl::event_dispatcher dispatcher(a_event);
+#if TESTBED_ENABLE_EVENT_TESTS
+		dispatcher.dispatch<myl::event_key_pressed>(key_pressed);
+		dispatcher.dispatch<myl::event_key_released>(key_released);
+		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
+		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
+#endif
 	}
 
 	void testbed_layer::update(myl::timestep ts) {
