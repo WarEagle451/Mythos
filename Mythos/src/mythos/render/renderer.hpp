@@ -22,7 +22,8 @@ namespace myl::render {
 		static MYL_NO_DISCARD api api() { return s_api; }
 		static MYL_NO_DISCARD const statistics& stats() { return s_stats; }
 
-		static void draw_frame();
+		static bool begin(); /// MYTodo: Needs to take camera
+		static void end();
 
 		static void on_window_resize(const u32vec2&);
 	};

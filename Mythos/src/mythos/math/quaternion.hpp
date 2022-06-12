@@ -1,8 +1,7 @@
 #pragma once
 #include "common.hpp"
 #include "structure_def.hpp" // mat
-
-#include <mythos/defines.hpp>
+#include "trigonometry.hpp"
 
 #include <utility> // std::move
 
@@ -148,11 +147,22 @@ namespace myl {
 		constexpr quat(value_type&& a_x, value_type&& a_y, value_type&& a_z, value_type&& a_w)
 			: data{ std::move(a_x), std::move(a_y), std::move(a_z), std::move(a_w) } {}
 
+		constexpr explicit quat(const vec3<value_type>& a_angles) {
+			const value_type half = static_cast<value_type>(.5f);
+			const vec3<value_type> c{ cos(a_angles.x) * half, cos(a_angles.y) * half, cos(a_angles.z) * half };
+			const vec3<value_type> s{ sin(a_angles.x) * half, sin(a_angles.y) * half, sin(a_angles.z) * half };
+
+			x = s.x * c.y * c.z - c.x * s.y * s.z;
+			y = c.x * s.y * c.z + s.x * c.y * s.z;
+			z = c.x * c.y * s.z - s.x * s.y * c.z;
+			w = c.x * c.y * c.z + s.x * s.y * s.z;
+		}
+
 		//@brief Constructs a quat from an axis angle
-		constexpr explicit quat(const vec3<value_type>& a_axis, T a_angle, bool a_normalize) {
-			const T half_angle = a_angle * static_cast<T>(.5f);
-			const T s = myl::sin(half_angle);
-			const T c = myl::cos(half_angle);
+		constexpr explicit quat(const vec3<value_type>& a_axis, value_type a_angle, bool a_normalize) {
+			const value_type half_angle = a_angle * static_cast<value_type>(.5f);
+			const value_type s = myl::sin(half_angle);
+			const value_type c = myl::cos(half_angle);
 
 			x = s * a_axis.x;
 			y = s * a_axis.y;

@@ -1,0 +1,64 @@
+#include "scene.hpp"
+
+#include <mythos/render/renderer.hpp>
+
+/// MYTemp:
+#include <mythos/core/app.hpp>
+#include <mythos/input.hpp>
+#include <mythos/math/quaternion.hpp>
+#include <mythos/algorithm.hpp>
+
+namespace myl {
+	void camera::update() { /// MYTemp:
+		m_aspect = app::get().window()->aspect_ratio();
+		m_viewport = app::get().window()->size();
+
+		f32vec3 velocity = f32vec3::zero();
+		if (input::key_down(key::w)) velocity += forward(m_view);
+		if (input::key_down(key::s)) velocity += backward(m_view);
+		if (input::key_down(key::a)) velocity += left(m_view);
+		if (input::key_down(key::d)) velocity += right(m_view);
+		if (input::key_down(key::space)) velocity.y += 1.f;
+		if (input::key_down(key::left_shift)) velocity.y -= 1.f;
+		
+		if (velocity != f32vec3::zero())
+			m_position += normalize(velocity);
+
+		if (input::key_down(key::q)) m_rotation.z += radians(2.f);
+		if (input::key_down(key::e)) m_rotation.z -= radians(2.f);
+		
+		if (input::mouse_button_down(mouse_button::left) && input::cursor_position() != input::previous_cursor_position()) {
+			f32 pan_speed = 2.f;
+			auto delta = input::cursor_delta();
+			auto rotated = delta * pan_speed / length(delta);
+			m_rotation.x += -radians(rotated.y);
+			m_rotation.y += -radians(rotated.x);
+
+			// Prevent Gimball lock
+			constexpr f32 limit = radians(89.9f);
+			m_rotation.x = clamp(m_rotation.x, -limit, limit);
+		}
+
+		recaculate_view(); /// MYTemp:
+	}
+
+	static f32 angle = 0.f; /// MYTemp:
+
+	void scene::update() {
+		angle += .01f;
+	}
+
+	void scene::render() {
+		if (render::renderer::begin()) {
+			m_camera.update();
+
+			f32quat rot(forward(f32mat4x4::identity()), angle, false);
+			f32mat4x4 model = quat_to_rotation_matrix(rot, f32vec3::zero()); /// MYTemp: Position
+
+			render::renderer::backend()->update_global_state(m_camera.projection(), m_camera.view(), f32vec3::zero(), f32vec4::one(), 0); /// MYTemp:
+			render::renderer::backend()->update_object(model); /// MYTodo: hate this style, this should be draw_quad, draw_model
+			
+			render::renderer::end();
+		}
+	}
+}

@@ -2,11 +2,18 @@
 
 #include <mythos/platform/detection.hpp>
 #include <mythos/core/log.hpp>
-#include <mythos/math.hpp>
+#include <mythos/math/mat4x4.hpp>
 
 namespace myl::render {
 	std::unique_ptr<backend> renderer::s_backend = nullptr;
 	api renderer::s_api = api::none;
+	statistics renderer::s_stats;
+
+	struct render_data {
+		f32mat4x4 view_projection;
+	};
+
+	static render_data g_data;
 
 	static constexpr api choose_renderer_api() {
 #ifdef MYL_PLATFORM_WINDOWS
@@ -27,28 +34,24 @@ namespace myl::render {
 		s_backend.reset();
 	}
 
-	static f32 z = -30.f; /// MYTemp:
-	static bool flip = false; /// MYTemp:
-	static f32 angle = 0.f; /// MYTemp:
+	bool renderer::begin() {
+		s_stats = statistics(); // Reset stats every frame
+		/// MYTodo: does not need to be bool
+		/// MYTodo: This should only allow drawing to begin, not call the backend begin
+		/// that should come before this in app, I think, refer to lagacy Mythos,
+		/// This should just be the beginnig of a draw call
+		
+		///g_data.view_projection = a_camera.view();
 
-	void renderer::draw_frame() {
-		if (s_backend->begin()) {
-			f32mat4x4 projection = perspective(radians(45.f), app::get().window()->aspect_ratio(), .1f, 1000.f); /// MYTemp: The screen
-			f32mat4x4 view = inverse(translation(f32vec3{ 0, 0, z })); /// MYTemp: Camera
+		if (s_backend->begin())
+			return true;
+		return false;
+	}
 
-			f32quat rot(forward(f32mat4x4::identity()), angle, false);
-			f32mat4x4 model = quat_to_rotation_matrix(rot, f32vec3::zero()); /// MYTemp: Position
-
-			if (z > -15.f || z < -45.f)
-				flip = !flip;
-
-			flip ? z -= .2f : z += .2f;
-			angle += .01f;
-
-			s_backend->update_global_state(projection, view, f32vec3::zero(), f32vec4::one(), 0); /// MYTemp:
-			s_backend->update_object(model); /// MYTodo: hate this style, this should be draw_quad, draw_model
-			s_backend->end();
-		}
+	void renderer::end() {
+		s_backend->end(); /// MYTodo: Should not be calling this
+		/// MYTodo: draw
+		++s_stats.draw_calls;
 	}
 
 	void renderer::on_window_resize(const u32vec2& a_size) {

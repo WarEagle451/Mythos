@@ -51,7 +51,6 @@ namespace myl {
 				for (auto& l : m_layer_stack) l->update(ts);
 				for (auto& l : m_layer_stack) l->render();
 
-				render::renderer::draw_frame();
 				input::update();
 			}
 

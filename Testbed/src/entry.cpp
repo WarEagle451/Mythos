@@ -1,6 +1,7 @@
 #include <mythos/core/entry.hpp>
 
 #include "testbed/testbed_layer.hpp"
+#include "testbed/game_layer.hpp"
 
 #define TESTBED_MAJOR 1
 #define TESTBED_MINOR 0
@@ -23,6 +24,7 @@ namespace myl {
 
 		auto application = std::make_unique<app>(info, config);
 		application->push_layer(new tb::testbed_layer());
+		application->push_layer(new game_layer());
 		return application;
 	}
 }

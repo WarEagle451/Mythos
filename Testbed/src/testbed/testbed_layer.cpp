@@ -15,26 +15,6 @@
 ///#define TESTBED_RUN_TESTS
 
 namespace tb {
-	static bool mouse_pressed(myl::event_mouse_pressed& e) {
-		MYL_CORE_TRACE("mouse pressed: {}", mouse_buttons_to_string(e.buttons()));
-		return true;
-	}
-
-	static bool mouse_released(myl::event_mouse_released& e) {
-		MYL_CORE_TRACE("mouse released: {}", mouse_buttons_to_string(e.buttons()));
-		return true;
-	}
-
-	static bool key_released(myl::event_key_released& e) {
-		MYL_CORE_TRACE("Key '{}' released", key_to_string(e.key()));
-		return true;
-	}
-
-	static bool key_pressed(myl::event_key_pressed& e) {
-		MYL_CORE_TRACE("Key '{}' pressed", key_to_string(e.key()));
-		return true;
-	}
-
 	testbed_layer::testbed_layer()
 		: myl::layer("Testbed") {
 		MYL_CORE_TRACE("Testbed layer created");
@@ -58,10 +38,6 @@ namespace tb {
 
 	void testbed_layer::on_event(myl::event& a_event) {
 		myl::event_dispatcher dispatcher(a_event);
-		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
-		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
-		dispatcher.dispatch<myl::event_key_pressed>(key_pressed);
-		dispatcher.dispatch<myl::event_key_released>(key_released);
 	}
 
 	void testbed_layer::update(myl::timestep ts) {
@@ -70,6 +46,5 @@ namespace tb {
 	}
 
 	void testbed_layer::render() {
-
 	}
 }
