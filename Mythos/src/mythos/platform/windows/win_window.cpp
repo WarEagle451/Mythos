@@ -156,31 +156,44 @@ namespace myl::windows {
 		}
 	}
 
+/// https://github.com/o3de/o3de/blob/development/Code/Framework/AzFramework/Platform/Windows/AzFramework/Windowing/NativeWindow_Windows.cpp
+/// MYTodo: Above is a good ref for windows messages
+
 	LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
 		switch (msg) {
-			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
-				return 1;
 			case WM_CLOSE: {
 				event_window_close e{};
 				fire_event(e);
 			} return 0;
-			case WM_DESTROY:
-				PostQuitMessage(0);
-				return 0;
-			case WM_SIZE: { // Get the updated size
-				RECT r;
-				GetClientRect(hwnd, &r);
-				event_window_resize e(static_cast<u32>(r.right - r.left), static_cast<u32>(r.bottom - r.top));
+			case WM_SIZE: {
+				/// MYTodo: w_param contains SIZE_MAXHIDE, SIZE_MAXIMIZED, SIZE_MAXSHOW, SIZE_MINIMIZED, SIZE_RESTORED
+				/// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-size
+
+				event_window_resize e(LOWORD(l_param), HIWORD(l_param));
 				fire_event(e);
 			} break;
-			case WM_KEYDOWN: MYL_FALLTHROUGH;
+			case WM_INPUT: /// MYTodo: WM_INPUT:
+				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-input
+			case WM_CHAR: /// MYTodo: WM_CHAR:
+				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
+			case WM_ACTIVATE: /// MYTodo: WM_ACTIVATE
+				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-activate
+			case WM_KEYDOWN: MYL_FALLTHROUGH; /// MYTodo: Lumber yard doesn't use this? why?
 			case WM_SYSKEYDOWN:
 				input::process_key(translate_key_code(w_param, l_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // First 16 bits contain the repeat count
 				break;
-			case WM_KEYUP: MYL_FALLTHROUGH;
+			case WM_KEYUP: MYL_FALLTHROUGH; /// MYTodo: Lumber yard doesn't use this? why?
 			case WM_SYSKEYUP:
 				input::process_key(translate_key_code(w_param, l_param), input::state::up, 0);
 				break;
+			case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED
+				break; /// https://docs.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged
+			case WM_WINDOWPOSCHANGED: /// MYTodo: WM_WINDOWPOSCHANGED
+				break; /// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-windowposchanged
+			/// MYTodo: Lumber yard doesn't use below, why? https://github.com/o3de/o3de/blob/development/Code/Framework/AzFramework/Platform/Windows/AzFramework/Windowing/NativeWindow_Windows.cpp
+			case WM_DESTROY:
+				PostQuitMessage(0);
+				return 0;
 			case WM_MOUSEMOVE:
 				input::process_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
 				break;
@@ -211,6 +224,12 @@ namespace myl::windows {
 			case WM_RBUTTONUP: input::process_mouse_buttons(mouse_button::right, input::state::up); break;
 			case WM_XBUTTONUP: input::process_mouse_buttons(HIWORD(w_param) == XBUTTON1 ? mouse_button::button4 : mouse_button::button5, input::state::up); break;
 #endif
+			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
+				return 1;
+			case WM_CREATE: /// MYTodo: WM_CREATE: creation of windows
+				break; /// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-create
+			case WM_DROPFILES: /// MYTodo: WM_DROPFILES: Be able to drop files onto windows
+				return 0; /// https://docs.microsoft.com/en-us/windows/win32/shell/wm-dropfiles
 		}
 	
 		return DefWindowProcA(hwnd, msg, w_param, l_param);

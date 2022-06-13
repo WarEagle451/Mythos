@@ -11,12 +11,13 @@ namespace myl {
 
 	app::app(const app_info& a_info, const config& a_config)
 		: m_info(a_info) {
-		core::loggers::init(); // Asserts contain a call to MYL_CORE_FATAL
+		loggers::init(); // Asserts contain a call to MYL_CORE_FATAL
 		MYL_CORE_INFO("Creating application");
 		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
 		s_instance = this;
-
-		MYL_CORE_INFO("Mythos version: {}", MYL_VERSION);
+		MYL_CORE_INFO("Mythos:");
+		MYL_CORE_INFO("\t- Version: {}", MYL_VERSION);
+		/// MYTodo: Should probs output config info
 
 		input::init();
 		m_window = window::create(a_config.window);
@@ -96,7 +97,7 @@ namespace myl {
 		return false;
 	}
 
-	void app::on_event(event& a_event) {
+	void app::on_event(event& a_event) { /// MYTodo: Instead of this have listeners that have a function pointer, this will also allow them to unsubscribe, Would this be faster? 
 		event_dispatcher dispatcher(a_event);
 		dispatcher.dispatch<event_window_close>(MYL_BIND_EVENT_FN(app::on_window_close));
 		dispatcher.dispatch<event_window_resize>(MYL_BIND_EVENT_FN(app::on_window_resize));

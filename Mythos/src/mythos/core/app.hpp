@@ -40,7 +40,7 @@ namespace myl {
 		MYL_API MYL_NO_DISCARD static app& get() { return *s_instance; }
 
 		MYL_API app(const app_info& = app_info{}, const config& = config{});
-		MYL_API ~app();
+		MYL_API virtual ~app();
 
 		MYL_API app(const app&) = delete;
 		MYL_API app& operator=(const app&) = delete;
@@ -53,7 +53,7 @@ namespace myl {
 
 		MYL_API void push_layer(layer_stack::layer_ptr);
 		MYL_API void push_overlay(layer_stack::layer_ptr);
-
+	private:
 		bool on_window_close(event_window_close&);
 		bool on_window_resize(event_window_resize&);
 

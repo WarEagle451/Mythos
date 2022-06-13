@@ -62,3 +62,5 @@ project "Mythos"
 			"%{Library.SPIRV_Cross_Release}",
 			"%{Library.SPIRV_Cross_GLSL_Release}"
 		}
+		
+LibraryDir["MythosDLL"] = ("%{wks.location}/bin/" .. outputdir .. "/Mythos")

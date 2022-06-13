@@ -1,14 +1,18 @@
 - Multiple window support
 - obj files speed up compliation also precompiled header files
 
-- Use a left handed cord system
-- Top View
-- Z
-- YX
-
 - Native c++ scripting, lua scripting
 
 - Install Process:
 	- Download game
 	- Install required drivers
 	- Compile assets (This prevents a game having to run for 10 minutes while stuff compiles)
+	
+- Pre-build command to clean mythos
+
+- Callbacks:
+	- ImGui_ImplGlfw_WindowFocusCallback
+    - ImGui_ImplGlfw_CursorEnterCallback
+    - ImGui_ImplGlfw_CursorPosCallback
+    - ImGui_ImplGlfw_CharCallback
+    - ImGui_ImplGlfw_MonitorCallback

@@ -1,5 +1,3 @@
-LibraryDir["MythosDLL"] = ("%{wks.location}/bin/" .. outputdir .. "/Mythos")
-
 project "Testbed"
 	kind "ConsoleApp"
 	language "C++"

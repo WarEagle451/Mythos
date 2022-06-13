@@ -1,8 +1,11 @@
 #pragma once
+/// MYTodo: Update this to work like vulkan's
+#define MYL_MAKE_VERSION(major, minor, patch) (major * 10000 + minor * 100 + patch)
+
 #define MYL_VERSION_MAJOR 0
 #define MYL_VERSION_MINOR 0
 #define MYL_VERSION_PATCH 0
-#define MYL_VERSION (MYL_VERSION_MAJOR * 10000 + MYL_VERSION_MINOR * 100 + MYL_VERSION_PATCH)
+#define MYL_VERSION MYL_MAKE_VERSION(MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH)
 
 #define MYL_ENGINE_NAME "Mythos Engine"
 

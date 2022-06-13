@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace myl::core {
+namespace myl {
 	std::shared_ptr<spdlog::logger> loggers::s_core = nullptr;
 
 	void loggers::init() {
