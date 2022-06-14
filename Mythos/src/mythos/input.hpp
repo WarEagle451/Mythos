@@ -7,15 +7,20 @@
 /// MYTodo: Key mods
 /// MYTodo: Track toggled keys
 
-namespace myl::input {
+namespace myl::input { /// MYTodo: Should this be a class?
 	enum class state { up, down };
 
 	void init();
 	void update();
 
 	void process_key(key_code, state, u32);
+
+	void process_mouse_buttons_up(mouse_code);
+	void process_mouse_buttons_down(mouse_code);
 	void process_mouse_buttons(mouse_code, state);
-	void process_cursor_position(const f32vec2&);
+
+	void process_cursor_absolute(const f32vec2&);
+	void process_cursor_relative(const f32vec2&);
 	void process_mouse_wheel(const f32vec2&);
 
 	MYL_API MYL_NO_DISCARD state key_state(key_code);

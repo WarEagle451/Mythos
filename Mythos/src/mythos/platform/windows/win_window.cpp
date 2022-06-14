@@ -1,6 +1,7 @@
 #include "win_window.hpp"
 #ifdef MYL_PLATFORM_WINDOWS
 #	include <mythos/core/except.hpp>
+#	include <mythos/core/assert.hpp>
 #	include <mythos/core/log.hpp>
 #	include <mythos/core/key_codes.hpp>
 #	include <mythos/core/mouse_codes.hpp>
@@ -9,8 +10,11 @@
 #	include <mythos/input.hpp>
 
 #	include <windowsx.h>
+#	include <hidusage.h>
 
 /// MYTodo: Figure out event_key_typed
+
+#	define MYL_WM_INPUT 1 /// MYBUG: WHY DOES WM_INPUT ALLOW INPUT FROM OUTSIDE THE WINDOW
 
 namespace myl::windows {
 	MYL_NO_DISCARD constexpr mouse_code translate_mouse_code(WPARAM w_param) {
@@ -172,8 +176,84 @@ namespace myl::windows {
 				event_window_resize e(LOWORD(l_param), HIWORD(l_param));
 				fire_event(e);
 			} break;
-			case WM_INPUT: /// MYTodo: WM_INPUT:
-				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-input
+			case WM_INPUT: { /// MYTodo: Improve
+				UINT dw_size = sizeof(RAWINPUT);
+				static BYTE lpb[sizeof(RAWINPUT)]{};
+
+				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, lpb, &dw_size, sizeof(RAWINPUTHEADER));
+
+				RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb);
+				switch (raw->header.dwType) {
+					case RIM_TYPEMOUSE: { // Mouse
+						if (auto mb_flags = raw->data.mouse.usButtonFlags; mb_flags != 0) { // Mouse buttons / wheel
+							if (mb_flags & RI_MOUSE_LEFT_BUTTON_UP || // Mouse button up
+								mb_flags & RI_MOUSE_RIGHT_BUTTON_UP || /// MYTodo: Improve
+								mb_flags & RI_MOUSE_MIDDLE_BUTTON_UP ||
+								mb_flags & RI_MOUSE_BUTTON_4_UP ||
+								mb_flags & RI_MOUSE_BUTTON_5_UP) {
+								using namespace mouse_button; /// MYTodo: Replace with translate raw_mouse_button_code()
+								mouse_code mouse_buttons = none;
+								if (mb_flags & RI_MOUSE_LEFT_BUTTON_UP) mouse_buttons |= left;
+								if (mb_flags & RI_MOUSE_RIGHT_BUTTON_UP) mouse_buttons |= right;
+								if (mb_flags & RI_MOUSE_MIDDLE_BUTTON_UP) mouse_buttons |= middle;
+								if (mb_flags & RI_MOUSE_BUTTON_4_UP) mouse_buttons |= button4;
+								if (mb_flags & RI_MOUSE_BUTTON_5_UP) mouse_buttons |= button5;
+
+								input::process_mouse_buttons_up(mouse_buttons);
+							}
+
+							if (mb_flags & RI_MOUSE_LEFT_BUTTON_DOWN || // Mouse button down
+								mb_flags & RI_MOUSE_RIGHT_BUTTON_DOWN || /// MYTodo: Improve
+								mb_flags & RI_MOUSE_MIDDLE_BUTTON_DOWN ||
+								mb_flags & RI_MOUSE_BUTTON_4_DOWN ||
+								mb_flags & RI_MOUSE_BUTTON_5_DOWN) {
+								using namespace mouse_button;
+								mouse_code mouse_buttons = none;
+								if (mb_flags & RI_MOUSE_LEFT_BUTTON_DOWN) mouse_buttons |= left;
+								if (mb_flags & RI_MOUSE_RIGHT_BUTTON_DOWN) mouse_buttons |= right;
+								if (mb_flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) mouse_buttons |= middle;
+								if (mb_flags & RI_MOUSE_BUTTON_4_DOWN) mouse_buttons |= button4;
+								if (mb_flags & RI_MOUSE_BUTTON_5_DOWN) mouse_buttons |= button5;
+
+								input::process_mouse_buttons_down(mouse_buttons);
+							}
+
+							if (mb_flags & RI_MOUSE_WHEEL) { // Mouse wheel (vertical)
+								i16 y_delta = static_cast<i16>(raw->data.mouse.usButtonData);
+								if (y_delta != 0) // Flatten the input to an OS-independent(-1, 1)
+									y_delta = y_delta < 0 ? -1 : 1;
+								input::process_mouse_wheel({ 0.f, static_cast<f32>(y_delta) });
+							}
+
+							if (mb_flags & RI_MOUSE_HWHEEL) { // Mouse wheel (horizontal) 
+								i16 x_delta = static_cast<i16>(raw->data.mouse.usButtonData);
+								if (x_delta != 0) // Flatten the input to an OS-independent(-1, 1)
+									x_delta = x_delta < 0 ? -1 : 1;
+								input::process_mouse_wheel({ static_cast<f32>(x_delta), 0.f });
+							}
+						}
+
+						if (raw->data.mouse.lLastX != 0 || raw->data.mouse.lLastY != 0) { // Mouse move
+							f32vec2 move{ static_cast<f32>(raw->data.mouse.lLastX), static_cast<f32>(raw->data.mouse.lLastY) }; 
+							raw->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE ? /// MYTodo: Is there a way to force the mouse to be MOUSE_MOVE_ABSOLUTE
+								input::process_cursor_absolute(move) : /// MYBug: Needs to be relative to the top left of screen
+								input::process_cursor_relative(move);
+						}
+					} break;
+					case RIM_TYPEKEYBOARD: { // Keyboard
+						/// MYBug: THESES REALLY NEED TO BE DONE RN
+					} break;
+					case RIM_TYPEHID: { // Not a keyboard or mouse
+						/// MYBug: THESES REALLY NEED TO BE DONE RN
+					} break;
+					default: MYL_CORE_ASSERT(false, "WM_INPUT value not valid"); break;
+				}
+
+				if (raw->header.dwType == RIM_TYPEMOUSE) {
+					u32 x_relative = raw->data.mouse.lLastX;
+					u32 y_relative = raw->data.mouse.lLastY;
+				}
+			} break; 
 			case WM_CHAR: /// MYTodo: WM_CHAR:
 				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
 			case WM_ACTIVATE: /// MYTodo: WM_ACTIVATE
@@ -194,8 +274,11 @@ namespace myl::windows {
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;
+			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
+				return 1;
+#if !MYL_WM_INPUT
 			case WM_MOUSEMOVE:
-				input::process_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
+				input::process_cursor_absolute(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
 				break;
 			case WM_MOUSEWHEEL: {
 				i32 y_delta = GET_WHEEL_DELTA_WPARAM(w_param);
@@ -224,12 +307,7 @@ namespace myl::windows {
 			case WM_RBUTTONUP: input::process_mouse_buttons(mouse_button::right, input::state::up); break;
 			case WM_XBUTTONUP: input::process_mouse_buttons(HIWORD(w_param) == XBUTTON1 ? mouse_button::button4 : mouse_button::button5, input::state::up); break;
 #endif
-			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
-				return 1;
-			case WM_CREATE: /// MYTodo: WM_CREATE: creation of windows
-				break; /// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-create
-			case WM_DROPFILES: /// MYTodo: WM_DROPFILES: Be able to drop files onto windows
-				return 0; /// https://docs.microsoft.com/en-us/windows/win32/shell/wm-dropfiles
+#endif
 		}
 	
 		return DefWindowProcA(hwnd, msg, w_param, l_param);
@@ -309,6 +387,23 @@ namespace myl::windows {
 		// If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
 		// If initially maximized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
+
+#if MYL_WM_INPUT
+		RAWINPUTDEVICE rid{ /// MYTodo: For WM_INPUT, should this only be done once or per window?
+			.usUsagePage = HID_USAGE_PAGE_GENERIC,
+			.usUsage = HID_USAGE_GENERIC_MOUSE,
+			.dwFlags = RIDEV_EXINPUTSINK, /// RIDEV_NOLEGACY = infinite scroll
+			.hwndTarget = m_handle
+		};
+		
+		if (!RegisterRawInputDevices(&rid, 1, sizeof(rid)))
+			throw core_runtime_error("Windows - Failed to register raw input devices");
+		/// MYTodo: To receive WM_INPUT_DEVICE_CHANGE messages, an application must specify the
+		/// RIDEV_DEVNOTIFY flag for each device class that is specified by the usUsagePageand usUsage
+		/// fields of the RAWINPUTDEVICE structure.By default, an application does not receive WM_INPUT_DEVICE_CHANGE
+		/// notifications for raw input device arrivaland removal.
+		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerrawinputdevices
+#endif
 	}
 
 	window::~window() {

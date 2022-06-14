@@ -31,5 +31,8 @@ namespace myl {
 			auto& s = size();
 			return static_cast<f32>(s.x) / static_cast<f32>(s.y);
 		}
+
+		/// MYTodo: enable_cursor();
+		/// MYTodo: disable_cursor();
 	};
 }

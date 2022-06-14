@@ -13,7 +13,7 @@
 #include <mythos/io.hpp>
 
 #define TESTBED_RUN_TESTS 0
-#define TESTBED_ENABLE_EVENT_TESTS 0
+#define TESTBED_ENABLE_EVENT_TESTS 1
 
 namespace tb {
 	static bool key_pressed(myl::event_key_pressed& e) {
@@ -33,6 +33,16 @@ namespace tb {
 
 	static bool mouse_released(myl::event_mouse_released& e) {
 		MYL_CORE_TRACE("Mouse button(s) '{}' released", mouse_buttons_to_string(e.buttons()));
+		return true;
+	}
+
+	static bool mouse_scrolled(myl::event_mouse_scrolled& e) {
+		MYL_CORE_TRACE("Mouse scrolled: [{}, {}]", e.delta().x, e.delta().y);
+		return true;
+	}
+
+	static bool mouse_moved(myl::event_mouse_moved& e) {
+		MYL_CORE_TRACE("Mouse moved: [{}, {}]", e.position().x, e.position().y);
 		return true;
 	}
 
@@ -64,6 +74,8 @@ namespace tb {
 		dispatcher.dispatch<myl::event_key_released>(key_released);
 		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
 		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
+		dispatcher.dispatch<myl::event_mouse_scrolled>(mouse_scrolled);
+		dispatcher.dispatch<myl::event_mouse_moved>(mouse_moved);
 #endif
 	}
 

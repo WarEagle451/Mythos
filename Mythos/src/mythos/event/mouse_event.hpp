@@ -11,7 +11,7 @@ namespace myl {
 		MYL_API constexpr event_mouse_moved(const f32vec2& a_position)
 			: m_position(a_position){ }
 
-		MYL_API MYL_NO_DISCARD constexpr f32 position() const { return m_position.x; }
+		MYL_API MYL_NO_DISCARD constexpr const f32vec2& position() const { return m_position; }
 
 		MYL_IMPL_EVENT_CATEGORY(static_cast<i32>(event_category::mouse) | static_cast<i32>(event_category::input))
 		MYL_IMPL_EVENT_TYPE(mouse_moved)
