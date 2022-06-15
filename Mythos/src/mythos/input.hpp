@@ -19,8 +19,9 @@ namespace myl::input { /// MYTodo: Should this be a class?
 	void process_mouse_buttons_down(mouse_code);
 	void process_mouse_buttons(mouse_code, state);
 
-	void process_cursor_absolute(const f32vec2&);
-	void process_cursor_relative(const f32vec2&);
+	void process_cursor_delta(const f32vec2&);
+	void process_cursor_delta_given_absolute(const f32vec2&);
+	void process_window_cursor_position(const f32vec2&);
 	void process_mouse_wheel(const f32vec2&);
 
 	MYL_API MYL_NO_DISCARD state key_state(key_code);
@@ -39,7 +40,8 @@ namespace myl::input { /// MYTodo: Should this be a class?
 	MYL_API MYL_NO_DISCARD bool mouse_button_pressed(mouse_code);
 	MYL_API MYL_NO_DISCARD bool mouse_button_released(mouse_code);
 
-	MYL_API MYL_NO_DISCARD f32vec2 cursor_position();
-	MYL_API MYL_NO_DISCARD f32vec2 previous_cursor_position();
-	MYL_API MYL_NO_DISCARD f32vec2 cursor_delta();
+	MYL_API MYL_NO_DISCARD const f32vec2& cursor_position();
+	MYL_API MYL_NO_DISCARD const f32vec2& previous_cursor_position();
+	MYL_API MYL_NO_DISCARD const f32vec2& cursor_delta();
+	MYL_API MYL_NO_DISCARD const f32vec2& previous_cursor_delta();
 }

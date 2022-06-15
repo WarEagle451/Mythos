@@ -17,7 +17,7 @@
 #	define MYL_WM_INPUT 1 /// MYBUG: WHY DOES WM_INPUT ALLOW INPUT FROM OUTSIDE THE WINDOW
 
 namespace myl::windows {
-	MYL_NO_DISCARD constexpr mouse_code translate_mouse_code(WPARAM w_param) {
+	MYL_NO_DISCARD constexpr mouse_code translate_mouse_code(WPARAM w_param) { /// MYTodo: REMOVE
 		using namespace mouse_button;
 		mouse_code mouse_buttons = none;
 		if (w_param & MK_LBUTTON) mouse_buttons |= left;
@@ -27,6 +27,18 @@ namespace myl::windows {
 		if (w_param & MK_XBUTTON2) mouse_buttons |= button5;
 
 		return mouse_buttons;
+	}
+
+	MYL_NO_DISCARD constexpr mouse_code translate_raw_mouse_code(USHORT buttons) {
+		using namespace mouse_button;
+		mouse_code code = none;
+		if ((buttons & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_LEFT_BUTTON_DOWN)) != 0)		code |= left;
+		if ((buttons & (RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_DOWN)) != 0)	code |= right;
+		if ((buttons & (RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_DOWN)) != 0)	code |= middle;
+		if ((buttons & (RI_MOUSE_BUTTON_4_UP | RI_MOUSE_BUTTON_4_DOWN)) != 0)			code |= button4;
+		if ((buttons & (RI_MOUSE_BUTTON_5_UP | RI_MOUSE_BUTTON_5_DOWN)) != 0)			code |= button5;
+
+		return code;
 	}
 
 	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param, LPARAM l_param) {
@@ -163,6 +175,23 @@ namespace myl::windows {
 /// https://github.com/o3de/o3de/blob/development/Code/Framework/AzFramework/Platform/Windows/AzFramework/Windowing/NativeWindow_Windows.cpp
 /// MYTodo: Above is a good ref for windows messages
 
+	static bool cursor_over_client_area(HWND hwnd) {
+		RECT client_area{};
+		GetClientRect(hwnd, &client_area);
+
+		POINT tl{ .x = client_area.left, .y = client_area.top };
+		POINT br{ .x = client_area.right, .y = client_area.bottom };
+		ClientToScreen(hwnd, &tl);
+		ClientToScreen(hwnd, &br);
+
+		POINT cursor{};
+		GetCursorPos(&cursor);
+
+		return
+			cursor.x > tl.x && cursor.x < br.x &&
+			cursor.y > tl.y && cursor.y < br.y;
+	}
+
 	LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
 		switch (msg) {
 			case WM_CLOSE: {
@@ -176,46 +205,33 @@ namespace myl::windows {
 				event_window_resize e(LOWORD(l_param), HIWORD(l_param));
 				fire_event(e);
 			} break;
-			case WM_INPUT: { /// MYTodo: Improve
+			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position
+				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
+				break;
+			case WM_INPUT: {
+				// If cursor is over client area
+				// - Process window_cursor_position (Handled by WM_MOUSEMOVE)
+				// - Process mouse delta
+				// - Process_scroll_wheel
+				// if app is focused
+				// - Process all WM_INPUT except mouse clicks outside of client area
+				
+				const bool cursor_over_client_space = cursor_over_client_area(hwnd);
+				const bool app_in_forground = GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT;
+
 				UINT dw_size = sizeof(RAWINPUT);
 				static BYTE lpb[sizeof(RAWINPUT)]{};
-
 				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, lpb, &dw_size, sizeof(RAWINPUTHEADER));
-
 				RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb);
+
 				switch (raw->header.dwType) {
-					case RIM_TYPEMOUSE: { // Mouse
-						if (auto mb_flags = raw->data.mouse.usButtonFlags; mb_flags != 0) { // Mouse buttons / wheel
-							if (mb_flags & RI_MOUSE_LEFT_BUTTON_UP || // Mouse button up
-								mb_flags & RI_MOUSE_RIGHT_BUTTON_UP || /// MYTodo: Improve
-								mb_flags & RI_MOUSE_MIDDLE_BUTTON_UP ||
-								mb_flags & RI_MOUSE_BUTTON_4_UP ||
-								mb_flags & RI_MOUSE_BUTTON_5_UP) {
-								using namespace mouse_button; /// MYTodo: Replace with translate raw_mouse_button_code()
-								mouse_code mouse_buttons = none;
-								if (mb_flags & RI_MOUSE_LEFT_BUTTON_UP) mouse_buttons |= left;
-								if (mb_flags & RI_MOUSE_RIGHT_BUTTON_UP) mouse_buttons |= right;
-								if (mb_flags & RI_MOUSE_MIDDLE_BUTTON_UP) mouse_buttons |= middle;
-								if (mb_flags & RI_MOUSE_BUTTON_4_UP) mouse_buttons |= button4;
-								if (mb_flags & RI_MOUSE_BUTTON_5_UP) mouse_buttons |= button5;
-
-								input::process_mouse_buttons_up(mouse_buttons);
-							}
-
-							if (mb_flags & RI_MOUSE_LEFT_BUTTON_DOWN || // Mouse button down
-								mb_flags & RI_MOUSE_RIGHT_BUTTON_DOWN || /// MYTodo: Improve
-								mb_flags & RI_MOUSE_MIDDLE_BUTTON_DOWN ||
-								mb_flags & RI_MOUSE_BUTTON_4_DOWN ||
-								mb_flags & RI_MOUSE_BUTTON_5_DOWN) {
-								using namespace mouse_button;
-								mouse_code mouse_buttons = none;
-								if (mb_flags & RI_MOUSE_LEFT_BUTTON_DOWN) mouse_buttons |= left;
-								if (mb_flags & RI_MOUSE_RIGHT_BUTTON_DOWN) mouse_buttons |= right;
-								if (mb_flags & RI_MOUSE_MIDDLE_BUTTON_DOWN) mouse_buttons |= middle;
-								if (mb_flags & RI_MOUSE_BUTTON_4_DOWN) mouse_buttons |= button4;
-								if (mb_flags & RI_MOUSE_BUTTON_5_DOWN) mouse_buttons |= button5;
-
-								input::process_mouse_buttons_down(mouse_buttons);
+					case RIM_TYPEMOUSE: // Mouse
+						if (auto mb_flags = raw->data.mouse.usButtonFlags; mb_flags != 0 && cursor_over_client_space) { // Mouse buttons / wheel. (Must be in client space to work)
+							if (app_in_forground) { // Mouse buttons
+								if ((mb_flags & (RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN)) != 0)
+									input::process_mouse_buttons_down(translate_raw_mouse_code(mb_flags));
+								if ((mb_flags & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_BUTTON_4_UP | RI_MOUSE_BUTTON_5_UP)) != 0)
+									input::process_mouse_buttons_up(translate_raw_mouse_code(mb_flags));
 							}
 
 							if (mb_flags & RI_MOUSE_WHEEL) { // Mouse wheel (vertical)
@@ -233,27 +249,24 @@ namespace myl::windows {
 							}
 						}
 
+						/// MYBug: This will only work with deltas, if absolute and 0, 0 will not fire
 						if (raw->data.mouse.lLastX != 0 || raw->data.mouse.lLastY != 0) { // Mouse move
-							f32vec2 move{ static_cast<f32>(raw->data.mouse.lLastX), static_cast<f32>(raw->data.mouse.lLastY) }; 
-							raw->data.mouse.usFlags & MOUSE_MOVE_ABSOLUTE ? /// MYTodo: Is there a way to force the mouse to be MOUSE_MOVE_ABSOLUTE
-								input::process_cursor_absolute(move) : /// MYBug: Needs to be relative to the top left of screen
-								input::process_cursor_relative(move);
-						}
-					} break;
-					case RIM_TYPEKEYBOARD: { // Keyboard
-						/// MYBug: THESES REALLY NEED TO BE DONE RN
-					} break;
-					case RIM_TYPEHID: { // Not a keyboard or mouse
-						/// MYBug: THESES REALLY NEED TO BE DONE RN
-					} break;
+							f32vec2 move{ static_cast<f32>(raw->data.mouse.lLastX), static_cast<f32>(raw->data.mouse.lLastY) };
+							raw->data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
+								input::process_cursor_delta_given_absolute(move) : /// MYTodo: How is this supposed to be handled?
+								input::process_cursor_delta(move);
+						} break;
+					case RIM_TYPEKEYBOARD: // Keyboard
+						if (app_in_forground) {
+							/// MYBug: THESES REALLY NEED TO BE DONE RN
+						} break;
+					case RIM_TYPEHID: // Not a keyboard or mouse
+						if (app_in_forground) {
+							/// MYBug: THESES REALLY NEED TO BE DONE RN
+						} break;
 					default: MYL_CORE_ASSERT(false, "WM_INPUT value not valid"); break;
 				}
-
-				if (raw->header.dwType == RIM_TYPEMOUSE) {
-					u32 x_relative = raw->data.mouse.lLastX;
-					u32 y_relative = raw->data.mouse.lLastY;
-				}
-			} break; 
+			} break;
 			case WM_CHAR: /// MYTodo: WM_CHAR:
 				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
 			case WM_ACTIVATE: /// MYTodo: WM_ACTIVATE
@@ -268,46 +281,11 @@ namespace myl::windows {
 				break;
 			case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED
 				break; /// https://docs.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged
-			case WM_WINDOWPOSCHANGED: /// MYTodo: WM_WINDOWPOSCHANGED
-				break; /// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-windowposchanged
-			/// MYTodo: Lumber yard doesn't use below, why? https://github.com/o3de/o3de/blob/development/Code/Framework/AzFramework/Platform/Windows/AzFramework/Windowing/NativeWindow_Windows.cpp
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;
 			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
 				return 1;
-#if !MYL_WM_INPUT
-			case WM_MOUSEMOVE:
-				input::process_cursor_absolute(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
-				break;
-			case WM_MOUSEWHEEL: {
-				i32 y_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-				if (y_delta != 0) // Flatten the input to an OS-independent(-1, 1)
-					y_delta = y_delta < 0 ? -1 : 1;
-				input::process_mouse_wheel({ 0.f, static_cast<f32>(y_delta) });
-			} break;
-			case WM_MOUSEHWHEEL: {
-				i32 x_delta = GET_WHEEL_DELTA_WPARAM(w_param);
-				if (x_delta != 0) // Flatten the input to an OS-independent(-1, 1)
-					x_delta = x_delta < 0 ? -1 : 1;
-				input::process_mouse_wheel({ static_cast<f32>(x_delta), 0.f });
-			} break;
-			case WM_LBUTTONDOWN: MYL_FALLTHROUGH;
-			case WM_MBUTTONDOWN: MYL_FALLTHROUGH;
-			case WM_RBUTTONDOWN: input::process_mouse_buttons(translate_mouse_code(w_param), input::state::down); break;
-			case WM_XBUTTONDOWN: input::process_mouse_buttons(translate_mouse_code(LOWORD(w_param)), input::state::down); break; // LOWORD contains the button
-#if 0 /// MYBug: For some reason w_param is always 0 when a button is released. Can't do stuff like block below
-			case WM_LBUTTONUP: MYL_FALLTHROUGH;
-			case WM_MBUTTONUP: MYL_FALLTHROUGH;
-			case WM_RBUTTONUP: input::process_mouse_buttons(translate_mouse_code(w_param), input::state::up); break;
-			case WM_XBUTTONUP: input::process_mouse_buttons(translate_mouse_code(LOWORD(w_param)), input::state::up); break; // LOWORD contains the button
-#else /// MYHack: See bug above
-			case WM_LBUTTONUP: input::process_mouse_buttons(mouse_button::left, input::state::up); break;
-			case WM_MBUTTONUP: input::process_mouse_buttons(mouse_button::middle, input::state::up); break;
-			case WM_RBUTTONUP: input::process_mouse_buttons(mouse_button::right, input::state::up); break;
-			case WM_XBUTTONUP: input::process_mouse_buttons(HIWORD(w_param) == XBUTTON1 ? mouse_button::button4 : mouse_button::button5, input::state::up); break;
-#endif
-#endif
 		}
 	
 		return DefWindowProcA(hwnd, msg, w_param, l_param);
@@ -322,17 +300,17 @@ namespace myl::windows {
 
 		// Setup and register window class
 		HICON icon = LoadIcon(m_instance, IDI_APPLICATION);
-		WNDCLASSA wc;
-		memset(&wc, 0, sizeof(wc));
-		wc.style = CS_DBLCLKS;
-		wc.lpfnWndProc = win32_process_message;
-		wc.cbClsExtra = 0;
-		wc.cbWndExtra = 0;
-		wc.hInstance = m_instance;
-		wc.hIcon = icon;
-		wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-		wc.hbrBackground = NULL;
-		wc.lpszClassName = window_class_name;
+		WNDCLASSA wc{
+			.style = CS_DBLCLKS,
+			.lpfnWndProc = win32_process_message,
+			.cbClsExtra = 0,
+			.cbWndExtra = 0,
+			.hInstance = m_instance,
+			.hIcon = icon,
+			.hCursor = LoadCursor(NULL, IDC_ARROW),
+			.hbrBackground = NULL,
+			.lpszClassName = window_class_name,
+		};
 
 		if (!RegisterClassA(&wc))
 			throw core_runtime_error("Windows window registration failed");
@@ -388,11 +366,10 @@ namespace myl::windows {
 		// If initially maximized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
 
-#if MYL_WM_INPUT
-		RAWINPUTDEVICE rid{ /// MYTodo: For WM_INPUT, should this only be done once or per window?
+		RAWINPUTDEVICE rid{
 			.usUsagePage = HID_USAGE_PAGE_GENERIC,
 			.usUsage = HID_USAGE_GENERIC_MOUSE,
-			.dwFlags = RIDEV_EXINPUTSINK, /// RIDEV_NOLEGACY = infinite scroll
+			.dwFlags = RIDEV_EXINPUTSINK,
 			.hwndTarget = m_handle
 		};
 		
@@ -403,7 +380,6 @@ namespace myl::windows {
 		/// fields of the RAWINPUTDEVICE structure.By default, an application does not receive WM_INPUT_DEVICE_CHANGE
 		/// notifications for raw input device arrivaland removal.
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerrawinputdevices
-#endif
 	}
 
 	window::~window() {

@@ -26,8 +26,8 @@ namespace myl {
 
 		if (input::key_down(key::q)) m_rotation.z += radians(2.f);
 		if (input::key_down(key::e)) m_rotation.z -= radians(2.f);
-		
-		if (input::mouse_button_down(mouse_button::left) && input::cursor_position() != input::previous_cursor_position()) {
+
+		if (input::mouse_button_down(mouse_button::left) && input::cursor_delta() != f32vec2::zero()) {
 			f32 pan_speed = 2.f;
 			auto delta = input::cursor_delta();
 			auto rotated = delta * pan_speed / length(delta);

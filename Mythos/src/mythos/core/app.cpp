@@ -41,7 +41,7 @@ namespace myl {
 	}
 
 	void app::run() {
-		m_clock.reset(); // start time needs to be since app started running
+		m_clock.reset(); // Start time needs to be since app started running
 
 		while (m_running) {
 			std::chrono::nanoseconds time = m_clock.elapsed();
@@ -52,7 +52,7 @@ namespace myl {
 				for (auto& l : m_layer_stack) l->update(ts);
 				for (auto& l : m_layer_stack) l->render();
 
-				input::update();
+				input::update(); // Called after because it clears current values for next frame
 			}
 
 			m_window->update();
@@ -63,6 +63,7 @@ namespace myl {
 				while (time_remaining.count() > 0)
 					time_remaining = target_frame_time - (m_clock.elapsed() - m_last_frame_time);
 				/// MYBug: Why is this limiting at ~33 fps
+				/// MYTodo: Do vsync the right way
 				///if (time_remaining.count() > 0)
 				///	std::this_thread::sleep_for(time_remaining);
 			}

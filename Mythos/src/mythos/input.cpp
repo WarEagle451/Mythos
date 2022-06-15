@@ -11,6 +11,8 @@ namespace myl::input {
 		static mouse_code s_mouse_button_states;
 		static f32vec2 s_previous_cursor_position;
 		static f32vec2 s_cursor_position;
+		static f32vec2 s_mouse_delta;
+		static f32vec2 s_previous_mouse_delta;
 	};
 
 	state internal_states::s_previous_key_states[key::size];
@@ -19,10 +21,14 @@ namespace myl::input {
 	mouse_code internal_states::s_mouse_button_states;
 	f32vec2 internal_states::s_previous_cursor_position;
 	f32vec2 internal_states::s_cursor_position;
+	f32vec2 internal_states::s_mouse_delta;
+	f32vec2 internal_states::s_previous_mouse_delta;
 
 	void init() {
 		internal_states::s_previous_cursor_position = { 0, 0 };
 		internal_states::s_cursor_position = { 0, 0 };
+		internal_states::s_mouse_delta = { 0, 0 };
+		internal_states::s_previous_mouse_delta = { 0, 0 };
 
 		for (u32 i = 0; i != key::size; ++i) {
 			internal_states::s_previous_key_states[i] = state::up;
@@ -39,6 +45,8 @@ namespace myl::input {
 		*internal_states::s_previous_key_states = *internal_states::s_key_states;
 		internal_states::s_previous_mouse_button_states = internal_states::s_mouse_button_states;
 		internal_states::s_previous_cursor_position = internal_states::s_cursor_position;
+		internal_states::s_previous_mouse_delta = internal_states::s_mouse_delta;
+		internal_states::s_mouse_delta = { 0, 0 };
 	}
 
 	void process_key(key_code code, state state, u32 repeat_count) {
@@ -89,17 +97,19 @@ namespace myl::input {
 		state == state::up ? process_mouse_buttons_up(code) : process_mouse_buttons_down(code);
 	}
 
-	void process_cursor_absolute(const f32vec2& position) {
-		if (internal_states::s_cursor_position.x != position.x || internal_states::s_cursor_position.y != position.y) {  // Only update when they change state
-			internal_states::s_cursor_position = position;
-			event_mouse_moved e(internal_states::s_cursor_position);
-			fire_event(e);
-		}
+	void process_cursor_delta(const f32vec2& delta) {
+		if (delta.x != 0.f || delta.y != 0.f) // No event is sent because this is to be queried
+			internal_states::s_mouse_delta = delta;
 	}
 
-	void process_cursor_relative(const f32vec2& delta) {
-		if (delta.x != 0.f || delta.y != 0.f) {
-			internal_states::s_cursor_position += delta;
+	void process_cursor_delta_given_absolute(const f32vec2&) {
+
+		/// MYTodo: Figure out how to do this
+	}
+
+	void process_window_cursor_position(const f32vec2& position) {
+		if (internal_states::s_cursor_position.x != position.x || internal_states::s_cursor_position.y != position.y) {  // Only update when they change state
+			internal_states::s_cursor_position = position;
 			event_mouse_moved e(internal_states::s_cursor_position);
 			fire_event(e);
 		}
@@ -166,15 +176,19 @@ namespace myl::input {
 			(~internal_states::s_mouse_button_states & code) == code; // up
 	}
 
-	f32vec2 cursor_position() {
+	const f32vec2& cursor_position() {
 		return internal_states::s_cursor_position;
 	}
 
-	f32vec2 previous_cursor_position() {
+	const f32vec2& previous_cursor_position() {
 		return internal_states::s_previous_cursor_position;
 	}
 
-	f32vec2 cursor_delta() {
-		return internal_states::s_cursor_position - internal_states::s_previous_cursor_position;
+	const f32vec2& cursor_delta() {
+		return internal_states::s_mouse_delta;
+	}
+
+	const f32vec2& previous_cursor_delta() {
+		return internal_states::s_previous_mouse_delta;
 	}
 }
