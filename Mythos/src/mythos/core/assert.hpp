@@ -1,5 +1,4 @@
 #pragma once
-#include <mythos/core/core.hpp>
 #include <mythos/core/log.hpp> // MYL_CORE_FATAL()
 
 #include <filesystem>

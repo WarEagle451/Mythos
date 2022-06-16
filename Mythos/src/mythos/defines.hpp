@@ -1,5 +1,4 @@
 #pragma once
-/// MYTodo: Update this to work like vulkan's
 #define MYL_MAKE_VERSION(major, minor, patch) (major * 10000 + minor * 100 + patch)
 
 #define MYL_VERSION_MAJOR 0
@@ -19,6 +18,9 @@
 #define MYL_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #define MYL_LIKELY [[likely]]
 #define MYL_UNLIKELY [[unlikely]]
+
+#define MYL_EXPAND_MACRO(x) x
+#define MYL_STRINGIFY(x) #x
 
 #ifdef MYL_EXPORT
 #	ifdef _MSC_VER
