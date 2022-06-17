@@ -28,13 +28,13 @@
 
 #include "platform/detection.hpp"
 #ifdef MYL_EXPORT
-#	ifdef _MSC_VER
+#	ifdef MYL_COMPILER_MSVC
 #		define MYL_API __declspec(dllexport)
 #	else
 #		define MYL_API __attribute__((visibility("default")))
 #	endif
 #else
-#	ifdef _MSC_VER
+#	ifdef MYL_COMPILER_MSVC
 #		define MYL_API __declspec(dllimport)
 #	else
 #		define MYL_API
