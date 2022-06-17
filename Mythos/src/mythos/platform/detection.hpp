@@ -1,4 +1,14 @@
 #pragma once
+#if defined(_MSC_VER)
+#	define MYL_COMPILER_MSVC _MSC_VER
+#elif defined(__clang__)
+#	define MYL_COMPILER_CLANG __clang_major__
+#elif defined(__GNUC__)
+#	define MYL_COMPILER_GCC (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__)
+#else
+#	define MYL_COMPILER_UNKNOWN 0
+#endif
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #	define MYL_PLATFORM_WINDOWS
 #	ifndef _WIN64

@@ -16,7 +16,7 @@ namespace myl {
 		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
 		s_instance = this;
 		MYL_CORE_INFO("Mythos:");
-		MYL_CORE_INFO("\t- Version: {}.{}.{}", MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH);
+		MYL_CORE_INFO("\t- Version: {}", MYL_VERSION_STRING);
 		/// MYTodo: Should probs output config info
 
 		input::init();

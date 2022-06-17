@@ -1,10 +1,17 @@
 #pragma once
-#define MYL_MAKE_VERSION(major, minor, patch) (major * 10000 + minor * 100 + patch)
+#define MYL_EXPAND_MACRO(x) x
+#define MYL_STRINGIFY(x) #x
+#define MYL_STRINGIFY_ARG(arg) MYL_STRINGIFY(arg)
 
 #define MYL_VERSION_MAJOR 0
 #define MYL_VERSION_MINOR 0
 #define MYL_VERSION_PATCH 0
+
+#define MYL_MAKE_VERSION(major, minor, patch) (major * 10000 + minor * 100 + patch)
+#define MYL_MAKE_VERSION_STRING(major, minor, patch) (MYL_STRINGIFY_ARG(major)##"."##MYL_STRINGIFY_ARG(minor)##"."##MYL_STRINGIFY_ARG(patch))
+
 #define MYL_VERSION MYL_MAKE_VERSION(MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH)
+#define MYL_VERSION_STRING MYL_MAKE_VERSION_STRING(MYL_VERSION_MAJOR, MYL_VERSION_MINOR, MYL_VERSION_PATCH)
 
 #define MYL_ENGINE_NAME "Mythos Engine"
 
@@ -19,9 +26,7 @@
 #define MYL_LIKELY [[likely]]
 #define MYL_UNLIKELY [[unlikely]]
 
-#define MYL_EXPAND_MACRO(x) x
-#define MYL_STRINGIFY(x) #x
-
+#include "platform/detection.hpp"
 #ifdef MYL_EXPORT
 #	ifdef _MSC_VER
 #		define MYL_API __declspec(dllexport)
@@ -34,6 +39,13 @@
 #	else
 #		define MYL_API
 #	endif
+#endif
+
+/// MYTodo: DISTRIBUTION
+#if !defined(MYL_BUILD_DEBUG) && defined(_DEBUG)
+#	define MYL_BUILD_DEBUG
+#elif !defined(MYL_BUILD_RELEASE) && defined(_RELEASE)
+#	define MYL_BUILD_RELEASE
 #endif
 
 namespace myl {
