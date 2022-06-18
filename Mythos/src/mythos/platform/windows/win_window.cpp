@@ -11,24 +11,13 @@
 
 #	include <windowsx.h>
 #	include <hidusage.h>
+#	include <Xinput.h>
 
 /// MYTodo: Figure out event_key_typed
 
-#	define MYL_WM_INPUT 1 /// MYBUG: WHY DOES WM_INPUT ALLOW INPUT FROM OUTSIDE THE WINDOW
+#	define MYL_WM_INPUT 1
 
 namespace myl::windows {
-	MYL_NO_DISCARD constexpr mouse_code translate_mouse_code(WPARAM w_param) { /// MYTodo: REMOVE
-		using namespace mouse_button;
-		mouse_code mouse_buttons = none;
-		if (w_param & MK_LBUTTON) mouse_buttons |= left;
-		if (w_param & MK_RBUTTON) mouse_buttons |= right;
-		if (w_param & MK_MBUTTON) mouse_buttons |= middle;
-		if (w_param & MK_XBUTTON1) mouse_buttons |= button4;
-		if (w_param & MK_XBUTTON2) mouse_buttons |= button5;
-
-		return mouse_buttons;
-	}
-
 	MYL_NO_DISCARD constexpr mouse_code translate_raw_mouse_code(USHORT buttons) {
 		using namespace mouse_button;
 		mouse_code code = none;
@@ -41,7 +30,7 @@ namespace myl::windows {
 		return code;
 	}
 
-	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param, LPARAM l_param) {
+	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param, LPARAM l_param) { /// MYTodo: remove
 		switch (static_cast<u16>(w_param)) { // Key code it a u16 from the w_param
 			using namespace key;
 			case VK_TAB: return tab;
@@ -205,6 +194,7 @@ namespace myl::windows {
 				event_window_resize e(LOWORD(l_param), HIWORD(l_param));
 				fire_event(e);
 			} break;
+				/// MYTodo: Eventually get this to ve processed by WM_INPUT
 			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position
 				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
 				break;
@@ -249,7 +239,7 @@ namespace myl::windows {
 							}
 						}
 
-						/// MYBug: This will only work with deltas, if absolute and 0, 0 will not fire
+						/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
 						if (raw->data.mouse.lLastX != 0 || raw->data.mouse.lLastY != 0) { // Mouse move
 							f32vec2 move{ static_cast<f32>(raw->data.mouse.lLastX), static_cast<f32>(raw->data.mouse.lLastY) };
 							raw->data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
@@ -258,19 +248,38 @@ namespace myl::windows {
 						} break;
 					case RIM_TYPEKEYBOARD: // Keyboard
 						if (app_in_forground) {
-							/// MYBug: THESES REALLY NEED TO BE DONE RN
+							auto& keyboard = raw->data.keyboard;
+
+							if (keyboard.Flags & RI_KEY_E0)
+								; /// MYTodo: 
+							if (keyboard.Flags & RI_KEY_E1)
+								; /// MYTodo: 
+							if (keyboard.Flags & RI_KEY_TERMSRV_SET_LED)
+								; /// MYTodo: 
+							if (keyboard.Flags & RI_KEY_TERMSRV_SHADOW)
+								; /// MYTodo: 
+							keyboard.ExtraInformation; /// MYTodo:
+
+							/// MYTodo: probs need to register keyboard (also multiple mice and keyboards)
+							/// MYTodo: Confirm that 0 or 1 has to be in the first bit
+							input::state key_state = (keyboard.Flags & RI_KEY_MAKE) ? input::state::down : input::state::up;
+							u32 key_repeats = 0;
+							input::process_key(translate_key_code(keyboard.VKey, l_param), key_state, key_repeats);
+							///input::process_key(translate_raw_scancode(keyboard.MakeCode), key_state, key_repeats);
 						} break;
 					case RIM_TYPEHID: // Not a keyboard or mouse
-						if (app_in_forground) {
-							/// MYBug: THESES REALLY NEED TO BE DONE RN
-						} break;
+						MYL_CORE_WARN("Unknown device sent WM_INPUT");
+						break;
 					default: MYL_CORE_ASSERT(false, "WM_INPUT value not valid"); break;
 				}
 			} break;
-			case WM_CHAR: /// MYTodo: WM_CHAR:
+			case WM_CHAR: /// MYTodo: WM_CHAR: https://docs.microsoft.com/en-us/windows/win32/learnwin32/keyboard-input
 				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
 			case WM_ACTIVATE: /// MYTodo: WM_ACTIVATE
 				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-activate
+			case WM_INPUT_DEVICE_CHANGE:
+				break; /// MYTodo
+#if !MYL_WM_INPUT
 			case WM_KEYDOWN: MYL_FALLTHROUGH; /// MYTodo: Lumber yard doesn't use this? why?
 			case WM_SYSKEYDOWN:
 				input::process_key(translate_key_code(w_param, l_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // First 16 bits contain the repeat count
@@ -279,6 +288,7 @@ namespace myl::windows {
 			case WM_SYSKEYUP:
 				input::process_key(translate_key_code(w_param, l_param), input::state::up, 0);
 				break;
+#endif
 			case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED
 				break; /// https://docs.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged
 			case WM_DESTROY:
@@ -289,6 +299,20 @@ namespace myl::windows {
 		}
 	
 		return DefWindowProcA(hwnd, msg, w_param, l_param);
+	}
+
+	std::string GetLastError_as_string() {
+		DWORD error_id = GetLastError();
+		if (error_id == 0)
+			return std::string(); // No error
+
+		LPSTR message_buf = nullptr;
+		size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+									 nullptr, error_id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&message_buf), 0, nullptr);
+
+		std::string message(message_buf, size);
+		LocalFree(message_buf);
+		return message;
 	}
 
 	window::window(const config& a_config)
@@ -365,14 +389,16 @@ namespace myl::windows {
 		// If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
 		// If initially maximized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
-
-		RAWINPUTDEVICE rid{
+#if 1
+		RAWINPUTDEVICE rid{ /// MYTodo: Should only do if exists
 			.usUsagePage = HID_USAGE_PAGE_GENERIC,
 			.usUsage = HID_USAGE_GENERIC_MOUSE,
 			.dwFlags = RIDEV_EXINPUTSINK,
 			.hwndTarget = m_handle
 		};
-		
+
+		/// MYTodo: figure out how to register both keyboards
+
 		if (!RegisterRawInputDevices(&rid, 1, sizeof(rid)))
 			throw core_runtime_error("Windows - Failed to register raw input devices");
 		/// MYTodo: To receive WM_INPUT_DEVICE_CHANGE messages, an application must specify the
@@ -380,6 +406,36 @@ namespace myl::windows {
 		/// fields of the RAWINPUTDEVICE structure.By default, an application does not receive WM_INPUT_DEVICE_CHANGE
 		/// notifications for raw input device arrivaland removal.
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerrawinputdevices
+#else
+		/// I Don't understand why this fails
+		UINT rids_count = 0;
+		UINT list_size = sizeof(RAWINPUTDEVICELIST);
+		GetRawInputDeviceList(nullptr, &rids_count, list_size);
+		if (rids_count) {
+			std::vector<RAWINPUTDEVICELIST> rid_list(rids_count);
+			rids_count = GetRawInputDeviceList(rid_list.data(), &rids_count, sizeof(RAWINPUTDEVICELIST));
+			std::vector<RAWINPUTDEVICE> rids{};
+			for (auto& device : rid_list) {
+				UINT cb_size = sizeof(RID_DEVICE_INFO); /// MAKE SURE THIS IS CORRECT, DO YOU DONT HAVE TO CHECK THE SIZE
+				///GetRawInputDeviceInfoA(device.hDevice, RIDI_DEVICEINFO, nullptr, &cb_size);
+				RID_DEVICE_INFO info{};
+				GetRawInputDeviceInfoA(device.hDevice, RIDI_DEVICEINFO, &info, &cb_size);
+
+				if (raw_input_device_supported(info))
+					rids.push_back(RAWINPUTDEVICE{
+							.usUsagePage = info.hid.usUsagePage,
+							.usUsage = info.hid.usUsage,
+							.dwFlags = RIDEV_EXINPUTSINK,
+							.hwndTarget = m_handle
+						});
+			}
+
+			MYL_CORE_WARN("devices, {}", rids.size());
+			if (!rids.empty())
+				if (!RegisterRawInputDevices(rids.data(), static_cast<u32>(rids.size()), sizeof(RAWINPUTDEVICE)))
+					throw core_runtime_error(std::format("Windows - Failed to register raw input devices: {}", GetLastError_as_string()));
+		}
+#endif
 	}
 
 	window::~window() {
