@@ -41,13 +41,6 @@
 #	endif
 #endif
 
-/// MYTodo: DISTRIBUTION
-#if !defined(MYL_BUILD_DEBUG) && defined(_DEBUG)
-#	define MYL_BUILD_DEBUG
-#elif !defined(MYL_BUILD_RELEASE) && defined(_RELEASE)
-#	define MYL_BUILD_RELEASE
-#endif
-
 namespace myl {
 	using u8 = unsigned char;
 	using u16 = unsigned short;
@@ -63,7 +56,7 @@ namespace myl {
 	using f64 = double;
 }
 
-#if defined(__clang__) || defined(__gcc__)
+#if defined(MYL_COMPILER_CLANG) || defined(MYL_COMPILER_GCC)
 #	define MYL_STATIC_ASSERT _Static_assert
 #else
 #	define MYL_STATIC_ASSERT static_assert
