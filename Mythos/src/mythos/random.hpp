@@ -46,7 +46,7 @@ namespace myl {
 
 		void set_distribution(const distribution_type& a_dist) { m_dist = a_dist; }
 
-		//@return Dstribution's lowest possible value
+		//@return Distribution's lowest possible value
 		MYL_NO_DISCARD result_type min() const noexcept { return m_dist.min(); }
 		//@return Distribution's highest possible value
 		MYL_NO_DISCARD result_type max() const noexcept { return m_dist.max(); }
