@@ -71,7 +71,7 @@ namespace myl {
 		as_u64[1] = gen();
 	}
 
-	uuid::uuid()
+	constexpr uuid::uuid()
 		: m_bytes{
 		0, 0, 0, 0,
 		0, 0,
@@ -91,7 +91,7 @@ namespace myl {
 		}
 	}
 
-	uuid::uuid(u8* a_bytes)
+	constexpr uuid::uuid(u8* a_bytes)
 		: m_bytes{
 		a_bytes[0], a_bytes[1], a_bytes[2], a_bytes[3],
 		a_bytes[4], a_bytes[5],
@@ -99,7 +99,7 @@ namespace myl {
 		a_bytes[8], a_bytes[9],
 		a_bytes[10], a_bytes[11], a_bytes[12], a_bytes[13], a_bytes[14], a_bytes[15] } {}
 
-	uuid::uuid(std::string_view a_view)
+	constexpr uuid::uuid(std::string_view a_view)
 		: m_bytes{
 		char_to_hex(a_view[0]), char_to_hex(a_view[1]), char_to_hex(a_view[2]), char_to_hex(a_view[3]),
 		char_to_hex(a_view[4]), char_to_hex(a_view[5]),
@@ -112,7 +112,7 @@ namespace myl {
 		return as_u64[0] == 0 && as_u64[1] == 0;
 	}
 
-	uuid_version uuid::version() const { // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx : Getting M
+	constexpr uuid_version uuid::version() const { // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx : Getting M
 		switch (uuid_version(m_bytes[6] & 0xF0)) {
 			using enum uuid_version;
 			case time:		return time;
@@ -124,7 +124,7 @@ namespace myl {
 		}
 	}
 
-	uuid_variant uuid::variant() const { // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx : Getting N
+	constexpr uuid_variant uuid::variant() const { // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx : Getting N
 		const u8 byte = m_bytes[8];
 		using enum uuid_variant;
 		if ((byte & 0x80) == 0x00)		return ncs;
@@ -134,7 +134,7 @@ namespace myl {
 		else							return unknown;
 	}
 
-	std::string uuid::string(bool a_brackets = true, bool a_dashed = true) const {
+	constexpr std::string uuid::string(bool a_brackets, bool a_dashed) const {
 		std::string out;
 		out.reserve(32 + (a_brackets ? 2 : 0) + (a_dashed ? 4 : 0));
 		if (a_brackets) out += '{';
