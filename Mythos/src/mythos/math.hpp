@@ -9,6 +9,7 @@
 #include "math/vec_compare.hpp"
 #include "math/geometric.hpp"
 #include "math/matrix.hpp"
+#include "math/matrix_operators.hpp"
 #include "math/quaternion.hpp"
 #include "math/projection.hpp"
 #include "math/transform.hpp"

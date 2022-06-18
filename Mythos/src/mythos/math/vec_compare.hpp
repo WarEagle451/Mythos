@@ -1,8 +1,6 @@
 #pragma once
-#include "vec.hpp"
 #include "geometric.hpp"
 
-/// MYTodo: There should be a nicer way of declaring comparision operations for vectors
 /// MYTodo: comparision operations for matrices and quats
 
 namespace myl {

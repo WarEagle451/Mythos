@@ -79,12 +79,9 @@ namespace myl {
 				m_data[0][2] * rhs[2][0] + m_data[1][2] * rhs[2][1] + m_data[2][2] * rhs[2][2]);// z2
 		}
 
-		MYL_NO_DISCARD constexpr mat operator/(const mat& rhs) const { return *this * inverse(rhs); }
-
 		constexpr mat& operator+=(const mat& rhs) { m_data[0] += rhs[0]; m_data[1] += rhs[1]; m_data[2] += rhs[2]; return *this; }
 		constexpr mat& operator-=(const mat& rhs) { m_data[0] -= rhs[0]; m_data[1] -= rhs[1]; m_data[2] -= rhs[2]; return *this; }
 		constexpr mat& operator*=(const mat& rhs) { return *this = (*this * rhs); }
-		constexpr mat& operator/=(const mat& rhs) { return *this *= inverse(rhs); }
 	};
 
 	template<typename T> using mat3x3 = mat<3, 3, T>;

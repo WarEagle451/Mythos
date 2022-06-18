@@ -86,12 +86,9 @@ namespace myl {
 				m_data[0][3] * rhs[3][0] + m_data[1][3] * rhs[3][1] + m_data[2][3] * rhs[3][2] + m_data[3][3] * rhs[3][3]);// w3
 		}
 
-		MYL_NO_DISCARD constexpr mat operator/(const mat& rhs) const { return *this * inverse(rhs); } /// MYBug: This won't work if matrix.hpp is not included maybe?
-
 		constexpr mat& operator+=(const mat& rhs) { m_data[0] += rhs[0]; m_data[1] += rhs[1]; m_data[2] += rhs[2]; m_data[3] += rhs[3]; return *this; }
 		constexpr mat& operator-=(const mat& rhs) { m_data[0] -= rhs[0]; m_data[1] -= rhs[1]; m_data[2] -= rhs[2]; m_data[3] -= rhs[3]; return *this; }
 		constexpr mat& operator*=(const mat& rhs) { return *this = (*this * rhs); }
-		constexpr mat& operator/=(const mat& rhs) { return *this *= inverse(rhs); }
 	};
 
 	template<typename T> using mat4x4 = mat<4, 4, T>;
