@@ -6,6 +6,7 @@
 
 /// MYTodo: Key mods
 /// MYTodo: Track toggled keys
+/// MYTodo: Key remapping
 
 namespace myl::input { /// MYTodo: Should this be a class?
 	enum class state { up, down };

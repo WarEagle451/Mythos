@@ -40,6 +40,7 @@ namespace myl::input {
 	}
 
 	/// MYBug: If the window loses focus and a key or mouse button is down when the window regains focus it will stay down until the key or button event up happens
+	/// MYTodo: When a window loses focus clear keys
 	/// On refocus maybe query the platform to update all input states
 	void update() { /// MYTodo: Could probs make better
 		*internal_states::s_previous_key_states = *internal_states::s_key_states;

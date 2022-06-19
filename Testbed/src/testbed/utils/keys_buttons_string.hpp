@@ -76,6 +76,7 @@ namespace tb {
 			case kp7: return "keypad 7";
 			case kp8: return "keypad 8";
 			case kp9: return "keypad 9";
+			case kp_enter: return "keypad enter";
 			TB_CODE_TO_STRING_CASE(decimal);
 			TB_CODE_TO_STRING_CASE(divide);
 			TB_CODE_TO_STRING_CASE(multiply);
@@ -107,8 +108,6 @@ namespace tb {
 			TB_CODE_TO_STRING_CASE(page_down);
 			TB_CODE_TO_STRING_CASE(home);
 			TB_CODE_TO_STRING_CASE(end);
-			TB_CODE_TO_STRING_CASE(world1);
-			TB_CODE_TO_STRING_CASE(world2);
 			TB_CODE_TO_STRING_CASE(caps_lock);
 			TB_CODE_TO_STRING_CASE(scroll_lock);
 			TB_CODE_TO_STRING_CASE(num_lock);

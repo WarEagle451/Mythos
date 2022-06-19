@@ -53,6 +53,8 @@ namespace myl {
 			kp7, // Keypad 7
 			kp8, // Keypad 8
 			kp9, // Keypad 9
+			kp_enter,
+
 			decimal,
 			divide,
 			multiply,
@@ -88,9 +90,6 @@ namespace myl {
 			page_down,
 			home,
 			end,
-
-			world1,
-			world2,
 
 			caps_lock,
 			scroll_lock,

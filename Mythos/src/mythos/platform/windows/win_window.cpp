@@ -1,21 +1,21 @@
 #include "win_window.hpp"
 #ifdef MYL_PLATFORM_WINDOWS
+#	include "win_utils.hpp"
+
 #	include <mythos/core/except.hpp>
 #	include <mythos/core/assert.hpp>
 #	include <mythos/core/log.hpp>
 #	include <mythos/core/key_codes.hpp>
 #	include <mythos/core/mouse_codes.hpp>
 #	include <mythos/event/app_event.hpp>
-
 #	include <mythos/input.hpp>
 
 #	include <windowsx.h>
 #	include <hidusage.h>
-#	include <Xinput.h>
 
-/// MYTodo: Figure out event_key_typed
+// https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input
 
-#	define MYL_WM_INPUT 1
+/// MYTodo: Figure out event_key_typed, probs WM_CHAR
 
 namespace myl::windows {
 	MYL_NO_DISCARD constexpr mouse_code translate_raw_mouse_code(USHORT buttons) {
@@ -30,139 +30,172 @@ namespace myl::windows {
 		return code;
 	}
 
-	MYL_NO_DISCARD static constexpr key_code translate_key_code(WPARAM w_param, LPARAM l_param) { /// MYTodo: remove
-		switch (static_cast<u16>(w_param)) { // Key code it a u16 from the w_param
+	MYL_NO_DISCARD static constexpr key_code translate_raw_scancode(USHORT scancode) {
+		switch (scancode) { // From: https://source.chromium.org/chromium/chromium/src/+/main:ui/events/keycodes/dom/dom_code_data.inc
 			using namespace key;
-			case VK_TAB: return tab;
-			case VK_RETURN: return enter;
-			case VK_ESCAPE: return escape;
-			case VK_SPACE: return space;
-			case VK_OEM_7: return apostrophe;
-			case VK_OEM_COMMA: return comma;
-			case VK_OEM_MINUS: return dash;
-			case VK_OEM_PERIOD: return period;
-			case VK_OEM_2: return slash;
-			case 0x30: return n0;
-			case 0x31: return n1;
-			case 0x32: return n2;
-			case 0x33: return n3;
-			case 0x34: return n4;
-			case 0x35: return n5;
-			case 0x36: return n6;
-			case 0x37: return n7;
-			case 0x38: return n8;
-			case 0x39: return n9;
-			case VK_OEM_1: return semicolon;
-			case VK_OEM_PLUS: return equal;
-			case 0x41: return a;
-			case 0x42: return b;
-			case 0x43: return c;
-			case 0x44: return d;
-			case 0x45: return e;
-			case 0x46: return f;
-			case 0x47: return g;
-			case 0x48: return h;
-			case 0x49: return i;
-			case 0x4a: return j;
-			case 0x4b: return k;
-			case 0x4c: return l;
-			case 0x4d: return m;
-			case 0x4e: return n;
-			case 0x4f: return o;
-			case 0x50: return p;
-			case 0x51: return q;
-			case 0x52: return r;
-			case 0x53: return s;
-			case 0x54: return t;
-			case 0x55: return u;
-			case 0x56: return v;
-			case 0x57: return w;
-			case 0x58: return x;
-			case 0x59: return y;
-			case 0x5a: return z;
-			case VK_OEM_3: return grave_accent;
-			case VK_OEM_4: return left_bracket;
-			case VK_OEM_5: return backslash;
-			case VK_OEM_6: return right_bracket;
-			case VK_BACK: return backspace;
-			case VK_INSERT: return insert;
-			case VK_DELETE: return delete_key;
-			case VK_RIGHT: return right;
-			case VK_LEFT: return left;
-			case VK_DOWN: return down;
-			case VK_UP: return up;
-			case VK_PRIOR: return page_up;
-			case VK_NEXT: return page_down;
-			case VK_HOME: return home;
-			case VK_END: return end;
-			case VK_CAPITAL: return caps_lock;
-			case VK_SCROLL: return scroll_lock;
-			case VK_NUMLOCK: return num_lock;
-			case VK_SNAPSHOT: return print_screen; 	/// MYBug: Print screen does not work
-			case VK_PAUSE: return pause;
-			case VK_F1: return f1;
-			case VK_F2: return f2;
-			case VK_F3: return f3;
-			case VK_F4: return f4;
-			case VK_F5: return f5;
-			case VK_F6: return f6;
-			case VK_F7: return f7;
-			case VK_F8: return f8;
-			case VK_F9: return f9;
-			case VK_F10: return f10;
-			case VK_F11: return f11;
-			case VK_F12: return f12;
-			case VK_F13: return f13;
-			case VK_F14: return f14;
-			case VK_F15: return f15;
-			case VK_F16: return f16;
-			case VK_F17: return f17;
-			case VK_F18: return f18;
-			case VK_F19: return f19;
-			case VK_F20: return f20;
-			case VK_F21: return f21;
-			case VK_F22: return f22;
-			case VK_F23: return f23;
-			case VK_F24: return f24;
-			case VK_NUMPAD0: return kp0;
-			case VK_NUMPAD1: return kp1;
-			case VK_NUMPAD2: return kp2;
-			case VK_NUMPAD3: return kp3;
-			case VK_NUMPAD4: return kp4;
-			case VK_NUMPAD5: return kp5;
-			case VK_NUMPAD6: return kp6;
-			case VK_NUMPAD7: return kp7;
-			case VK_NUMPAD8: return kp8;
-			case VK_NUMPAD9: return kp9;
-			case VK_DECIMAL: return decimal;
-			case VK_DIVIDE: return divide;
-			case VK_MULTIPLY: return multiply;
-			case VK_SUBTRACT: return subtract;
-			case VK_ADD: return add;
-			case VK_LWIN: return left_super;
-			case VK_RWIN: return right_super;
+			case 0x0001: return escape;
+			case 0x0002: return n1;
+			case 0x0003: return n2;
+			case 0x0004: return n3;
+			case 0x0005: return n4;
+			case 0x0006: return n5;
+			case 0x0007: return n6;
+			case 0x0008: return n7;
+			case 0x0009: return n8;
+			case 0x000A: return n9;
+			case 0x000B: return n0;
+			case 0x000C: return dash;
+			case 0x000D: return equal;
+			case 0x000E: return backspace;
+			case 0x000F: return tab;
+			case 0x0010: return q;
+			case 0x0011: return w;
+			case 0x0012: return e;
+			case 0x0013: return r;
+			case 0x0014: return t;
+			case 0x0015: return y;
+			case 0x0016: return u;
+			case 0x0017: return i;
+			case 0x0018: return o;
+			case 0x0019: return p;
+			case 0x001A: return left_bracket;
+			case 0x001B: return right_bracket;
+			case 0x001C: return enter;
+			case 0x001D: return left_control;
+			case 0x001E: return a;
+			case 0x001F: return s;
+			case 0x0020: return d;
+			case 0x0021: return f;
+			case 0x0022: return g;
+			case 0x0023: return h;
+			case 0x0024: return j;
+			case 0x0025: return k;
+			case 0x0026: return l;
+			case 0x0027: return semicolon;
+			case 0x0028: return apostrophe;
+			case 0x0029: return grave_accent;
+			case 0x002A: return left_shift;
+			case 0x002B: return backslash;
+			case 0x002C: return z;
+			case 0x002D: return x;
+			case 0x002E: return c;
+			case 0x002F: return v;
+			case 0x0030: return b;
+			case 0x0031: return n;
+			case 0x0032: return m;
+			case 0x0033: return comma;
+			case 0x0034: return period;
+			case 0x0035: return slash;
+			case 0x0036: return right_shift;
+			case 0x0037: return multiply;
+			case 0x0038: return left_alt;
+			case 0x0039: return space;
+			case 0x003A: return caps_lock;
+			case 0x003B: return f1;
+			case 0x003C: return f2;
+			case 0x003D: return f3;
+			case 0x003E: return f4;
+			case 0x003F: return f5;
+			case 0x0040: return f6;
+			case 0x0041: return f7;
+			case 0x0042: return f8;
+			case 0x0043: return f9;
+			case 0x0044: return f10;
+			case 0x0045: return pause;
+			case 0x0046: return scroll_lock;
+			case 0x0047: return kp7;
+			case 0x0048: return kp8;
+			case 0x0049: return kp9;
+			case 0x004A: return subtract;
+			case 0x004B: return kp4;
+			case 0x004C: return kp5;
+			case 0x004D: return kp6;
+			case 0x004E: return add;
+			case 0x004F: return kp1;
+			case 0x0050: return kp2;
+			case 0x0051: return kp3;
+			case 0x0052: return kp0;
+			case 0x0053: return decimal;
+			case 0x0054: return print_screen; // alt + print screen. Force it to register as printscreen
 
-			// Special handling
+			case 0x0057: return f11;
+			case 0x0058: return f12;
 
-			case VK_MENU: {
-				bool extended = (l_param & 0x01000000) == 0;
-				return extended ? left_alt : right_alt;
-			}
-			case VK_CONTROL: {
-				bool extended = (l_param & 0x01000000) == 0;
-				return extended ? left_control : right_control;
-			}
-			case VK_SHIFT: {
-				UINT scancode = (l_param & 0x00ff0000) >> 16;
-				return MapVirtualKey(scancode, MAPVK_VSC_TO_VK_EX) == VK_LSHIFT ? left_shift : right_shift;
-			}
+			case 0x0064: return f13;
+			case 0x0065: return f14;
+			case 0x0066: return f15;
+			case 0x0067: return f16;
+			case 0x0068: return f17;
+			case 0x0069: return f18;
+			case 0x006A: return f19;
+			case 0x006B: return f20;
+			case 0x006C: return f21;
+			case 0x006D: return f22;
+			case 0x006E: return f23;
 
+			case 0x0076: return f24;
+
+			case 0xE01C: return kp_enter;
+			case 0xE01D: return right_control;
+			case 0xE035: return divide;
+			case 0xE037: return print_screen;
+			case 0xE038: return right_alt;
+			case 0xE045: return num_lock;
+			case 0xE047: return home;
+			case 0xE048: return up;
+			case 0xE049: return page_up;
+			case 0xE04B: return left;
+			case 0xE04D: return right; 
+			case 0xE04F: return end;
+			case 0xE050: return down;
+			case 0xE051: return page_down;
+			case 0xE052: return insert;
+			case 0xE053: return delete_key;
+			case 0xE05B: return left_super;
+			case 0xE05C: return right_super;
+
+			case 0x0000: MYL_FALLTHROUGH;
+			case 0x0070: MYL_FALLTHROUGH;
+			case 0x0071: MYL_FALLTHROUGH;
+			case 0x0072: MYL_FALLTHROUGH;
+			case 0x0073: MYL_FALLTHROUGH;
+			case 0x0077: MYL_FALLTHROUGH;
+			case 0x0078: MYL_FALLTHROUGH;
+			case 0x0079: MYL_FALLTHROUGH;
+			case 0x007B: MYL_FALLTHROUGH;
+			case 0x007D: MYL_FALLTHROUGH;
+			case 0x007E: MYL_FALLTHROUGH;
+			case 0xE008: MYL_FALLTHROUGH;
+			case 0xE00A: MYL_FALLTHROUGH;
+			case 0xE010: MYL_FALLTHROUGH;
+			case 0xE017: MYL_FALLTHROUGH;
+			case 0xE018: MYL_FALLTHROUGH;
+			case 0xE019: MYL_FALLTHROUGH;
+			case 0xE020: MYL_FALLTHROUGH;
+			case 0xE021: MYL_FALLTHROUGH;
+			case 0xE022: MYL_FALLTHROUGH;
+			case 0xE024: MYL_FALLTHROUGH;
+			case 0xE02C: MYL_FALLTHROUGH;
+			case 0xE02E: MYL_FALLTHROUGH;
+			case 0xE030: MYL_FALLTHROUGH;
+			case 0xE032: MYL_FALLTHROUGH;
+			case 0xE03B: MYL_FALLTHROUGH;
+			case 0x0056: MYL_FALLTHROUGH;
+			case 0x0059: MYL_FALLTHROUGH;
+			case 0xE05D: MYL_FALLTHROUGH;
+			case 0xE05E: MYL_FALLTHROUGH;
+			case 0xE065: MYL_FALLTHROUGH;
+			case 0xE066: MYL_FALLTHROUGH;
+			case 0xE067: MYL_FALLTHROUGH;
+			case 0xE068: MYL_FALLTHROUGH;
+			case 0xE069: MYL_FALLTHROUGH;
+			case 0xE06A: MYL_FALLTHROUGH;
+			case 0xE06B: MYL_FALLTHROUGH;
+			case 0xE06C: MYL_FALLTHROUGH;
+			case 0xE06D: MYL_CORE_DEBUG("Valid unhandled key pressed: {}", scancode); MYL_FALLTHROUGH;
 			default: return unknown;
 		}
 	}
-
-/// https://github.com/o3de/o3de/blob/development/Code/Framework/AzFramework/Platform/Windows/AzFramework/Windowing/NativeWindow_Windows.cpp
-/// MYTodo: Above is a good ref for windows messages
 
 	static bool cursor_over_client_area(HWND hwnd) {
 		RECT client_area{};
@@ -176,8 +209,7 @@ namespace myl::windows {
 		POINT cursor{};
 		GetCursorPos(&cursor);
 
-		return
-			cursor.x > tl.x && cursor.x < br.x &&
+		return cursor.x > tl.x && cursor.x < br.x &&
 			cursor.y > tl.y && cursor.y < br.y;
 	}
 
@@ -194,7 +226,7 @@ namespace myl::windows {
 				event_window_resize e(LOWORD(l_param), HIWORD(l_param));
 				fire_event(e);
 			} break;
-				/// MYTodo: Eventually get this to ve processed by WM_INPUT
+				/// MYTodo: Eventually get this to be processed by WM_INPUT
 			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position
 				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
 				break;
@@ -209,14 +241,13 @@ namespace myl::windows {
 				const bool cursor_over_client_space = cursor_over_client_area(hwnd);
 				const bool app_in_forground = GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT;
 
+				RAWINPUT raw{};
 				UINT dw_size = sizeof(RAWINPUT);
-				static BYTE lpb[sizeof(RAWINPUT)]{};
-				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, lpb, &dw_size, sizeof(RAWINPUTHEADER));
-				RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb);
+				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &dw_size, sizeof(RAWINPUTHEADER));
 
-				switch (raw->header.dwType) {
+				switch (raw.header.dwType) {
 					case RIM_TYPEMOUSE: // Mouse
-						if (auto mb_flags = raw->data.mouse.usButtonFlags; mb_flags != 0 && cursor_over_client_space) { // Mouse buttons / wheel. (Must be in client space to work)
+						if (auto mb_flags = raw.data.mouse.usButtonFlags; mb_flags != 0 && cursor_over_client_space) { // Mouse buttons / wheel. (Must be in client space to work)
 							if (app_in_forground) { // Mouse buttons
 								if ((mb_flags & (RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN)) != 0)
 									input::process_mouse_buttons_down(translate_raw_mouse_code(mb_flags));
@@ -225,14 +256,14 @@ namespace myl::windows {
 							}
 
 							if (mb_flags & RI_MOUSE_WHEEL) { // Mouse wheel (vertical)
-								i16 y_delta = static_cast<i16>(raw->data.mouse.usButtonData);
+								i16 y_delta = static_cast<i16>(raw.data.mouse.usButtonData);
 								if (y_delta != 0) // Flatten the input to an OS-independent(-1, 1)
 									y_delta = y_delta < 0 ? -1 : 1;
 								input::process_mouse_wheel({ 0.f, static_cast<f32>(y_delta) });
 							}
 
 							if (mb_flags & RI_MOUSE_HWHEEL) { // Mouse wheel (horizontal) 
-								i16 x_delta = static_cast<i16>(raw->data.mouse.usButtonData);
+								i16 x_delta = static_cast<i16>(raw.data.mouse.usButtonData);
 								if (x_delta != 0) // Flatten the input to an OS-independent(-1, 1)
 									x_delta = x_delta < 0 ? -1 : 1;
 								input::process_mouse_wheel({ static_cast<f32>(x_delta), 0.f });
@@ -240,57 +271,38 @@ namespace myl::windows {
 						}
 
 						/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
-						if (raw->data.mouse.lLastX != 0 || raw->data.mouse.lLastY != 0) { // Mouse move
-							f32vec2 move{ static_cast<f32>(raw->data.mouse.lLastX), static_cast<f32>(raw->data.mouse.lLastY) };
-							raw->data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
+						if (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0) { // Mouse move
+							f32vec2 move{ static_cast<f32>(raw.data.mouse.lLastX), static_cast<f32>(raw.data.mouse.lLastY) };
+							raw.data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
 								input::process_cursor_delta_given_absolute(move) : /// MYTodo: How is this supposed to be handled?
 								input::process_cursor_delta(move);
 						} break;
 					case RIM_TYPEKEYBOARD: // Keyboard
 						if (app_in_forground) {
-							auto& keyboard = raw->data.keyboard;
-
-							if (keyboard.Flags & RI_KEY_E0)
-								; /// MYTodo: 
-							if (keyboard.Flags & RI_KEY_E1)
-								; /// MYTodo: 
-							if (keyboard.Flags & RI_KEY_TERMSRV_SET_LED)
-								; /// MYTodo: 
-							if (keyboard.Flags & RI_KEY_TERMSRV_SHADOW)
-								; /// MYTodo: 
-							keyboard.ExtraInformation; /// MYTodo:
-
-							/// MYTodo: probs need to register keyboard (also multiple mice and keyboards)
-							/// MYTodo: Confirm that 0 or 1 has to be in the first bit
-							input::state key_state = (keyboard.Flags & RI_KEY_MAKE) ? input::state::down : input::state::up;
-							u32 key_repeats = 0;
-							input::process_key(translate_key_code(keyboard.VKey, l_param), key_state, key_repeats);
-							///input::process_key(translate_raw_scancode(keyboard.MakeCode), key_state, key_repeats);
+							/// MYBug: Num lock is being read as pause
+							/// MYBug: When num lock is disengaged, key is still sending key_numbers not keys like home, end, etc
+							
+							auto& keyboard = raw.data.keyboard;
+							USHORT scancode = keyboard.MakeCode | ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0);
+							input::process_key(
+								translate_raw_scancode(scancode),
+								(keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down,
+								0); /// MYTodo: Get key repeats
 						} break;
 					case RIM_TYPEHID: // Not a keyboard or mouse
 						MYL_CORE_WARN("Unknown device sent WM_INPUT");
 						break;
-					default: MYL_CORE_ASSERT(false, "WM_INPUT value not valid"); break;
+					default:
+						/// MYTodo: DefRawInputProc();
+						break;
 				}
 			} break;
-			case WM_CHAR: /// MYTodo: WM_CHAR: https://docs.microsoft.com/en-us/windows/win32/learnwin32/keyboard-input
-				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
-			case WM_ACTIVATE: /// MYTodo: WM_ACTIVATE
-				break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-activate
-			case WM_INPUT_DEVICE_CHANGE:
-				break; /// MYTodo
-#if !MYL_WM_INPUT
-			case WM_KEYDOWN: MYL_FALLTHROUGH; /// MYTodo: Lumber yard doesn't use this? why?
-			case WM_SYSKEYDOWN:
-				input::process_key(translate_key_code(w_param, l_param), input::state::down, static_cast<u32>(LOWORD(l_param))); // First 16 bits contain the repeat count
-				break;
-			case WM_KEYUP: MYL_FALLTHROUGH; /// MYTodo: Lumber yard doesn't use this? why?
-			case WM_SYSKEYUP:
-				input::process_key(translate_key_code(w_param, l_param), input::state::up, 0);
-				break;
-#endif
-			case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED
-				break; /// https://docs.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged
+			///case WM_CHAR: /// MYTodo: WM_CHAR: https://docs.microsoft.com/en-us/windows/win32/learnwin32/keyboard-input
+			///	break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
+			///case WM_INPUT_DEVICE_CHANGE:
+			///	break; /// MYTodo
+			///case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED
+			///	break; /// https://docs.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged
 			case WM_DESTROY:
 				PostQuitMessage(0);
 				return 0;
@@ -299,20 +311,6 @@ namespace myl::windows {
 		}
 	
 		return DefWindowProcA(hwnd, msg, w_param, l_param);
-	}
-
-	std::string GetLastError_as_string() {
-		DWORD error_id = GetLastError();
-		if (error_id == 0)
-			return std::string(); // No error
-
-		LPSTR message_buf = nullptr;
-		size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-									 nullptr, error_id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), reinterpret_cast<LPSTR>(&message_buf), 0, nullptr);
-
-		std::string message(message_buf, size);
-		LocalFree(message_buf);
-		return message;
 	}
 
 	window::window(const config& a_config)
@@ -389,53 +387,32 @@ namespace myl::windows {
 		// If initially minimized, use SW_MINIMIZE : SW_SHOWMINNOACTIVE;
 		// If initially maximized, use SW_SHOWMAXIMIZED : SW_MAXIMIZE;
 		ShowWindow(m_handle, show_window_command_flags);
-#if 1
-		RAWINPUTDEVICE rid{ /// MYTodo: Should only do if exists
-			.usUsagePage = HID_USAGE_PAGE_GENERIC,
-			.usUsage = HID_USAGE_GENERIC_MOUSE,
-			.dwFlags = RIDEV_EXINPUTSINK,
-			.hwndTarget = m_handle
-		};
 
-		/// MYTodo: figure out how to register both keyboards
+		/// MYTodo: figure out how to register multiple devices, also check if above are present first
 
-		if (!RegisterRawInputDevices(&rid, 1, sizeof(rid)))
+		std::vector<RAWINPUTDEVICE> rids;
+		rids.push_back(RAWINPUTDEVICE{ // Mouse
+				.usUsagePage = HID_USAGE_PAGE_GENERIC,
+				.usUsage = HID_USAGE_GENERIC_MOUSE,
+				.dwFlags = RIDEV_EXINPUTSINK,
+				.hwndTarget = m_handle
+			});
+
+		rids.push_back(RAWINPUTDEVICE{ // Keyboard
+				.usUsagePage = HID_USAGE_PAGE_GENERIC,
+				.usUsage = HID_USAGE_GENERIC_KEYBOARD, /// MYTodo: Below comment for mouse
+				.dwFlags = RIDEV_EXINPUTSINK | RIDEV_NOLEGACY, // RIDEV_NOLEGACY: No WM_KEYDOWN, WM_SYSKEYDOWN, etc will occur
+				.hwndTarget = m_handle
+			});
+
+		if (!RegisterRawInputDevices(rids.data(), rids.size(), sizeof(RAWINPUTDEVICE)))
 			throw core_runtime_error("Windows - Failed to register raw input devices");
-		/// MYTodo: To receive WM_INPUT_DEVICE_CHANGE messages, an application must specify the
-		/// RIDEV_DEVNOTIFY flag for each device class that is specified by the usUsagePageand usUsage
-		/// fields of the RAWINPUTDEVICE structure.By default, an application does not receive WM_INPUT_DEVICE_CHANGE
-		/// notifications for raw input device arrivaland removal.
+		/// MYTodo: To receive WM_INPUT_DEVICE_CHANGE messages, an application must specify the \
+		/// RIDEV_DEVNOTIFY flag for each device class that is specified by the usUsagePageand usUsage \
+		/// fields of the RAWINPUTDEVICE structure.By default, an application does not receive WM_INPUT_DEVICE_CHANGE \
+		/// notifications for raw input device arrivals and removal. \
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerrawinputdevices
-#else
-		/// I Don't understand why this fails
-		UINT rids_count = 0;
-		UINT list_size = sizeof(RAWINPUTDEVICELIST);
-		GetRawInputDeviceList(nullptr, &rids_count, list_size);
-		if (rids_count) {
-			std::vector<RAWINPUTDEVICELIST> rid_list(rids_count);
-			rids_count = GetRawInputDeviceList(rid_list.data(), &rids_count, sizeof(RAWINPUTDEVICELIST));
-			std::vector<RAWINPUTDEVICE> rids{};
-			for (auto& device : rid_list) {
-				UINT cb_size = sizeof(RID_DEVICE_INFO); /// MAKE SURE THIS IS CORRECT, DO YOU DONT HAVE TO CHECK THE SIZE
-				///GetRawInputDeviceInfoA(device.hDevice, RIDI_DEVICEINFO, nullptr, &cb_size);
-				RID_DEVICE_INFO info{};
-				GetRawInputDeviceInfoA(device.hDevice, RIDI_DEVICEINFO, &info, &cb_size);
-
-				if (raw_input_device_supported(info))
-					rids.push_back(RAWINPUTDEVICE{
-							.usUsagePage = info.hid.usUsagePage,
-							.usUsage = info.hid.usUsage,
-							.dwFlags = RIDEV_EXINPUTSINK,
-							.hwndTarget = m_handle
-						});
-			}
-
-			MYL_CORE_WARN("devices, {}", rids.size());
-			if (!rids.empty())
-				if (!RegisterRawInputDevices(rids.data(), static_cast<u32>(rids.size()), sizeof(RAWINPUTDEVICE)))
-					throw core_runtime_error(std::format("Windows - Failed to register raw input devices: {}", GetLastError_as_string()));
-		}
-#endif
+		
 	}
 
 	window::~window() {
