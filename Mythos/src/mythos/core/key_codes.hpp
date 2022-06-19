@@ -53,7 +53,6 @@ namespace myl {
 			kp7, // Keypad 7
 			kp8, // Keypad 8
 			kp9, // Keypad 9
-			kp_enter,
 
 			decimal,
 			divide,
@@ -74,9 +73,12 @@ namespace myl {
 			backslash,
 			grave_accent,
 
+			// End of codes with associated characters
+
 			backspace,
-			tab,
-			enter,
+			tab, /// MYTodo: Do these have to be after grave_accent?
+			enter, /// MYTodo: Do these have to be after grave_accent?
+			kp_enter, /// MYTodo: Do these have to be after grave_accent?
 
 			right,
 			left,
@@ -134,6 +136,18 @@ namespace myl {
 
 			size,
 			unknown
+		};
+	}
+
+	namespace key_mod {
+		enum : key_code {
+			none		= 0,
+			shift		= 1 << 0,
+			control		= 1 << 1,
+			alt			= 1 << 2,
+			super		= 1 << 3,
+			caps_lock	= 1 << 4,
+			num_lock	= 1 << 5
 		};
 	}
 }

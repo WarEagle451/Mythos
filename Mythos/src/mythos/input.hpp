@@ -17,22 +17,23 @@ namespace myl {
 		static state s_key_states[key::size];
 		static mouse_code s_previous_mouse_button_states;
 		static mouse_code s_mouse_button_states;
-		static f32vec2 s_previous_cursor_position;
-		static f32vec2 s_cursor_position;
+		static f32vec2 s_previous_window_cursor_position;
+		static f32vec2 s_window_cursor_position;
 		static f32vec2 s_mouse_delta;
 		static f32vec2 s_previous_mouse_delta;
 	public:
 		static void init();
 		static void update();
 
-		static void process_key(key_code, state, u32);
+		static void process_key(key_code, state, u32 = 0); /// MYTodo: Should key_repeat be removed
+		static void process_key_typed(char, key_code a_mods);
 
 		static void process_mouse_buttons_up(mouse_code);
 		static void process_mouse_buttons_down(mouse_code);
 		static void process_mouse_buttons(mouse_code, state);
 
 		static void process_cursor_delta(const f32vec2&);
-		static void process_cursor_delta_given_absolute(const f32vec2&); /// MYTodo: Figure out how to deal with this
+		static void process_cursor_delta_given_absolute(const f32vec2&);
 		static void process_window_cursor_position(const f32vec2&);
 		static void process_mouse_wheel(const f32vec2&);
 
@@ -52,8 +53,8 @@ namespace myl {
 		MYL_API MYL_NO_DISCARD static bool mouse_button_released(mouse_code);
 		MYL_API MYL_NO_DISCARD static bool mouse_button_pressed(mouse_code);
 
-		MYL_API MYL_NO_DISCARD static const f32vec2& previous_cursor_position();
-		MYL_API MYL_NO_DISCARD static const f32vec2& cursor_position();
+		MYL_API MYL_NO_DISCARD static const f32vec2& previous_window_cursor_position();
+		MYL_API MYL_NO_DISCARD static const f32vec2& window_cursor_position();
 		MYL_API MYL_NO_DISCARD static const f32vec2& previous_cursor_delta();
 		MYL_API MYL_NO_DISCARD static const f32vec2& cursor_delta();
 

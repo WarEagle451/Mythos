@@ -16,6 +16,11 @@
 #define TESTBED_ENABLE_EVENT_TESTS 1
 
 namespace tb {
+	static bool key_typed(myl::event_key_typed& e) {
+		MYL_CORE_DEBUG("Key typed: '{}'", static_cast<char>(e.key()));
+		return true;
+	}
+
 	static bool key_pressed(myl::event_key_pressed& e) {
 		MYL_CORE_TRACE("Key '{}' pressed", key_to_string(e.key()));
 		return true;
@@ -76,6 +81,7 @@ namespace tb {
 		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
 		dispatcher.dispatch<myl::event_mouse_scrolled>(mouse_scrolled);
 		dispatcher.dispatch<myl::event_mouse_moved>(mouse_moved);
+		dispatcher.dispatch<myl::event_key_typed>(key_typed);
 #endif
 	}
 

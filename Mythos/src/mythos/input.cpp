@@ -8,14 +8,14 @@ namespace myl {
 	input::state input::s_key_states[key::size];
 	mouse_code input::s_previous_mouse_button_states;
 	mouse_code input::s_mouse_button_states;
-	f32vec2 input::s_previous_cursor_position;
-	f32vec2 input::s_cursor_position;
+	f32vec2 input::s_previous_window_cursor_position;
+	f32vec2 input::s_window_cursor_position;
 	f32vec2 input::s_mouse_delta;
 	f32vec2 input::s_previous_mouse_delta;
 
 	void input::init() {
-		s_previous_cursor_position = { 0, 0 };
-		s_cursor_position = { 0, 0 };
+		s_previous_window_cursor_position = { 0, 0 };
+		s_window_cursor_position = { 0, 0 };
 		s_mouse_delta = { 0, 0 };
 		s_previous_mouse_delta = { 0, 0 };
 
@@ -34,7 +34,7 @@ namespace myl {
 	void input::update() { /// MYTodo: Could probs make better
 		*s_previous_key_states = *s_key_states;
 		s_previous_mouse_button_states = s_mouse_button_states;
-		s_previous_cursor_position = s_cursor_position;
+		s_previous_window_cursor_position = s_window_cursor_position;
 		s_previous_mouse_delta = s_mouse_delta;
 		s_mouse_delta = { 0, 0 };
 	}
@@ -59,6 +59,13 @@ namespace myl {
 			event_key_pressed e(a_code, a_repeat_count); /// MYTodo: Might have to keep track of key repeats internally as windows only ever returns 1
 			fire_event(e);
 		}
+	}
+
+	void input::process_key_typed(char a_char, key_code a_mods) {
+		if (a_char < 32 || (a_char > 126 && a_char < 160))
+			return;
+		event_key_typed e(a_char);
+		fire_event(e);
 	}
 
 	void input::process_mouse_buttons_up(mouse_code a_code) {
@@ -92,15 +99,14 @@ namespace myl {
 			s_mouse_delta = a_delta;
 	}
 
-	void input::process_cursor_delta_given_absolute(const f32vec2&) {
-
-		/// MYTodo: Figure out how to do this
+	void input::process_cursor_delta_given_absolute(const f32vec2& a_absolute) {
+		/// MYTodo: Figure out how to deal with this
 	}
 
 	void input::process_window_cursor_position(const f32vec2& a_position) {
-		if (s_cursor_position.x != a_position.x || s_cursor_position.y != a_position.y) {  // Only update when they change state
-			s_cursor_position = a_position;
-			event_mouse_moved e(s_cursor_position);
+		if (s_window_cursor_position.x != a_position.x || s_window_cursor_position.y != a_position.y) {  // Only update when they change state
+			s_window_cursor_position = a_position;
+			event_mouse_moved e(s_window_cursor_position);
 			fire_event(e);
 		}
 	}
@@ -166,12 +172,12 @@ namespace myl {
 			(s_mouse_button_states & a_code) == a_code; // down
 	}
 
-	const f32vec2& input::previous_cursor_position() {
-		return s_previous_cursor_position;
+	const f32vec2& input::previous_window_cursor_position() {
+		return s_previous_window_cursor_position;
 	}
 
-	const f32vec2& input::cursor_position() {
-		return s_cursor_position;
+	const f32vec2& input::window_cursor_position() {
+		return s_window_cursor_position;
 	}
 
 	const f32vec2& input::previous_cursor_delta() {

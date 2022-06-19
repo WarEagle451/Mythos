@@ -1,7 +1,10 @@
 #pragma once
+#include <errhandlingapi.h>
+
+#include <string>
 
 namespace myl::windows {
-	std::string GetLastError_as_string() { /// MYTodo: This should be put somewhere, like windows utils
+	static std::string GetLastError_as_string() {
 		DWORD error_id = GetLastError();
 		if (error_id == 0)
 			return std::string(); // No error

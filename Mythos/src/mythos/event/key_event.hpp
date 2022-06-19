@@ -36,7 +36,7 @@ namespace myl {
 		MYL_IMPL_EVENT_TYPE(key_released)
 	};
 
-	class event_key_typed : public key_event {
+	class event_key_typed : public key_event { /// MYTodo: Needs to hold a wchar actually
 	public:
 		MYL_API event_key_typed(const key_code a_code)
 			: key_event(a_code) {}

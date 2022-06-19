@@ -13,12 +13,8 @@
 #	include <windowsx.h>
 #	include <hidusage.h>
 
-// https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input
-
-/// MYTodo: Figure out event_key_typed, probs WM_CHAR
-
 namespace myl::windows {
-	MYL_NO_DISCARD constexpr mouse_code translate_raw_mouse_code(USHORT buttons) {
+	MYL_NO_DISCARD static constexpr mouse_code translate_raw_mouse_code(USHORT buttons) {
 		using namespace mouse_button;
 		mouse_code code = none;
 		if ((buttons & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_LEFT_BUTTON_DOWN)) != 0)		code |= left;
@@ -213,7 +209,22 @@ namespace myl::windows {
 			cursor.y > tl.y && cursor.y < br.y;
 	}
 
-	LRESULT CALLBACK win32_process_message(HWND hwnd, u32 msg, WPARAM w_param, LPARAM l_param) {
+	static key_code get_key_mods() {
+		using namespace key_mod;
+		key_code mods = none;
+		if (GetKeyState(VK_SHIFT) & 0x8000)							mods |= shift;
+		if (GetKeyState(VK_CONTROL) & 0x8000)						mods |= control;
+		if (GetKeyState(VK_MENU) & 0x8000)							mods |= alt;
+		if (GetKeyState(VK_CAPITAL) & 1)							mods |= caps_lock;
+		if (GetKeyState(VK_NUMLOCK) & 1)							mods |= num_lock;
+		if ((GetKeyState(VK_LWIN) | GetKeyState(VK_RWIN)) & 0x8000)	mods |= super;
+
+		return mods;
+	}
+
+	/// MYTodo: Good reference https://github.com/glfw/glfw/blob/master/src/win32_window.c
+
+	LRESULT CALLBACK win32_process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) {
 		switch (msg) {
 			case WM_CLOSE: {
 				event_window_close e{};
@@ -230,7 +241,10 @@ namespace myl::windows {
 			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position
 				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
 				break;
-			case WM_INPUT: {
+			case WM_CHAR: /// MYTodo: Eventually get this to be processed by WM_INPUT
+				input::process_key_typed(static_cast<WCHAR>(w_param), get_key_mods());
+				return 0;
+			case WM_INPUT: { // https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input
 				// If cursor is over client area
 				// - Process window_cursor_position (Handled by WM_MOUSEMOVE)
 				// - Process mouse delta
@@ -238,7 +252,6 @@ namespace myl::windows {
 				// if app is focused
 				// - Process all WM_INPUT except mouse clicks outside of client area
 				
-				const bool cursor_over_client_space = cursor_over_client_area(hwnd);
 				const bool app_in_forground = GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT;
 
 				RAWINPUT raw{};
@@ -246,8 +259,19 @@ namespace myl::windows {
 				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &dw_size, sizeof(RAWINPUTHEADER));
 
 				switch (raw.header.dwType) {
-					case RIM_TYPEMOUSE: // Mouse
-						if (auto mb_flags = raw.data.mouse.usButtonFlags; mb_flags != 0 && cursor_over_client_space) { // Mouse buttons / wheel. (Must be in client space to work)
+					case RIM_TYPEMOUSE: { // Mouse
+						const bool cursor_over_client_space = cursor_over_client_area(hwnd);
+						const auto mb_flags = raw.data.mouse.usButtonFlags;
+
+						if (mb_flags != 0 && cursor_over_client_space) { // Mouse buttons / wheel. (Must be in client space to work)
+							/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
+							if (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0) { // Mouse move
+								f32vec2 move{ static_cast<f32>(raw.data.mouse.lLastX), static_cast<f32>(raw.data.mouse.lLastY) };
+								raw.data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
+									input::process_cursor_delta_given_absolute(move) :
+									input::process_cursor_delta(move);
+							}
+
 							if (app_in_forground) { // Mouse buttons
 								if ((mb_flags & (RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN)) != 0)
 									input::process_mouse_buttons_down(translate_raw_mouse_code(mb_flags));
@@ -269,14 +293,7 @@ namespace myl::windows {
 								input::process_mouse_wheel({ static_cast<f32>(x_delta), 0.f });
 							}
 						}
-
-						/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
-						if (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0) { // Mouse move
-							f32vec2 move{ static_cast<f32>(raw.data.mouse.lLastX), static_cast<f32>(raw.data.mouse.lLastY) };
-							raw.data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
-								input::process_cursor_delta_given_absolute(move) : /// MYTodo: How is this supposed to be handled?
-								input::process_cursor_delta(move);
-						} break;
+					} break;
 					case RIM_TYPEKEYBOARD: // Keyboard
 						if (app_in_forground) {
 							/// MYBug: Num lock is being read as pause
@@ -284,10 +301,10 @@ namespace myl::windows {
 							
 							auto& keyboard = raw.data.keyboard;
 							USHORT scancode = keyboard.MakeCode | ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0);
+
 							input::process_key(
 								translate_raw_scancode(scancode),
-								(keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down,
-								0); /// MYTodo: Get key repeats
+								(keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down);
 						} break;
 					case RIM_TYPEHID: // Not a keyboard or mouse
 						MYL_CORE_WARN("Unknown device sent WM_INPUT");
@@ -297,8 +314,6 @@ namespace myl::windows {
 						break;
 				}
 			} break;
-			///case WM_CHAR: /// MYTodo: WM_CHAR: https://docs.microsoft.com/en-us/windows/win32/learnwin32/keyboard-input
-			///	break; /// https://docs.microsoft.com/en-us/windows/win32/inputdev/wm-char
 			///case WM_INPUT_DEVICE_CHANGE:
 			///	break; /// MYTodo
 			///case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED
@@ -338,20 +353,9 @@ namespace myl::windows {
 			throw core_runtime_error("Windows window registration failed");
 
 		// Create window
-		i32 client_x = a_config.postion.x;
-		i32 client_y = a_config.postion.y;
-		u32 client_width = a_config.size.w;
-		u32 client_height = a_config.size.h;
-
-		i32 window_x = client_x;
-		i32 window_y = client_y;
-		u32 window_width = client_width;
-		u32 window_height = client_height;
-
 		u32 window_style = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION;
 		u32 window_ex_style = WS_EX_APPWINDOW;
 
-		///window_style |= WS_MAXIMIZE;
 		window_style |= WS_MINIMIZEBOX;
 		window_style |= WS_MAXIMIZEBOX;
 		window_style |= WS_THICKFRAME;
@@ -360,15 +364,15 @@ namespace myl::windows {
 		RECT border_rect = { 0, 0, 0, 0 };
 		AdjustWindowRectEx(&border_rect, window_style, FALSE, window_ex_style);
 		
-		// In this case, the border rect is negative
-		window_x -= border_rect.left;
-		window_y -= border_rect.top;
+		// Client area position - border rect. (In this case, the border rect is negative)
+		int window_x = a_config.postion.x - border_rect.left;
+		int window_y = a_config.postion.y - border_rect.top;
 
-		// Grow by the size of the OS bordering
-		window_width += border_rect.right - border_rect.left;
-		window_height += border_rect.bottom - border_rect.top;
+		// Client size + the size of OS bordering
+		int window_w = a_config.size.w + border_rect.right - border_rect.left;
+		int window_h = a_config.size.h + border_rect.bottom - border_rect.top;
 
-		m_handle = CreateWindowExA(window_ex_style, window_class_name, a_config.name.c_str(), window_style, window_x, window_y, window_width, window_height, 0, 0, m_instance, 0);
+		m_handle = CreateWindowExA(window_ex_style, window_class_name, a_config.name.c_str(), window_style, window_x, window_y, window_w, window_h, nullptr, nullptr, m_instance, nullptr);
 		if (!m_handle)
 			throw core_runtime_error("Windows window creation failed");
 
@@ -400,19 +404,18 @@ namespace myl::windows {
 
 		rids.push_back(RAWINPUTDEVICE{ // Keyboard
 				.usUsagePage = HID_USAGE_PAGE_GENERIC,
-				.usUsage = HID_USAGE_GENERIC_KEYBOARD, /// MYTodo: Below comment for mouse
-				.dwFlags = RIDEV_EXINPUTSINK | RIDEV_NOLEGACY, // RIDEV_NOLEGACY: No WM_KEYDOWN, WM_SYSKEYDOWN, etc will occur
+				.usUsage = HID_USAGE_GENERIC_KEYBOARD,
+				.dwFlags = RIDEV_EXINPUTSINK, // RIDEV_NOLEGACY: No WM_KEYDOWN, WM_SYSKEYDOWN, etc will occur
 				.hwndTarget = m_handle
 			});
 
-		if (!RegisterRawInputDevices(rids.data(), rids.size(), sizeof(RAWINPUTDEVICE)))
+		if (!RegisterRawInputDevices(rids.data(), static_cast<UINT>(rids.size()), sizeof(RAWINPUTDEVICE)))
 			throw core_runtime_error("Windows - Failed to register raw input devices");
 		/// MYTodo: To receive WM_INPUT_DEVICE_CHANGE messages, an application must specify the \
 		/// RIDEV_DEVNOTIFY flag for each device class that is specified by the usUsagePageand usUsage \
 		/// fields of the RAWINPUTDEVICE structure.By default, an application does not receive WM_INPUT_DEVICE_CHANGE \
 		/// notifications for raw input device arrivals and removal. \
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerrawinputdevices
-		
 	}
 
 	window::~window() {
