@@ -5,7 +5,7 @@
 #	include <mythos/core/except.hpp>
 #	include <mythos/core/assert.hpp>
 #	include <mythos/core/log.hpp>
-#	include <mythos/core/key_codes.hpp>
+#	include <mythos/core/keyboard.hpp>
 #	include <mythos/core/mouse_codes.hpp>
 #	include <mythos/event/app_event.hpp>
 #	include <mythos/input.hpp>
@@ -13,8 +13,10 @@
 #	include <windowsx.h>
 #	include <hidusage.h>
 
+/// MYTodo: Should have an option that allows to not use raw input
+
 namespace myl::windows {
-	MYL_NO_DISCARD static constexpr mouse_code translate_raw_mouse_code(USHORT buttons) {
+	MYL_NO_DISCARD static constexpr mouse_code translate_raw_mouse_code(USHORT buttons) noexcept {
 		using namespace mouse_button;
 		mouse_code code = none;
 		if ((buttons & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_LEFT_BUTTON_DOWN)) != 0)		code |= left;
@@ -24,173 +26,6 @@ namespace myl::windows {
 		if ((buttons & (RI_MOUSE_BUTTON_5_UP | RI_MOUSE_BUTTON_5_DOWN)) != 0)			code |= button5;
 
 		return code;
-	}
-
-	MYL_NO_DISCARD static constexpr key_code translate_raw_scancode(USHORT scancode) {
-		switch (scancode) { // From: https://source.chromium.org/chromium/chromium/src/+/main:ui/events/keycodes/dom/dom_code_data.inc
-			using namespace key;
-			case 0x0001: return escape;
-			case 0x0002: return n1;
-			case 0x0003: return n2;
-			case 0x0004: return n3;
-			case 0x0005: return n4;
-			case 0x0006: return n5;
-			case 0x0007: return n6;
-			case 0x0008: return n7;
-			case 0x0009: return n8;
-			case 0x000A: return n9;
-			case 0x000B: return n0;
-			case 0x000C: return dash;
-			case 0x000D: return equal;
-			case 0x000E: return backspace;
-			case 0x000F: return tab;
-			case 0x0010: return q;
-			case 0x0011: return w;
-			case 0x0012: return e;
-			case 0x0013: return r;
-			case 0x0014: return t;
-			case 0x0015: return y;
-			case 0x0016: return u;
-			case 0x0017: return i;
-			case 0x0018: return o;
-			case 0x0019: return p;
-			case 0x001A: return left_bracket;
-			case 0x001B: return right_bracket;
-			case 0x001C: return enter;
-			case 0x001D: return left_control;
-			case 0x001E: return a;
-			case 0x001F: return s;
-			case 0x0020: return d;
-			case 0x0021: return f;
-			case 0x0022: return g;
-			case 0x0023: return h;
-			case 0x0024: return j;
-			case 0x0025: return k;
-			case 0x0026: return l;
-			case 0x0027: return semicolon;
-			case 0x0028: return apostrophe;
-			case 0x0029: return grave_accent;
-			case 0x002A: return left_shift;
-			case 0x002B: return backslash;
-			case 0x002C: return z;
-			case 0x002D: return x;
-			case 0x002E: return c;
-			case 0x002F: return v;
-			case 0x0030: return b;
-			case 0x0031: return n;
-			case 0x0032: return m;
-			case 0x0033: return comma;
-			case 0x0034: return period;
-			case 0x0035: return slash;
-			case 0x0036: return right_shift;
-			case 0x0037: return multiply;
-			case 0x0038: return left_alt;
-			case 0x0039: return space;
-			case 0x003A: return caps_lock;
-			case 0x003B: return f1;
-			case 0x003C: return f2;
-			case 0x003D: return f3;
-			case 0x003E: return f4;
-			case 0x003F: return f5;
-			case 0x0040: return f6;
-			case 0x0041: return f7;
-			case 0x0042: return f8;
-			case 0x0043: return f9;
-			case 0x0044: return f10;
-			case 0x0045: return pause;
-			case 0x0046: return scroll_lock;
-			case 0x0047: return kp7;
-			case 0x0048: return kp8;
-			case 0x0049: return kp9;
-			case 0x004A: return subtract;
-			case 0x004B: return kp4;
-			case 0x004C: return kp5;
-			case 0x004D: return kp6;
-			case 0x004E: return add;
-			case 0x004F: return kp1;
-			case 0x0050: return kp2;
-			case 0x0051: return kp3;
-			case 0x0052: return kp0;
-			case 0x0053: return decimal;
-			case 0x0054: return print_screen; // alt + print screen. Force it to register as printscreen
-
-			case 0x0057: return f11;
-			case 0x0058: return f12;
-
-			case 0x0064: return f13;
-			case 0x0065: return f14;
-			case 0x0066: return f15;
-			case 0x0067: return f16;
-			case 0x0068: return f17;
-			case 0x0069: return f18;
-			case 0x006A: return f19;
-			case 0x006B: return f20;
-			case 0x006C: return f21;
-			case 0x006D: return f22;
-			case 0x006E: return f23;
-
-			case 0x0076: return f24;
-
-			case 0xE01C: return kp_enter;
-			case 0xE01D: return right_control;
-			case 0xE035: return divide;
-			case 0xE037: return print_screen;
-			case 0xE038: return right_alt;
-			case 0xE045: return num_lock;
-			case 0xE047: return home;
-			case 0xE048: return up;
-			case 0xE049: return page_up;
-			case 0xE04B: return left;
-			case 0xE04D: return right; 
-			case 0xE04F: return end;
-			case 0xE050: return down;
-			case 0xE051: return page_down;
-			case 0xE052: return insert;
-			case 0xE053: return delete_key;
-			case 0xE05B: return left_super;
-			case 0xE05C: return right_super;
-
-			case 0x0000: MYL_FALLTHROUGH;
-			case 0x0070: MYL_FALLTHROUGH;
-			case 0x0071: MYL_FALLTHROUGH;
-			case 0x0072: MYL_FALLTHROUGH;
-			case 0x0073: MYL_FALLTHROUGH;
-			case 0x0077: MYL_FALLTHROUGH;
-			case 0x0078: MYL_FALLTHROUGH;
-			case 0x0079: MYL_FALLTHROUGH;
-			case 0x007B: MYL_FALLTHROUGH;
-			case 0x007D: MYL_FALLTHROUGH;
-			case 0x007E: MYL_FALLTHROUGH;
-			case 0xE008: MYL_FALLTHROUGH;
-			case 0xE00A: MYL_FALLTHROUGH;
-			case 0xE010: MYL_FALLTHROUGH;
-			case 0xE017: MYL_FALLTHROUGH;
-			case 0xE018: MYL_FALLTHROUGH;
-			case 0xE019: MYL_FALLTHROUGH;
-			case 0xE020: MYL_FALLTHROUGH;
-			case 0xE021: MYL_FALLTHROUGH;
-			case 0xE022: MYL_FALLTHROUGH;
-			case 0xE024: MYL_FALLTHROUGH;
-			case 0xE02C: MYL_FALLTHROUGH;
-			case 0xE02E: MYL_FALLTHROUGH;
-			case 0xE030: MYL_FALLTHROUGH;
-			case 0xE032: MYL_FALLTHROUGH;
-			case 0xE03B: MYL_FALLTHROUGH;
-			case 0x0056: MYL_FALLTHROUGH;
-			case 0x0059: MYL_FALLTHROUGH;
-			case 0xE05D: MYL_FALLTHROUGH;
-			case 0xE05E: MYL_FALLTHROUGH;
-			case 0xE065: MYL_FALLTHROUGH;
-			case 0xE066: MYL_FALLTHROUGH;
-			case 0xE067: MYL_FALLTHROUGH;
-			case 0xE068: MYL_FALLTHROUGH;
-			case 0xE069: MYL_FALLTHROUGH;
-			case 0xE06A: MYL_FALLTHROUGH;
-			case 0xE06B: MYL_FALLTHROUGH;
-			case 0xE06C: MYL_FALLTHROUGH;
-			case 0xE06D: MYL_CORE_DEBUG("Valid unhandled key pressed: {}", scancode); MYL_FALLTHROUGH;
-			default: return unknown;
-		}
 	}
 
 	static bool cursor_over_client_area(HWND hwnd) {
@@ -242,7 +77,7 @@ namespace myl::windows {
 				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
 				break;
 			case WM_CHAR: /// MYTodo: Eventually get this to be processed by WM_INPUT
-				input::process_key_typed(static_cast<WCHAR>(w_param), get_key_mods());
+				input::process_key_typed(static_cast<WCHAR>(w_param));
 				return 0;
 			case WM_INPUT: { // https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input
 				// If cursor is over client area
@@ -251,13 +86,12 @@ namespace myl::windows {
 				// - Process_scroll_wheel
 				// if app is focused
 				// - Process all WM_INPUT except mouse clicks outside of client area
-				
 				const bool app_in_forground = GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT;
-
+				
 				RAWINPUT raw{};
 				UINT dw_size = sizeof(RAWINPUT);
 				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &dw_size, sizeof(RAWINPUTHEADER));
-
+				
 				switch (raw.header.dwType) {
 					case RIM_TYPEMOUSE: { // Mouse
 						const bool cursor_over_client_space = cursor_over_client_area(hwnd);
@@ -296,24 +130,25 @@ namespace myl::windows {
 					} break;
 					case RIM_TYPEKEYBOARD: // Keyboard
 						if (app_in_forground) {
-							/// MYBug: Num lock is being read as pause
-							/// MYBug: When num lock is disengaged, key is still sending key_numbers not keys like home, end, etc
-							
+							/// RI_KEY_TERMSRV_SET_LED;
+							/// RI_KEY_TERMSRV_SET_SHAWDOW;
 							auto& keyboard = raw.data.keyboard;
 							USHORT scancode = keyboard.MakeCode | ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0);
-
-							input::process_key(
-								translate_raw_scancode(scancode),
-								(keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down);
+							input::state state = (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down;
+							key_code key = translate_ps2_set_1_make(scancode); // PS/2 set 1 makecodes are always used in Windows
+							
+							input::process_key(key, state);
+							/// MYTodo: Should do what WM_CHAR is doing here
 						} break;
 					case RIM_TYPEHID: // Not a keyboard or mouse
 						MYL_CORE_WARN("Unknown device sent WM_INPUT");
+						/// MYTodo: Non-keyboard, non-mouse input
 						break;
 					default:
 						/// MYTodo: DefRawInputProc();
 						break;
 				}
-			} break;
+			} return 0;
 			///case WM_INPUT_DEVICE_CHANGE:
 			///	break; /// MYTodo
 			///case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED

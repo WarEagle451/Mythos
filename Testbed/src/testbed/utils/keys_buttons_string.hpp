@@ -77,7 +77,8 @@ namespace tb {
 			case kp8: return "keypad 8";
 			case kp9: return "keypad 9";
 			case kp_enter: return "keypad enter";
-			TB_CODE_TO_STRING_CASE(decimal);
+			case kp_equal: return "keypad equal";
+			TB_CODE_TO_STRING_CASE(kp_decimal);
 			TB_CODE_TO_STRING_CASE(divide);
 			TB_CODE_TO_STRING_CASE(multiply);
 			TB_CODE_TO_STRING_CASE(subtract);

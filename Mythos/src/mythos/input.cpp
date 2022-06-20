@@ -61,8 +61,8 @@ namespace myl {
 		}
 	}
 
-	void input::process_key_typed(char a_char, key_code a_mods) {
-		if (a_char < 32 || (a_char > 126 && a_char < 160))
+	void input::process_key_typed(u32 a_char) {
+		if (a_char < 32 || (a_char > 126 && a_char < 160)) /// MYTodo: Do this better
 			return;
 		event_key_typed e(a_char);
 		fire_event(e);
