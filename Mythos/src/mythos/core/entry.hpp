@@ -6,7 +6,6 @@ namespace myl { //@brief To be defined in client
 }
 
 #include "except.hpp"
-#include "log.hpp"
 #include "assert.hpp"
 
 int main() {
