@@ -4,7 +4,7 @@ bin-int/
 
 # Caches
 **/cache/
-scripts/__pycache__ 
+**/__pycache__/
 
 # Directories
 Mythos/vendor/VulkanSDK/

@@ -1,3 +1,3 @@
 @echo off
-python UpdateSubmodules.py
+python setup\submodules.py
 PAUSE
