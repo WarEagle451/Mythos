@@ -4,7 +4,7 @@
 
 namespace myl {
 	static std::string format_source_location(const std::source_location& source) {
-		return std::format("'{}' in '{}' @ [L: {}, C: {}]",
+		return std::format("'{}::{}' @ [{}, {}]",
 			source.file_name(),
 			source.function_name(),
 			source.line(),
