@@ -13,7 +13,7 @@ namespace myl::render {
 			default: MYL_CORE_FATAL("Invalid rendering api"); break;
 		}
 
-		MYL_CORE_VERIFY(!backend, "Failed to create renderer backend")
+		MYL_CORE_VERIFY(backend, "Failed to create renderer backend")
 		return backend;
 	}
 }
