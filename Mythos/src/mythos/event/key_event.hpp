@@ -17,13 +17,13 @@ namespace myl {
 	};
 
 	class event_key_pressed : public key_event {
-		u16 m_repeat_count;
+		bool m_repeat;
 	public:
-		MYL_API constexpr event_key_pressed(const key_code a_code, const u16 a_repeat_count)
+		MYL_API constexpr event_key_pressed(const key_code a_code, bool a_repeat)
 			: key_event(a_code)
-			, m_repeat_count(a_repeat_count) {}
+			, m_repeat(a_repeat) {}
 
-		MYL_API MYL_NO_DISCARD constexpr u16 repeat_count() const { return m_repeat_count; }
+		MYL_API MYL_NO_DISCARD constexpr bool is_repeat() const { return m_repeat; }
 
 		MYL_IMPL_EVENT_TYPE(key_pressed)
 	};

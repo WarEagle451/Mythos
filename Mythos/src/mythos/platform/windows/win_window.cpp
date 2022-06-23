@@ -136,7 +136,6 @@ namespace myl::windows {
 							USHORT scancode = keyboard.MakeCode | ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0);
 							input::state state = (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down;
 							key_code key = translate_ps2_set_1_make(scancode); // PS/2 set 1 makecodes are always used in Windows
-							
 							input::process_key(key, state);
 							/// MYTodo: Should do what WM_CHAR is doing here
 						} break;

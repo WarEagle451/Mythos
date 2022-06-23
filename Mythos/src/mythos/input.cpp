@@ -39,7 +39,7 @@ namespace myl {
 		s_mouse_delta = { 0, 0 };
 	}
 
-	void input::process_key(key_code a_code, state a_state, u32 a_repeat_count) {
+	void input::process_key(key_code a_code, state a_state) {
 		if (a_code == key::unknown)
 			return;
 
@@ -51,12 +51,12 @@ namespace myl {
 				fire_event(e);
 			}
 			else {
-				event_key_pressed e(a_code, 0);
+				event_key_pressed e(a_code, false);
 				fire_event(e);
 			}
 		}
 		else if (a_state == state::down) { // Key repeats
-			event_key_pressed e(a_code, a_repeat_count); /// MYTodo: Might have to keep track of key repeats internally as windows only ever returns 1
+			event_key_pressed e(a_code, true);
 			fire_event(e);
 		}
 	}

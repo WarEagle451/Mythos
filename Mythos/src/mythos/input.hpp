@@ -25,7 +25,7 @@ namespace myl {
 		static void init();
 		static void update();
 
-		static void process_key(key_code, state, u32 = 0); /// MYTodo: Should key_repeat be removed
+		static void process_key(key_code, state);
 		static void process_key_typed(u32);
 
 		static void process_mouse_buttons_up(mouse_code);
