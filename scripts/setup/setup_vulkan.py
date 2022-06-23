@@ -17,6 +17,10 @@ class vulkan_config:
         if (not cls.check_vulkan_sdk()):
             print("Vulkan SDK not installed correctly.")
             return
+        
+        if (not cls.check_vulkan_sdk_debug_libs):
+            print("\nNo Vulkan SDK libs found")
+            print("Debug configuration disabled")
 
     @classmethod
     def check_vulkan_sdk(cls):
@@ -35,6 +39,12 @@ class vulkan_config:
     
         print(f"Correct Vulkan SDK located at {vulkan_sdk}")
         return True
+        
+    @classmethod
+    def check_vulkan_sdk_debug_libs(cls):
+        vulkan_sdk = os.environ.get("VULKAN_SDK")
+        shadercd_lib = Path(f"{vulkan_sdk}/Lib/shaderc_sharedd.lib")
+        return shadercd_lib.exists()
 
     @classmethod
     def __install_vulkan_sdk(cls):
