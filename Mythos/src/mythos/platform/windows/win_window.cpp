@@ -163,10 +163,27 @@ namespace myl::windows {
 		return DefWindowProcA(hwnd, msg, w_param, l_param);
 	}
 
+	static constexpr DWORD get_style(window_style style) {
+		DWORD win_style = 0;
+		switch (style) {
+			using enum window_style;
+			case fullscreen: win_style |= WS_POPUP; break;
+			case maximized: win_style |= WS_MAXIMIZE; MYL_FALLTHROUGH;
+			case windowed: win_style |=
+				WS_SYSMENU | WS_CAPTION |
+				WS_MINIMIZEBOX | WS_MAXIMIZEBOX |
+				WS_OVERLAPPED | WS_THICKFRAME;
+				break;
+		}
+		return win_style;
+	}
+
 	window::window(const config& a_config)
 		: myl::window()
 		, m_size(a_config.size) {
 		m_instance = GetModuleHandleA(0);
+		
+		/// MYTodo: Be able to change window style after creation: https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353
 
 		constexpr const char* window_class_name = "mythos_window_class";
 
@@ -188,30 +205,26 @@ namespace myl::windows {
 			throw core_runtime_error("Windows window registration failed");
 
 		// Create window
-		u32 window_style = WS_OVERLAPPED | WS_SYSMENU | WS_CAPTION;
+		DWORD window_style = get_style(a_config.style);
 		u32 window_ex_style = WS_EX_APPWINDOW;
-
-		window_style |= WS_MINIMIZEBOX;
-		window_style |= WS_MAXIMIZEBOX;
-		window_style |= WS_THICKFRAME;
 
 		// Obtain size of the border
 		RECT border_rect = { 0, 0, 0, 0 };
 		AdjustWindowRectEx(&border_rect, window_style, FALSE, window_ex_style);
 		
 		// Client area position - border rect. (In this case, the border rect is negative)
-		int window_x = a_config.postion.x - border_rect.left;
-		int window_y = a_config.postion.y - border_rect.top;
+		int window_x = (a_config.style == window_style::fullscreen) ? 0 : a_config.postion.x - border_rect.left;
+		int window_y = (a_config.style == window_style::fullscreen) ? 0 : a_config.postion.y - border_rect.top;
 
 		// Client size + the size of OS bordering
-		int window_w = a_config.size.w + border_rect.right - border_rect.left;
-		int window_h = a_config.size.h + border_rect.bottom - border_rect.top;
+		int window_w = (a_config.style == window_style::fullscreen) ? GetSystemMetrics(SM_CXSCREEN) : a_config.size.w + border_rect.right - border_rect.left;
+		int window_h = (a_config.style == window_style::fullscreen) ? GetSystemMetrics(SM_CYSCREEN) : a_config.size.h + border_rect.bottom - border_rect.top;
 
 		m_handle = CreateWindowExA(window_ex_style, window_class_name, a_config.name.c_str(), window_style, window_x, window_y, window_w, window_h, nullptr, nullptr, m_instance, nullptr);
 		if (!m_handle)
 			throw core_runtime_error("Windows window creation failed");
 
-		if (window_style & WS_MAXIMIZE) { /// MYTodo: There has to be a better way to detect if the screen is maximized
+		if (a_config.style == window_style::maximized || a_config.style == window_style::fullscreen) { /// MYTodo: There has to be a better way to detect if the screen is maximized
 			RECT win_size{};
 			GetWindowRect(m_handle, &win_size);
 			m_size = {

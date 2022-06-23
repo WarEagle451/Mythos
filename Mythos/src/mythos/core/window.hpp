@@ -6,11 +6,18 @@
 #include <string>
 
 namespace myl {
+	enum class window_style {
+		windowed,
+		maximized,
+		fullscreen
+	};
+
 	class window {
 	public:
 		struct config {
-			i32vec2 postion = { 0, 0 };
-			u32vec2 size = { 1280, 720 };
+			window_style style = window_style::windowed;
+			i32vec2 postion{ 0, 0 };
+			u32vec2 size{ 1280, 720 };
 			std::string name = "Mythos Window";
 		};
 
