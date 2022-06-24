@@ -1,7 +1,9 @@
 #pragma once
-#include <errhandlingapi.h>
+#include <mythos/platform/detection.hpp>
+#ifdef MYL_PLATFORM_WINDOWS
+#	include <errhandlingapi.h>
 
-#include <string>
+#	include <string>
 
 namespace myl::windows {
 	static std::string GetLastError_as_string() {
@@ -18,3 +20,4 @@ namespace myl::windows {
 		return message;
 	}
 }
+#endif
