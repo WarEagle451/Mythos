@@ -65,7 +65,7 @@ namespace myl::vulkan {
 		};
 
 		VkDeviceMemory new_memory{};
-		MYL_VK_VERIFY(vkAllocateMemory, m_context.device(), &allocate_info, VK_NULL_HANDLE, &new_memory); /// MYTodo: should have a function that does this
+		MYL_VK_VERIFY(vkAllocateMemory, m_context.device(), &allocate_info, VK_NULL_HANDLE, &new_memory);
 		MYL_VK_ASSERT(vkBindBufferMemory, m_context.device(), new_buffer, new_memory, 0);
 
 		copy_to(new_buffer, a_pool, 0, a_queue, 0, m_size);

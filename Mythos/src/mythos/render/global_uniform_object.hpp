@@ -1,7 +1,7 @@
 #pragma once
 #include <mythos/math/mat4x4.hpp>
 
-namespace myl::render {
+namespace myl::render { /// MYTodo: Hate this design
 	struct global_unifrom_object {
 		f32mat4x4 projection;	// 64 bytes
 		f32mat4x4 view;			// 64 bytes

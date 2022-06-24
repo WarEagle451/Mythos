@@ -9,8 +9,6 @@
 
 #include <string.h>
 
-/// MYTodo: Try to minimize the use of dynamic allocation
-
 namespace myl::vulkan {
 	MYL_NO_DISCARD static std::vector<const char*> required_validation_layers() {
 		std::vector<const char*> required_layers;
@@ -216,7 +214,7 @@ namespace myl::vulkan {
 			}
 		}
 
-		m_swapchain_support_info = swapchain_support_info; /// MYTodo: This should probs not be set here, at least m_
+		m_swapchain_support_info = swapchain_support_info;
 		*a_queue_indices = queue_indices;
 		return true;
 	}
@@ -245,7 +243,7 @@ namespace myl::vulkan {
 				.compute = false, /// MYTodo: Enable
 				.transfer = true,
 				.sampler_anisotropy = true,
-				.discrete_gpu = true, /// MYTodo: Should be able to run without a discrete gpu
+				.discrete_gpu = true,
 				.extensions = extensions
 			};
 

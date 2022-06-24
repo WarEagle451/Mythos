@@ -31,7 +31,7 @@ namespace myl {
 	/// MYBug: If the window loses focus and a key or mouse button is down when the window regains focus it will stay down until the key or button event up happens
 	/// MYTodo: When a window loses focus clear keys
 	/// On refocus maybe query the platform to update all input states
-	void input::update() { /// MYTodo: Could probs make better
+	void input::update() {
 		*s_previous_key_states = *s_key_states;
 		s_previous_mouse_button_states = s_mouse_button_states;
 		s_previous_window_cursor_position = s_window_cursor_position;
@@ -43,6 +43,7 @@ namespace myl {
 		if (a_code == key::unknown)
 			return;
 
+		// This might only work because every frame the keystate is copied over, but is not cleared from the current states
 		if (s_key_states[a_code] != a_state) { // Only update when they change state
 			s_key_states[a_code] = a_state;
 

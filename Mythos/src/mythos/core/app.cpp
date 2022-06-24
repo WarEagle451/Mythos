@@ -17,7 +17,6 @@ namespace myl {
 		s_instance = this;
 		MYL_CORE_INFO("Mythos:");
 		MYL_CORE_INFO("\t- Version: {}", MYL_VERSION_STRING);
-		/// MYTodo: Should probs output config info
 
 		input::init();
 		m_window = window::create(a_config.window);
@@ -57,15 +56,11 @@ namespace myl {
 
 			m_window->update();
 			
-			if (!m_suspended) {
+			if (!m_suspended) { /// MYTodo: Do vsync the right way (Vulkan use fences)
 				static constexpr std::chrono::nanoseconds target_frame_time(static_cast<i64>((1.0 / 60.0) * 1'000'000'000));
 				std::chrono::nanoseconds time_remaining = target_frame_time - (m_clock.elapsed() - m_last_frame_time);
-				while (time_remaining.count() > 0)
+				while (time_remaining.count() > 0) /// MYBug: Why is this limiting at ~33 fps
 					time_remaining = target_frame_time - (m_clock.elapsed() - m_last_frame_time);
-				/// MYBug: Why is this limiting at ~33 fps
-				/// MYTodo: Do vsync the right way
-				///if (time_remaining.count() > 0)
-				///	std::this_thread::sleep_for(time_remaining);
 			}
 		}
 	}

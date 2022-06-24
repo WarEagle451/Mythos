@@ -50,7 +50,7 @@ namespace myl::render {
 
 	void renderer::end() {
 		s_backend->end(); /// MYTodo: Should not be calling this
-		/// MYTodo: draw
+		/// MYTodo: draw batches
 		++s_stats.draw_calls;
 	}
 
