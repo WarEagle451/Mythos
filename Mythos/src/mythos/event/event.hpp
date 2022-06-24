@@ -84,4 +84,11 @@ namespace myl {
 
 	void set_event_callback(event_callback&);
 	MYL_API void fire_event(event&);
+
+	/// MYTodo: New event fire?
+	///template<typename EventType, typename... Args>
+	///void fire_event(Args&&... args) {
+	///	EventType e(args...);
+	///	get_event_callback()(e);
+	///}
 }
