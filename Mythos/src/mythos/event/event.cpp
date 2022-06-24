@@ -1,7 +1,5 @@
 #include "event.hpp"
 
-#include <mythos/core/log.hpp>
-
 namespace myl {
 	static event_callback* g_event_callback = nullptr;
 
