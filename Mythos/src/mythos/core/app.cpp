@@ -18,7 +18,7 @@ namespace myl {
 		MYL_CORE_INFO("Mythos:");
 		MYL_CORE_INFO("\t- Version: {}", MYL_VERSION_STRING);
 
-		input::init();
+		input::clear();
 		m_window = window::create(a_config.window);
 
 		m_event_callback = MYL_BIND_EVENT_FN(app::on_event);

@@ -4,8 +4,8 @@
 #include <mythos/event/mouse_event.hpp>
 
 namespace myl {
-	input::state input::s_previous_key_states[key::size];
-	input::state input::s_key_states[key::size];
+	std::array<input::state, key::size> input::s_previous_key_states;
+	std::array<input::state, key::size> input::s_key_states;
 	mouse_code input::s_previous_mouse_button_states;
 	mouse_code input::s_mouse_button_states;
 	f32vec2 input::s_previous_window_cursor_position;
@@ -13,16 +13,15 @@ namespace myl {
 	f32vec2 input::s_mouse_delta;
 	f32vec2 input::s_previous_mouse_delta;
 
-	void input::init() {
+	void input::clear() {
 		s_previous_window_cursor_position = { 0, 0 };
 		s_window_cursor_position = { 0, 0 };
+
 		s_mouse_delta = { 0, 0 };
 		s_previous_mouse_delta = { 0, 0 };
 
-		for (u32 i = 0; i != key::size; ++i) {
-			s_previous_key_states[i] = state::up;
-			s_key_states[i] = state::up;
-		}
+		s_previous_key_states.fill(state::up);
+		s_key_states.fill(state::up);
 
 		s_previous_mouse_button_states = mouse_button::none;
 		s_mouse_button_states = mouse_button::none;
@@ -32,7 +31,7 @@ namespace myl {
 	/// MYTodo: When a window loses focus clear keys
 	/// On refocus maybe query the platform to update all input states
 	void input::update() {
-		*s_previous_key_states = *s_key_states;
+		s_previous_key_states = s_key_states;
 		s_previous_mouse_button_states = s_mouse_button_states;
 		s_previous_window_cursor_position = s_window_cursor_position;
 		s_previous_mouse_delta = s_mouse_delta;

@@ -4,6 +4,8 @@
 
 #include <mythos/math/vec2.hpp>
 
+#include <array>
+
 /// MYTodo: Key mods
 /// MYTodo: Track toggled keys
 /// MYTodo: Key remapping
@@ -13,8 +15,8 @@ namespace myl {
 	public:
 		enum class state : bool { up, down };
 	private:
-		static state s_previous_key_states[key::size];
-		static state s_key_states[key::size];
+		static std::array<state, key::size> s_previous_key_states;
+		static std::array<state, key::size> s_key_states;
 		static mouse_code s_previous_mouse_button_states;
 		static mouse_code s_mouse_button_states;
 		static f32vec2 s_previous_window_cursor_position;
@@ -22,7 +24,8 @@ namespace myl {
 		static f32vec2 s_mouse_delta;
 		static f32vec2 s_previous_mouse_delta;
 	public:
-		static void init();
+		//@brief Sets all input values to 0 or equivalent
+		static void clear();
 		static void update();
 
 		static void process_key(key_code, state);
