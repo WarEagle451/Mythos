@@ -39,6 +39,8 @@ namespace myl {
 			return static_cast<f32>(s.x) / static_cast<f32>(s.y);
 		}
 
+		MYL_API virtual void toggle_fullscreen() = 0;
+
 		/// MYTodo: enable_cursor();
 		/// MYTodo: disable_cursor();
 	};

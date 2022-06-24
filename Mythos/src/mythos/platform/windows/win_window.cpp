@@ -94,18 +94,19 @@ namespace myl::windows {
 				
 				switch (raw.header.dwType) {
 					case RIM_TYPEMOUSE: { // Mouse
+						/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
+						if (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0) { // Mouse move
+							f32vec2 move{ static_cast<f32>(raw.data.mouse.lLastX), static_cast<f32>(raw.data.mouse.lLastY) };
+							MYL_CORE_DEBUG("Mouse delta: [{}, {}]", move.x, move.y);
+							raw.data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
+								input::process_cursor_delta_given_absolute(move) :
+								input::process_cursor_delta(move);
+						}
+
 						const bool cursor_over_client_space = cursor_over_client_area(hwnd);
 						const auto mb_flags = raw.data.mouse.usButtonFlags;
 
 						if (mb_flags != 0 && cursor_over_client_space) { // Mouse buttons / wheel. (Must be in client space to work)
-							/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
-							if (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0) { // Mouse move
-								f32vec2 move{ static_cast<f32>(raw.data.mouse.lLastX), static_cast<f32>(raw.data.mouse.lLastY) };
-								raw.data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
-									input::process_cursor_delta_given_absolute(move) :
-									input::process_cursor_delta(move);
-							}
-
 							if (app_in_forground) { // Mouse buttons
 								if ((mb_flags & (RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN)) != 0)
 									input::process_mouse_buttons_down(translate_raw_mouse_code(mb_flags));
@@ -177,13 +178,17 @@ namespace myl::windows {
 		return win_style;
 	}
 
+	static i32vec2 get_window_position(HWND hwnd) {
+		RECT win_rect{};
+		GetWindowRect(hwnd, &win_rect);
+		return { static_cast<i32>(win_rect.left), static_cast<i32>(win_rect.top) };
+	}
+
 	window::window(const config& a_config)
 		: myl::window()
 		, m_size(a_config.size) {
 		m_instance = GetModuleHandleA(0);
 		
-		/// MYTodo: Be able to change window style after creation: https://devblogs.microsoft.com/oldnewthing/20100412-00/?p=14353
-
 		constexpr const char* window_class_name = "mythos_window_class";
 
 		// Setup and register window class
@@ -223,12 +228,12 @@ namespace myl::windows {
 		if (!m_handle)
 			throw core_runtime_error("Windows window creation failed");
 
-		if (a_config.style == window_style::maximized || a_config.style == window_style::fullscreen) { /// MYTodo: There has to be a better way to detect if the screen is maximized
-			RECT win_size{};
-			GetWindowRect(m_handle, &win_size);
+		if (a_config.style == window_style::maximized || a_config.style == window_style::fullscreen) {
+			RECT win_rect{};
+			GetWindowRect(m_handle, &win_rect);
 			m_size = {
-				static_cast<u32>(win_size.right - win_size.left - (border_rect.right - border_rect.left)),
-				static_cast<u32>(win_size.bottom - win_size.top - (border_rect.bottom - border_rect.top))
+				static_cast<u32>(win_rect.right - win_rect.left - (border_rect.right - border_rect.left)),
+				static_cast<u32>(win_rect.bottom - win_rect.top - (border_rect.bottom - border_rect.top))
 			};
 		}
 
@@ -282,6 +287,42 @@ namespace myl::windows {
 
 	void window::on_resize(const u32vec2& a_size) {
 		m_size = a_size;
+	}
+
+	void window::toggle_fullscreen() {
+		LONG_PTR style = GetWindowLongPtr(m_handle, GWL_STYLE);
+		if (style & WS_OVERLAPPEDWINDOW) { // To fullscreen
+			MONITORINFO monitor_info{};
+			monitor_info.cbSize = sizeof(monitor_info);
+			GetMonitorInfo(MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST), &monitor_info);
+			
+			SetWindowLongPtr(m_handle, GWL_STYLE, get_style(window_style::fullscreen)); /// MYBug: When this changes it flashes to old windows border, make instant
+
+			m_cached_size = m_size; // Fullscreen to windowed needs to know previous window size
+			m_position_pre_fullscreen = get_window_position(m_handle); // Fullscreen to windowed needs to know previous position
+			LONG w = monitor_info.rcMonitor.right - monitor_info.rcMonitor.left;
+			LONG h = monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top;
+			SetWindowPos(m_handle, nullptr,
+				monitor_info.rcMonitor.left,
+				monitor_info.rcMonitor.top,
+				w,
+				h,
+				SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+		}
+		else { // To windowed or maximized
+			window_style new_win_style = /// MYBug: Fullscreen to maximized not being detected
+				(GetSystemMetrics(SM_CXSCREEN) == static_cast<int>(m_cached_size.x) &&
+				GetSystemMetrics(SM_CYSCREEN) == static_cast<int>(m_cached_size.y)) ? window_style::maximized : window_style::windowed;
+			SetWindowLongPtr(m_handle, GWL_STYLE, get_style(new_win_style));
+
+			SetWindowPos(m_handle,  nullptr,
+				 m_position_pre_fullscreen.x, m_position_pre_fullscreen.y,
+				 m_cached_size.w, m_cached_size.h,
+				 SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED
+			);
+		}
+
+		ShowWindow(m_handle, SW_SHOW);
 	}
 }
 #endif

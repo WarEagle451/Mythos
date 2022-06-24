@@ -89,10 +89,11 @@ namespace tb {
 		if (myl::input::key_down(myl::key::escape) && myl::input::key_down(myl::key::left_shift))
 			myl::app::get().close();
 
-		/// MYTodo: Setup fullscreen toggling
-		/// if (myl::input::key_down(myl::key::f1)) myl::app::get().window()->toggle_fullscreen();
+		if (myl::input::key_released(myl::key::f1))
+			myl::app::get().window()->toggle_fullscreen();
 	}
 
 	void testbed_layer::render() {
+
 	}
 }

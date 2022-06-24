@@ -29,11 +29,10 @@ namespace myl {
 
 		if (input::mouse_button_down(mouse_button::left) && input::cursor_delta() != f32vec2::zero()) {
 			f32 pan_speed = 2.f;
-			auto delta = input::cursor_delta();
+			const auto& delta = input::cursor_delta();
 			auto rotated = delta * pan_speed / length(delta);
 			m_rotation.x += -radians(rotated.y);
 			m_rotation.y += -radians(rotated.x);
-
 			// Prevent Gimball lock
 			constexpr f32 limit = radians(89.9f);
 			m_rotation.x = clamp(m_rotation.x, -limit, limit);

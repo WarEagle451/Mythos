@@ -10,7 +10,8 @@ namespace myl::windows {
 		HINSTANCE m_instance;
 		HWND m_handle;
 
-		u32vec2 m_size;
+		u32vec2 m_size, m_cached_size{ 0, 0 };
+		i32vec2 m_position_pre_fullscreen{ 0, 0 };
 	public:
 		window(const config&);
 		~window();
@@ -24,8 +25,9 @@ namespace myl::windows {
 		MYL_NO_DISCARD HINSTANCE module() const { return m_instance; }
 
 		void update() override;
-
 		void on_resize(const u32vec2&) override;
+
+		MYL_API void toggle_fullscreen() override;
 	};
 }
 #endif
