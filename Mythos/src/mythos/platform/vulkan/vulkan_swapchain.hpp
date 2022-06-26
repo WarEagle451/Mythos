@@ -14,6 +14,7 @@ namespace myl::vulkan {
 		context& m_context;
 
 		u32 m_max_frames_in_flight;
+		VkExtent2D m_extent;
 
 		VkSwapchainKHR m_handle;
 		VkSurfaceFormatKHR m_image_format;
@@ -51,6 +52,7 @@ namespace myl::vulkan {
 		std::vector<std::weak_ptr<fence>>& images_in_flight() { return m_images_in_flight; }
 		u32 current_frame() const { return m_current_frame; }
 		bool recreating() const { return m_recreating; }
+		const VkExtent2D& extent() const { return m_extent; }
 
 		//@brief Sets the render pass when it cannot be set in the constructor
 		void set_render_pass(render_pass* a_render_pass) { m_render_pass = a_render_pass; }

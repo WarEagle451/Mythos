@@ -41,13 +41,6 @@ namespace myl::vulkan {
 	class context {
 		VkInstance m_instance;
 
-		/// MYTodo: Compatibilty for kohi system, Redo and remove
-		VkExtent2D m_cached_framebuffer_extent;
-		VkExtent2D m_framebuffer_extent;
-		u64 m_framebuffer_size_generation; /// MYTemp: What do these do?
-		u64 m_framebuffer_size_last_generation; /// MYTemp: What do these do?
-		///
-
 #ifdef MYL_VK_ENABLE_VALIDATION_LAYERS
 		VkDebugUtilsMessengerEXT m_debug_messenger;
 #endif
@@ -97,10 +90,6 @@ namespace myl::vulkan {
 		swapchain_support_info& swapchain_support_info() { return m_swapchain_support_info; }
 		device_queue_indices& queue_indices() { return m_queue_indices; }
 		VkFormat& depth_format() { return m_depth_format; } /// MYTodo: Should not be a reference
-		VkExtent2D& cached_framebuffer_extent() { return m_cached_framebuffer_extent; }
-		VkExtent2D& framebuffer_extent() { return m_framebuffer_extent; }
-		u64& framebuffer_size_generation() { return m_framebuffer_size_generation; } /// MYTodo: Should not be a reference
-		u64& framebuffer_size_last_generation() { return m_framebuffer_size_last_generation; } /// MYTodo: Should not be a reference
 
 		u32 find_memory_index(u32 a_type_filter, u32 a_property_flags) const;
 

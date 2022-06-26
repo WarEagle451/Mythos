@@ -157,7 +157,7 @@ namespace myl::vulkan {
 		MYL_VK_ASSERT(vkCreateDescriptorPool, m_context.device(), &global_pool_info, VK_NULL_HANDLE, &m_global_descriptor_pool);
 
 		// Pipeline creation
-		VkExtent2D swapchain_extent = m_context.framebuffer_extent();
+		VkExtent2D swapchain_extent = a_swapchain.extent();
 
 		VkViewport viewport{
 			.x = 0.f,

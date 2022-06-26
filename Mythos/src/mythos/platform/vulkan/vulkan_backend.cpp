@@ -3,19 +3,19 @@
 #include "vulkan_shader.hpp"
 
 #include <mythos/core/log.hpp>
+#include <mythos/core/app.hpp>
 #include <mythos/math/vec3.hpp>
 
 namespace myl::vulkan {
 	backend::backend()
 		: m_context()
-		, m_swapchain(m_context, nullptr, m_context.framebuffer_extent())
-		, m_main_render_pass(m_context, m_swapchain, f32vec4{ .2f, .2f, .2f, 1.f }, 0.f, 0.f, m_context.framebuffer_extent(), 1.f, 0) {
+		, m_cached_window_extent(VkExtent2D(app::get().window()->size().x, app::get().window()->size().y))
+		, m_swapchain(m_context, nullptr, m_cached_window_extent)
+		, m_main_render_pass(m_context, m_swapchain, f32vec4{ .2f, .2f, .2f, 1.f }, 0.f, 0.f, m_swapchain.extent(), 1.f, 0) {
 		m_swapchain.set_render_pass(&m_main_render_pass);
 		m_swapchain.regenerate_framebuffers(m_main_render_pass.extent());
-		MYL_CORE_INFO("Created framebuffers");
 
 		m_context.create_command_buffers(m_swapchain);
-		MYL_CORE_INFO("Created command buffers");
 
 		m_shader = create_shader("resources/shaders/shader.glsl");
 
@@ -36,8 +36,6 @@ namespace myl::vulkan {
 		m_context.upload(m_context.graphics_cmd_pool(), 0, m_context.graphics_queue(), *m_context.vertex_buffer(), 0, sizeof(f32vec3) * vert_count, verts);
 		m_context.upload(m_context.graphics_cmd_pool(), 0, m_context.graphics_queue(), *m_context.index_buffer(), 0, sizeof(u32) * index_count, indices);
 		/// End of temp code
-
-		MYL_CORE_INFO("Created Vulkan backend");
 	}
 
 	backend::~backend() {
@@ -48,7 +46,6 @@ namespace myl::vulkan {
 		// Destroyed m_main_render_pass
 		// Destroyed m_swapchain
 		// Destroyed m_context
-		MYL_CORE_INFO("Destroyed Vulkan backend");
 	}
 
 	bool backend::begin() {
@@ -64,7 +61,7 @@ namespace myl::vulkan {
 		}
 
 		// Check if the framebuffer has been resized. If so, a new swapchain must be created.
-		if (m_context.framebuffer_size_generation() != m_context.framebuffer_size_last_generation()) {
+		if (m_cached_window_extent.width != m_swapchain.extent().width || m_cached_window_extent.height != m_swapchain.extent().height) {
 			VkResult result = vkDeviceWaitIdle(m_context.device());
 			if (!result_is_success(result)) {
 				MYL_CORE_ERROR("Vulkan backend::begin vkDeviceWaitIdle (2) failed: '{}'", VkResult_to_string(result, true));
@@ -72,7 +69,7 @@ namespace myl::vulkan {
 			}
 		
 			// If the swapchain recreation failed (because, for example, the window was minimized), boot out before unsetting the flag.
-			if (!m_swapchain.recreate(m_context.cached_framebuffer_extent()))
+			if (!m_swapchain.recreate(m_cached_window_extent))
 				return false;
 		
 			MYL_CORE_INFO("Resized, booting.");
@@ -97,9 +94,9 @@ namespace myl::vulkan {
 		// Dynamic state
 		VkViewport viewport{
 			.x = 0.f,
-			.y = static_cast<f32>(m_context.framebuffer_extent().height),
-			.width = static_cast<f32>(m_context.framebuffer_extent().width),
-			.height = -static_cast<f32>(m_context.framebuffer_extent().height),
+			.y = static_cast<f32>(m_swapchain.extent().height),
+			.width = static_cast<f32>(m_swapchain.extent().width),
+			.height = -static_cast<f32>(m_swapchain.extent().height),
 			.minDepth = 0.f,
 			.maxDepth = 1.f
 		};
@@ -107,13 +104,13 @@ namespace myl::vulkan {
 		// Scissor
 		VkRect2D scissor{
 			.offset = { .x = 0, .y = 0 },
-			.extent = m_context.framebuffer_extent()
+			.extent = m_swapchain.extent()
 		};
 
 		vkCmdSetViewport(cmd_buffer.handle(), 0, 1, &viewport);
 		vkCmdSetScissor(cmd_buffer.handle(), 0, 1, &scissor);
 
-		m_main_render_pass.extent() = m_context.framebuffer_extent();
+		m_main_render_pass.extent() = m_swapchain.extent();
 
 		// Begin the render pass.
 		m_main_render_pass.begin(&cmd_buffer, m_swapchain.framebuffers()[m_context.image_index()].handle());
@@ -200,9 +197,7 @@ namespace myl::vulkan {
 	}
 
 	void backend::on_window_resize(const u32vec2& a_size) {
-		// Update the "framebuffer size generation", a counter which indicates when the framebuffer size has been updated.
-		m_context.cached_framebuffer_extent() = VkExtent2D{ .width = a_size.w, .height = a_size.h };
-		m_context.framebuffer_size_generation()++;
+		m_cached_window_extent = VkExtent2D{ .width = a_size.w, .height = a_size.h };
 	}
 
 	std::shared_ptr<render::shader> backend::create_shader(const std::filesystem::path& a_file) {

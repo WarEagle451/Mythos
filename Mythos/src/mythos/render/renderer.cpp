@@ -25,6 +25,7 @@ namespace myl::render {
 
 	void renderer::init(render::api a_api) {
 		s_api = (a_api == api::none) ? choose_renderer_api() : a_api;
+		MYL_CORE_INFO("Renderer API '{}' selected", api_to_string(s_api));
 
 		/// MYTodo: Allocate data for vertexes
 

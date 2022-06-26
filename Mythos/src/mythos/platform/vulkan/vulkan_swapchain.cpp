@@ -21,38 +21,28 @@ namespace myl::vulkan {
  
 	swapchain::swapchain(context& a_context, render_pass* a_render_pass, const VkExtent2D& a_extent)
 		: m_context(a_context)
+		, m_extent{ .width = (a_extent.width == 0) ? 800 : a_extent.width, .height = (a_extent.height == 0) ? 600 : a_extent.height }
 		, m_render_pass(a_render_pass) {
-		create_swapchain(a_extent);
-		MYL_CORE_INFO("Created swapchain");
-		create_depth_resources(a_extent);
-		MYL_CORE_INFO("Created depth resources");
+		create_swapchain(m_extent);
+		create_depth_resources(m_extent);
 		create_images();
-		MYL_CORE_INFO("Created images");
 
 		// Framebuffers are generated only if a valid render pass is provided,
 		// otherwise they must be generated before the swapchain is used
-		if (a_render_pass) {
-			regenerate_framebuffers(a_extent);
-			MYL_CORE_INFO("Created framebuffers");
-		}
+		if (a_render_pass)
+			regenerate_framebuffers(m_extent);
 
 		create_sync_objects();
-		MYL_CORE_INFO("Created sync objects");
 	}
 
 	swapchain::~swapchain() {
 		vkDeviceWaitIdle(m_context.device()); // Wait for Vulkan operations to be done
 
 		destroy_sync_objects();
-		MYL_CORE_INFO("Destroyed sync objects");
 		destroy_framebuffers();
-		MYL_CORE_INFO("Destroyed framebuffers");
 		destroy_image_views();
-		MYL_CORE_INFO("Destroyed images");
 		destroy_depth_resources();
-		MYL_CORE_INFO("Destroyed depth resources");
 		destroy_swapchain();
-		MYL_CORE_INFO("Destroyed swapchain");
 	}
 
 	bool swapchain::recreate(const VkExtent2D& a_extent) {
@@ -60,6 +50,8 @@ namespace myl::vulkan {
 			return false; // If already being recreated, do not try again
 		if (a_extent.width == 0 || a_extent.height == 0)
 			return false; // Can't recreate swapchain when width or height is 0
+		if (a_extent.width == m_extent.width && a_extent.height == m_extent.height)
+			return false; // Don't recreate if extent is already correct
 
 		m_recreating = true;
 		vkDeviceWaitIdle(m_context.device()); // Wait for Vulkan operations to be done
@@ -75,31 +67,20 @@ namespace myl::vulkan {
 		destroy_depth_resources();
 		destroy_image_views();
 		destroy_swapchain();
+
+		m_extent = a_extent;
+		m_render_pass->x() = 0;
+		m_render_pass->y() = 0;
+		m_render_pass->extent() = m_extent;
 		
-		create_swapchain(a_extent);
+		create_swapchain(m_extent);
 		create_images();
-		create_depth_resources(a_extent);
-		regenerate_framebuffers(a_extent);
+		create_depth_resources(m_extent);
+		regenerate_framebuffers(m_extent);
 		create_sync_objects();
-
-		/// MYTodo: Clean up here down
-
-		m_context.framebuffer_extent() = m_context.cached_framebuffer_extent(); /// MYTodo: This is not ideal
-		m_render_pass->extent() = m_context.framebuffer_extent();
-		m_context.cached_framebuffer_extent() = VkExtent2D{ 0, 0 };
-		m_context.framebuffer_size_last_generation() = m_context.framebuffer_size_generation();
 
 		for (auto& cmd_buf : m_context.graphics_command_buffers())
 			cmd_buf.deallocate(m_context.graphics_cmd_pool());
-
-		destroy_framebuffers();
-
-		m_render_pass->x() = 0;
-		m_render_pass->y() = 0;
-		m_render_pass->extent() = m_context.framebuffer_extent();
-
-		regenerate_framebuffers(m_render_pass->extent());
-
 		m_context.create_command_buffers(*this);
 
 		m_recreating = false;
@@ -121,7 +102,7 @@ namespace myl::vulkan {
 		VkResult result = vkQueuePresentKHR(a_present_queue, &present_info);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
 			// Swapchain is out of date, suboptimal or a framebuffer resize has occurred. Trigger swapchain recreation.
-			recreate(m_context.framebuffer_extent());
+			recreate(m_extent);
 		else if (result != VK_SUCCESS)
 			MYL_CORE_FATAL("Failed to present swap chain image!");
 
@@ -133,7 +114,7 @@ namespace myl::vulkan {
 		VkResult result = vkAcquireNextImageKHR(m_context.device(), m_handle, a_timeout_ns, a_image_available_semaphore, a_fence, a_image_index);
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 			// Trigger swapchain recreation, then boot out of the render loop.
-			recreate(m_context.framebuffer_extent());
+			recreate(m_extent);
 			return false;
 		}
 		else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {

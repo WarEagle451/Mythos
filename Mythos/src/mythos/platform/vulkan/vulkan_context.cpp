@@ -76,9 +76,7 @@ namespace myl::vulkan {
 		}
 	}
 
-	context::context()
-		: m_cached_framebuffer_extent{ .width = app::get().window()->size().x, .height = app::get().window()->size().y }
-		, m_framebuffer_extent{ .width = (m_cached_framebuffer_extent.width == 0) ? 800 : m_cached_framebuffer_extent.width, .height = (m_cached_framebuffer_extent.height == 0) ? 600 : m_cached_framebuffer_extent.height } { /// MYTodo: Don't like this big piece of code
+	context::context() {
 		create_instance();
 		create_surface();
 		create_device();
@@ -279,7 +277,6 @@ namespace myl::vulkan {
 		vkGetDeviceQueue(m_device, m_queue_indices.transfer_index, 0, &m_transfer_queue);
 		vkGetDeviceQueue(m_device, m_queue_indices.present_index, 0, &m_present_queue);
 		vkGetDeviceQueue(m_device, m_queue_indices.compute_index, 0, &m_compute_queue);
-		MYL_CORE_INFO("Queues obtained");
 	}
 
 	void context::detect_depth_format() {
@@ -377,19 +374,16 @@ namespace myl::vulkan {
 		create_info.pNext = &debug_create_info;
 #endif
 		MYL_VK_VERIFY(vkCreateInstance, &create_info, VK_NULL_HANDLE, &m_instance);
-		MYL_CORE_INFO("Created Vulkan instance");
 
 #ifdef MYL_VK_ENABLE_VALIDATION_LAYERS
 		PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkCreateDebugUtilsMessengerEXT");
 		MYL_CORE_ASSERT(func, "Failed to create debug messenger"); /// MYTodo: Should not be a core assert
 		MYL_VK_ASSERT(func, m_instance, &debug_create_info, VK_NULL_HANDLE, &m_debug_messenger);
-		MYL_CORE_INFO("Created Vulkan debugger");
 #endif
 	}
 
 	void context::create_surface() {
 		m_surface = platform_create_surface(m_instance);
-		MYL_CORE_INFO("Created Vulkan surface");
 	}
 
 	void context::create_device() {
@@ -451,7 +445,6 @@ namespace myl::vulkan {
 		};
 
 		MYL_VK_ASSERT(vkCreateDevice, m_physical_device, &create_info, VK_NULL_HANDLE, &m_device);
-		MYL_CORE_INFO("Created logical device");
 	}
 
 	void context::create_command_pool() {
@@ -462,7 +455,6 @@ namespace myl::vulkan {
 		};
 
 		MYL_VK_ASSERT(vkCreateCommandPool, m_device, &info, VK_NULL_HANDLE, &m_graphics_command_pool);
-		MYL_CORE_INFO("Created graphics command pool");
 	}
 
 	void context::destroy_command_pool() {
@@ -470,29 +462,23 @@ namespace myl::vulkan {
 			if (buffer.handle() != VK_NULL_HANDLE)
 				buffer.deallocate(m_graphics_command_pool);
 		m_graphics_command_buffers.clear();
-		MYL_CORE_INFO("Destroyed command buffers");
 
 		vkDestroyCommandPool(m_device, m_graphics_command_pool, VK_NULL_HANDLE);
-		MYL_CORE_INFO("Destroyed graphics command pool");
 	}
 
 	void context::destroy_device() {
 		vkDestroyDevice(m_device, VK_NULL_HANDLE);
-		MYL_CORE_INFO("Destroyed logical device");
 	}
 
 	void context::destroy_surface() {
 		vkDestroySurfaceKHR(m_instance, m_surface, VK_NULL_HANDLE);
-		MYL_CORE_INFO("Destroyed Vulkan surface");
 	}
 
 	void context::destroy_instance() {
 #ifdef MYL_VK_ENABLE_VALIDATION_LAYERS
 		PFN_vkDestroyDebugUtilsMessengerEXT func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(m_instance, "vkDestroyDebugUtilsMessengerEXT");
 		func(m_instance, m_debug_messenger, VK_NULL_HANDLE);
-		MYL_CORE_INFO("Destroyed Vulkan debugger");
 #endif
 		vkDestroyInstance(m_instance, VK_NULL_HANDLE);
-		MYL_CORE_INFO("Destroyed Vulkan instance");
 	}
 }

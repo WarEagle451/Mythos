@@ -9,6 +9,7 @@
 namespace myl::vulkan {
 	class backend : public render::backend {
 		context m_context;
+		VkExtent2D m_cached_window_extent;
 		swapchain m_swapchain;
 		render_pass m_main_render_pass;
 
