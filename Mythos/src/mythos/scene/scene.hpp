@@ -1,4 +1,6 @@
 #pragma once
+#include <mythos/core/timestep.hpp>
+
 /// MYTemp:
 #include <mythos/math/matrix.hpp>
 #include <mythos/math/projection.hpp>
@@ -38,7 +40,7 @@ namespace myl {
 		MYL_API scene() = default;
 		MYL_API ~scene() = default;
 
-		MYL_API void update();
+		MYL_API void update(timestep);
 		MYL_API void render();
 	};
 }

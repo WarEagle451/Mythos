@@ -23,8 +23,8 @@ void game_layer::on_event(event& a_event) {
 	event_dispatcher dispatcher(a_event);
 }
 
-void game_layer::update(timestep) {
-	m_scene.update();
+void game_layer::update(timestep ts) {
+	m_scene.update(ts);
 }
 
 void game_layer::render() {

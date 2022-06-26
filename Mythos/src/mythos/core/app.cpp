@@ -10,7 +10,8 @@ namespace myl {
 	app* app::s_instance = nullptr;
 
 	app::app(const app_info& a_info, const config& a_config)
-		: m_info(a_info) {
+		: m_info(a_info)
+		, m_target_frame_time(1.0 / 60.0) { // 60 FPS
 		loggers::init(); // Asserts contain a call to MYL_CORE_FATAL
 		MYL_CORE_INFO("Creating application");
 		MYL_CORE_ASSERT(s_instance == nullptr, "Application has already been created");
@@ -41,11 +42,12 @@ namespace myl {
 
 	void app::run() {
 		m_clock.reset(); // Start time needs to be since app started running
+		m_last_frame_time = m_clock.elapsed();
 
 		while (m_running) {
-			std::chrono::nanoseconds time = m_clock.elapsed();
-			timestep ts = std::chrono::duration<f64, std::chrono::seconds::period>(time - m_last_frame_time).count();
-			m_last_frame_time = time;
+			std::chrono::nanoseconds current_frame_time = m_clock.elapsed();
+			timestep ts = std::chrono::duration<f64, std::chrono::seconds::period>(current_frame_time - m_last_frame_time).count();
+			m_last_frame_time = current_frame_time;
 
 			if (!m_suspended) {
 				for (auto& l : m_layer_stack) l->update(ts);
@@ -55,13 +57,9 @@ namespace myl {
 			}
 
 			m_window->update();
-			
-			if (!m_suspended) { /// MYTodo: Do vsync the right way (Vulkan use fences)
-				static constexpr std::chrono::nanoseconds target_frame_time(static_cast<i64>((1.0 / 60.0) * 1'000'000'000));
-				std::chrono::nanoseconds time_remaining = target_frame_time - (m_clock.elapsed() - m_last_frame_time);
-				while (time_remaining.count() > 0) /// MYBug: Why is this limiting at ~33 fps
-					time_remaining = target_frame_time - (m_clock.elapsed() - m_last_frame_time);
-			}
+
+			while (ts < m_target_frame_time)
+				ts = std::chrono::duration<f64, std::chrono::seconds::period>(m_clock.elapsed() - current_frame_time).count();
 		}
 	}
 

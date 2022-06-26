@@ -30,6 +30,7 @@ namespace myl {
 
 		high_resolution_timer m_clock;
 		std::chrono::nanoseconds m_last_frame_time;
+		f64 m_target_frame_time;
 
 		event_callback m_event_callback; // event callback needs to refer to a member
 	public:
@@ -47,12 +48,14 @@ namespace myl {
 
 		MYL_API MYL_NO_DISCARD window* window() { return m_window.get(); }
 		MYL_API MYL_NO_DISCARD app_info& info() { return m_info; }
-		MYL_API void close() { m_running = false; }
 
 		MYL_API void run();
 
 		MYL_API void push_layer(layer_stack::layer_ptr);
 		MYL_API void push_overlay(layer_stack::layer_ptr);
+
+		MYL_API void close() { m_running = false; }
+		MYL_API void set_fps(f64 a_fps) { m_target_frame_time = 1.0 / a_fps; }
 	private:
 		bool on_window_close(event_window_close&);
 		bool on_window_resize(event_window_resize&);

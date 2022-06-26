@@ -42,9 +42,10 @@ namespace myl {
 	}
 
 	static f32 angle = 0.f; /// MYTemp:
+	static f32 rotations_pre_second_rads = radians(90.f);
 
-	void scene::update() {
-		angle += .01f;
+	void scene::update(timestep ts) {
+		angle += rotations_pre_second_rads * static_cast<f32>(ts);
 	}
 
 	void scene::render() {
