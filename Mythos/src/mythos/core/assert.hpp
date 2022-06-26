@@ -14,7 +14,6 @@
 #	define MYL_DEBUGBREAK()
 #endif
 
-/// MYTodo: Use source location
 #define MYL_MAKE_ASSERT(condition, output, msg, ...) { if (!(condition)) MYL_UNLIKELY { output(msg, __VA_ARGS__); MYL_DEBUGBREAK(); } }
 #if !defined(MYL_DISABLE_ASSERTS) && (defined(MYL_ENABLE_ASSERTS) || defined(MYL_BUILD_DEBUG))
 #	define MYL_INTERNAL_ASSERT_MSG(check, ...) MYL_MAKE_ASSERT(check, MYL_CORE_FATAL, "Assertion failed: {0}", __VA_ARGS__)

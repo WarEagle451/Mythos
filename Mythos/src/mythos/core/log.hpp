@@ -8,7 +8,6 @@
 namespace myl {
 	class loggers {
 		static std::shared_ptr<spdlog::logger> s_core;
-		/// MYTodo: Client logger
 	public:
 		static void init();
 

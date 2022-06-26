@@ -131,8 +131,6 @@ namespace myl::windows {
 					} break;
 					case RIM_TYPEKEYBOARD: // Keyboard
 						if (app_in_forground) {
-							/// RI_KEY_TERMSRV_SET_LED;
-							/// RI_KEY_TERMSRV_SET_SHAWDOW;
 							auto& keyboard = raw.data.keyboard;
 							USHORT scancode = keyboard.MakeCode | ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0);
 							input::state state = (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down;
@@ -144,9 +142,7 @@ namespace myl::windows {
 						MYL_CORE_WARN("Unknown device sent WM_INPUT");
 						/// MYTodo: Non-keyboard, non-mouse input
 						break;
-					default:
-						/// MYTodo: DefRawInputProc();
-						break;
+					default: break;
 				}
 			} return 0;
 			///case WM_INPUT_DEVICE_CHANGE:
