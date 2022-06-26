@@ -49,6 +49,7 @@ namespace myl {
 			timestep ts = std::chrono::duration<f64, std::chrono::seconds::period>(current_frame_time - m_last_frame_time).count();
 			m_last_frame_time = current_frame_time;
 
+			m_window->update();
 			if (!m_suspended) {
 				for (auto& l : m_layer_stack) l->update(ts);
 				for (auto& l : m_layer_stack) l->render();
@@ -56,9 +57,7 @@ namespace myl {
 				input::update(); // Called after because it clears current values for next frame
 			}
 
-			m_window->update();
-
-			while (ts < m_target_frame_time)
+			while (ts < m_target_frame_time) /// MYTodo: Should tie into vsync at some point
 				ts = std::chrono::duration<f64, std::chrono::seconds::period>(m_clock.elapsed() - current_frame_time).count();
 		}
 	}
