@@ -97,7 +97,6 @@ namespace myl::windows {
 						/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
 						if (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0) { // Mouse move
 							f32vec2 move{ static_cast<f32>(raw.data.mouse.lLastX), static_cast<f32>(raw.data.mouse.lLastY) };
-							MYL_CORE_DEBUG("Mouse delta: [{}, {}]", move.x, move.y);
 							raw.data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
 								input::process_cursor_delta_given_absolute(move) :
 								input::process_cursor_delta(move);
