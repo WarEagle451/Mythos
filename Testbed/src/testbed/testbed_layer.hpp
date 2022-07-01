@@ -9,7 +9,7 @@ namespace tb {
 
 		void on_attach() override;
 		void on_detach() override;
-		void on_event(myl::event&) override;
+		void on_event(myl::event::event_base&) override;
 		void update(myl::timestep) override;
 		void render() override;
 	};

@@ -62,15 +62,15 @@ namespace myl::windows {
 	LRESULT CALLBACK win32_process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) {
 		switch (msg) {
 			case WM_CLOSE: {
-				event_window_close e{};
-				fire_event(e);
+				event::window_close e{};
+				event::fire(e);
 			} return 0;
 			case WM_SIZE: {
 				/// MYTodo: w_param contains SIZE_MAXHIDE, SIZE_MAXIMIZED, SIZE_MAXSHOW, SIZE_MINIMIZED, SIZE_RESTORED
 				/// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-size
 
-				event_window_resize e(LOWORD(l_param), HIWORD(l_param));
-				fire_event(e);
+				event::window_resize e(LOWORD(l_param), HIWORD(l_param));
+				event::fire(e);
 			} break;
 				/// MYTodo: Eventually get this to be processed by WM_INPUT
 			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position

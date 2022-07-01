@@ -16,37 +16,37 @@
 #define TESTBED_ENABLE_EVENT_TESTS 1
 
 namespace tb {
-	static bool key_typed(myl::event_key_typed& e) {
+	static bool key_typed(myl::event::key_typed& e) {
 		MYL_CORE_DEBUG("Key typed: '{}'", static_cast<char>(e.key()));
 		return true;
 	}
 
-	static bool key_pressed(myl::event_key_pressed& e) {
+	static bool key_pressed(myl::event::key_pressed& e) {
 		MYL_CORE_TRACE("Key '{}' pressed", key_to_string(e.key()));
 		return true;
 	}
 
-	static bool key_released(myl::event_key_released& e) {
+	static bool key_released(myl::event::key_released& e) {
 		MYL_CORE_TRACE("Key '{}' released", key_to_string(e.key()));
 		return true;
 	}
 
-	static bool mouse_pressed(myl::event_mouse_pressed& e) {
+	static bool mouse_pressed(myl::event::mouse_pressed& e) {
 		MYL_CORE_TRACE("Mouse button(s) '{}' pressed", mouse_buttons_to_string(e.buttons()));
 		return true;
 	}
 
-	static bool mouse_released(myl::event_mouse_released& e) {
+	static bool mouse_released(myl::event::mouse_released& e) {
 		MYL_CORE_TRACE("Mouse button(s) '{}' released", mouse_buttons_to_string(e.buttons()));
 		return true;
 	}
 
-	static bool mouse_scrolled(myl::event_mouse_scrolled& e) {
+	static bool mouse_scrolled(myl::event::mouse_scrolled& e) {
 		MYL_CORE_TRACE("Mouse scrolled: [{}, {}]", e.delta().x, e.delta().y);
 		return true;
 	}
 
-	static bool mouse_moved(myl::event_mouse_moved& e) {
+	static bool mouse_moved(myl::event::mouse_moved& e) {
 		MYL_CORE_TRACE("Mouse moved: [{}, {}]", e.position().x, e.position().y);
 		return true;
 	}
@@ -72,16 +72,16 @@ namespace tb {
 		MYL_CORE_TRACE("Testbed layer on_detach");
 	}
 
-	void testbed_layer::on_event(myl::event& a_event) {
-		myl::event_dispatcher dispatcher(a_event);
+	void testbed_layer::on_event(myl::event::event_base& a_event) {
+		myl::event::dispatcher dispatcher(a_event);
 #if TESTBED_ENABLE_EVENT_TESTS
-		dispatcher.dispatch<myl::event_key_pressed>(key_pressed);
-		dispatcher.dispatch<myl::event_key_released>(key_released);
-		dispatcher.dispatch<myl::event_mouse_pressed>(mouse_pressed);
-		dispatcher.dispatch<myl::event_mouse_released>(mouse_released);
-		dispatcher.dispatch<myl::event_mouse_scrolled>(mouse_scrolled);
-		dispatcher.dispatch<myl::event_mouse_moved>(mouse_moved);
-		dispatcher.dispatch<myl::event_key_typed>(key_typed);
+		dispatcher.dispatch<myl::event::key_pressed>(key_pressed);
+		dispatcher.dispatch<myl::event::key_released>(key_released);
+		dispatcher.dispatch<myl::event::mouse_pressed>(mouse_pressed);
+		dispatcher.dispatch<myl::event::mouse_released>(mouse_released);
+		dispatcher.dispatch<myl::event::mouse_scrolled>(mouse_scrolled);
+		dispatcher.dispatch<myl::event::mouse_moved>(mouse_moved);
+		dispatcher.dispatch<myl::event::key_typed>(key_typed);
 #endif
 	}
 

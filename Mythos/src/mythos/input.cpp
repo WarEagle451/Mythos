@@ -47,25 +47,25 @@ namespace myl {
 			s_key_states[a_code] = a_state;
 
 			if (a_state == state::up) {
-				event_key_released e(a_code);
-				fire_event(e);
+				event::key_released e(a_code);
+				event::fire(e);
 			}
 			else {
-				event_key_pressed e(a_code, false);
-				fire_event(e);
+				event::key_pressed e(a_code, false);
+				fire(e);
 			}
 		}
 		else if (a_state == state::down) { // Key repeats
-			event_key_pressed e(a_code, true);
-			fire_event(e);
+			event::key_pressed e(a_code, true);
+			event::fire(e);
 		}
 	}
 
 	void input::process_key_typed(u32 a_char) {
 		if (a_char < 32 || (a_char > 126 && a_char < 160)) /// MYTodo: Do this better
 			return;
-		event_key_typed e(a_char);
-		fire_event(e);
+		event::key_typed e(a_char);
+		event::fire(e);
 	}
 
 	void input::process_mouse_buttons_up(mouse_code a_code) {
@@ -73,9 +73,9 @@ namespace myl {
 		// old & new = 0010. Therefor bit 2 has changed state to up
 		mouse_code changed_buttons = s_mouse_button_states & a_code;
 		if (changed_buttons != 0) { // Only update if there is a change
-		s_mouse_button_states &= ~changed_buttons; // Clear bits to up
-			event_mouse_released e(changed_buttons);
-			fire_event(e);
+			s_mouse_button_states &= ~changed_buttons; // Clear bits to up
+			event::mouse_released e(changed_buttons);
+			event::fire(e);
 		}
 	}
 
@@ -85,8 +85,8 @@ namespace myl {
 		mouse_code changed_buttons = ~(s_mouse_button_states | ~a_code); // Getting changed down buttons
 		if (changed_buttons != 0) { // Only update if there is a change
 			s_mouse_button_states |= changed_buttons; // Set bits to down
-			event_mouse_pressed e(changed_buttons);
-			fire_event(e);
+			event::mouse_pressed e(changed_buttons);
+			event::fire(e);
 		}
 	}
 
@@ -106,14 +106,14 @@ namespace myl {
 	void input::process_window_cursor_position(const f32vec2& a_position) {
 		if (s_window_cursor_position.x != a_position.x || s_window_cursor_position.y != a_position.y) {  // Only update when they change state
 			s_window_cursor_position = a_position;
-			event_mouse_moved e(s_window_cursor_position);
-			fire_event(e);
+			event::mouse_moved e(s_window_cursor_position);
+			event::fire(e);
 		}
 	}
 
 	void input::process_mouse_wheel(const f32vec2& a_scroll_delta) {
-		event_mouse_scrolled e(a_scroll_delta);
-		fire_event(e);
+		event::mouse_scrolled e(a_scroll_delta);
+		event::fire(e);
 	}
 
 	input::state input::previous_key_state(key_code a_code) {

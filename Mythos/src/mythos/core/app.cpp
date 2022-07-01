@@ -23,7 +23,7 @@ namespace myl {
 		m_window = window::create(a_config.window);
 
 		m_event_callback = MYL_BIND_EVENT_FN(app::on_event);
-		set_event_callback(m_event_callback);
+		event::set_event_callback(m_event_callback);
 
 		render::renderer::init();
 		MYL_CORE_INFO("Application initialized");
@@ -70,12 +70,12 @@ namespace myl {
 		m_layer_stack.push_overlay(std::move(a_overlay));
 	}
 
-	bool app::on_window_close(event_window_close& a_event) {
+	bool app::on_window_close(event::window_close& a_event) {
 		close();
 		return true;
 	}
 
-	bool app::on_window_resize(event_window_resize& a_event) {
+	bool app::on_window_resize(event::window_resize& a_event) {
 		if (m_window->size() == u32vec2{ 0, 0 })
 			return true; // Don't trigger a resize if no change
 
@@ -90,10 +90,10 @@ namespace myl {
 		return false;
 	}
 
-	void app::on_event(event& a_event) { /// MYTodo: Instead of this have listeners that have a function pointer, this will also allow them to unsubscribe, Would this be faster? 
-		event_dispatcher dispatcher(a_event);
-		dispatcher.dispatch<event_window_close>(MYL_BIND_EVENT_FN(app::on_window_close));
-		dispatcher.dispatch<event_window_resize>(MYL_BIND_EVENT_FN(app::on_window_resize));
+	void app::on_event(event::event_base& a_event) { /// MYTodo: Instead of this have listeners that have a function pointer, this will also allow them to unsubscribe, Would this be faster? 
+		event::dispatcher dispatcher(a_event);
+		dispatcher.dispatch<event::window_close>(MYL_BIND_EVENT_FN(app::on_window_close));
+		dispatcher.dispatch<event::window_resize>(MYL_BIND_EVENT_FN(app::on_window_resize));
 
 		for (auto& layer : m_layer_stack) {
 			if (a_event.handled)

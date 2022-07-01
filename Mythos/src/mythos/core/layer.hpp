@@ -18,7 +18,7 @@ namespace myl {
 
 		MYL_API virtual void on_attach() = 0;
 		MYL_API virtual void on_detach() = 0;
-		MYL_API virtual void on_event(event&) = 0;
+		MYL_API virtual void on_event(event::event_base&) = 0;
 		MYL_API virtual void update(timestep) = 0;
 		MYL_API virtual void render() = 0;
 

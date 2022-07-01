@@ -7,11 +7,9 @@
 #include <memory> /// For macro below
 #define MYL_BIND_EVENT_FN(fn) [this](auto&&... a_args) -> decltype(auto) { return this->fn(std::forward<decltype(a_args)>(a_args)...); }
 
-/// MYTodo: Event design: Need ability to register and unregister events
-
-namespace myl {
+namespace myl::event {
 	//@brief User defined event types should not conflict with the engine event types below
-	enum class event_type {
+	enum class type {
 		none,
 
 		window_close,
@@ -34,38 +32,40 @@ namespace myl {
 		mouse_scrolled
 	};
 
-	enum class event_category {
-		none = 0,
-		application = 1 << 0,
-		input = 1 << 1,
-		keyboard = 1 << 2,
-		mouse = 1 << 3,
-		mouse_button = 1 << 4
-	};
+	namespace category {
+		enum {
+			none = 0,
+			application = 1 << 0,
+			input = 1 << 1,
+			keyboard = 1 << 2,
+			mouse = 1 << 3,
+			mouse_button = 1 << 4
+		};
+	}
 
-#define MYL_IMPL_EVENT_CATEGORY(category) MYL_API MYL_NO_DISCARD constexpr virtual i32 category_flags() const override { return category; }
+#define MYL_IMPL_EVENT_CATEGORY(category_) MYL_API MYL_NO_DISCARD constexpr virtual myl::i32 category_flags() const override { return category_; }
 #define MYL_IMPL_EVENT_TYPE(type_)\
-	MYL_API MYL_NO_DISCARD static constexpr event_type static_type() { return event_type::type_; }\
-	MYL_API MYL_NO_DISCARD constexpr virtual event_type type() const override { return static_type(); }\
+	MYL_API MYL_NO_DISCARD static constexpr myl::event::type static_type() { return myl::event::type::type_; }\
+	MYL_API MYL_NO_DISCARD constexpr virtual myl::event::type type() const override { return static_type(); }\
 	MYL_API MYL_NO_DISCARD constexpr virtual const char* name() const override { return #type_; }
 
-	class event {
+	class event_base {
 	public:
-		MYL_API constexpr virtual ~event() = default;
+		MYL_API constexpr virtual ~event_base() = default;
 
-		MYL_API MYL_NO_DISCARD constexpr virtual event_type type() const = 0;
+		MYL_API MYL_NO_DISCARD constexpr virtual type type() const = 0;
 		MYL_API MYL_NO_DISCARD constexpr virtual const char* name() const = 0;
 		MYL_API MYL_NO_DISCARD constexpr virtual i32 category_flags() const = 0;
 
-		constexpr bool MYL_NO_DISCARD is_in_category(event_category a_category) { return category_flags() & static_cast<i32>(a_category); }
+		MYL_API MYL_NO_DISCARD constexpr bool is_in_category(i32 a_category) { return category_flags() & a_category; }
 
 		bool handled = false;
 	};
 
-	class event_dispatcher {
-		event& m_event;
+	class dispatcher {
+		event_base& m_event;
 	public:
-		MYL_API constexpr event_dispatcher(event& a_event)
+		MYL_API constexpr dispatcher(event_base& a_event)
 			: m_event(a_event) {}
 
 		//@param a_func: Must return a bool
@@ -80,15 +80,8 @@ namespace myl {
 		}
 	};
 
-	using event_callback = std::function<void(event&)>;
+	using event_callback = std::function<void(event_base&)>;
 
 	void set_event_callback(event_callback&);
-	MYL_API void fire_event(event&);
-
-	/// MYTodo: New event fire?
-	///template<typename EventType, typename... Args>
-	///void fire_event(Args&&... args) {
-	///	EventType e(args...);
-	///	get_event_callback()(e);
-	///}
+	MYL_API void fire(event_base&);
 }

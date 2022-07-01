@@ -32,7 +32,7 @@ namespace myl {
 		std::chrono::nanoseconds m_last_frame_time;
 		f64 m_target_frame_time;
 
-		event_callback m_event_callback; // event callback needs to refer to a member
+		event::event_callback m_event_callback; // event callback needs to refer to a member
 	public:
 		struct config {
 			window::config window{};
@@ -57,9 +57,9 @@ namespace myl {
 		MYL_API void close() { m_running = false; }
 		MYL_API void set_fps(f64 a_fps) { m_target_frame_time = 1.0 / a_fps; }
 	private:
-		bool on_window_close(event_window_close&);
-		bool on_window_resize(event_window_resize&);
+		bool on_window_close(event::window_close&);
+		bool on_window_resize(event::window_resize&);
 
-		void on_event(event&);
+		void on_event(event::event_base&);
 	};
 }
