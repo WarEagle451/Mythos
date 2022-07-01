@@ -5,7 +5,6 @@
 /// MYTemp:
 #include <mythos/core/app.hpp>
 #include <mythos/input.hpp>
-#include <mythos/math/quaternion.hpp>
 #include <mythos/algorithm.hpp>
 
 namespace myl {
@@ -52,12 +51,10 @@ namespace myl {
 		if (render::renderer::begin()) {
 			m_camera.update();
 
-			f32quat rot(forward(f32mat4x4::identity()), angle, false);
-			f32mat4x4 model = quat_to_rotation_matrix(rot, f32vec3::zero()); /// MYTemp: Position
-
+			/// MYTodo: Remove global state
 			render::renderer::backend()->update_global_state(m_camera.projection(), m_camera.view(), f32vec3::zero(), f32vec4::one(), 0); /// MYTemp:
-			render::renderer::backend()->update_object(model); /// MYTodo: hate this style, this should be draw_quad, draw_model
-			
+			render::draw_quad({ 0, 0, 0 }, { 0, 0, angle }, { 1, 1, 1 });
+
 			render::renderer::end();
 		}
 	}

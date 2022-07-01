@@ -46,6 +46,7 @@ namespace myl {
 
 		while (m_running) {
 			std::chrono::nanoseconds current_frame_time = m_clock.elapsed();
+			/// MYTodo: Apparently a variable timestep is bad, change this to Fixed update time step, variable rendering https://gameprogrammingpatterns.com/game-loop.html
 			timestep ts = std::chrono::duration<f64, std::chrono::seconds::period>(current_frame_time - m_last_frame_time).count();
 			m_last_frame_time = current_frame_time;
 
@@ -53,7 +54,6 @@ namespace myl {
 			if (!m_suspended) {
 				for (auto& l : m_layer_stack) l->update(ts);
 				for (auto& l : m_layer_stack) l->render();
-
 				input::update(); // Called after because it clears current values for next frame
 			}
 

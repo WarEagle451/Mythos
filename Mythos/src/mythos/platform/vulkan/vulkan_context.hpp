@@ -63,7 +63,7 @@ namespace myl::vulkan {
 		std::vector<command_buffer> m_graphics_command_buffers;
 		VkFormat m_depth_format; /// MYTodo: Should this be in swapchain?
 
-		std::unique_ptr<buffer> m_vertex_buffer;
+		std::unique_ptr<buffer> m_vertex_buffer; /// MYTodo: Should not be here
 		std::unique_ptr<buffer> m_index_buffer;
 		u64 m_geometry_vertex_offset;
 		u64 m_geometry_index_offset;
