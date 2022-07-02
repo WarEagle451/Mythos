@@ -1,7 +1,10 @@
 #include "uuid.hpp"
 #include "random.hpp"
 
-// m_bytes[0] is the high part of the data
+#include <chrono>
+#include <atomic>
+
+// https://datatracker.ietf.org/doc/html/rfc4122
 
 namespace myl {
 	static const char g_uuid_digits[16]{ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
@@ -34,8 +37,29 @@ namespace myl {
 		}
 	}
 
-	static constexpr void uuid_create_time(u8* bytes){
-		/// MYTodo: UUID gen
+	static void uuid_create_time(u8* bytes) {
+		static constexpr u64 nanoseconds_since_15_october_1582_to_epoch = 12'219'292'800'000'000'000ull; // Magic number!
+		static generator_u64 clock_gen = generator_u64();
+		static std::atomic<u16> clock_sequence = static_cast<u16>(clock_gen());
+
+		u64 nanoseconds_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+		u64 intervals = (nanoseconds_since_15_october_1582_to_epoch + nanoseconds_since_epoch) / 100ull; // RFC states that the time is in 100 nanosecond intervals
+		u64* as_u64 = reinterpret_cast<u64*>(bytes);
+
+		as_u64[0] =
+			(intervals & 0x0000'0000'FFFF'FFFF) << 32 |	// Low 32 bits
+			(intervals & 0x0000'FFFF'0000'0000) >> 16 |	// Mid 16 bits
+			(intervals & 0xFFFF'0000'0000'0000) >> 48;	// High 16 bits
+		as_u64[1] =
+			static_cast<u64>(clock_sequence) << 48 | // 16 bits
+			clock_gen() >> 16; // 48 bits and does not use MAC address for security reasons
+
+		bytes[10] |= 0x01; // If MAC address is replaced with random number, the RFC requires that the least significant bit of the first octet of the node ID should be set to 1
+
+		bytes[6] &= 0x1F; bytes[6] |= 0x10; // Version time
+		bytes[8] &= 0xBF; bytes[8] |= 0x80; // Variant rfc_4122
+
+		++clock_sequence;
 	}
 
 	static constexpr void uuid_create_dce(u8* bytes) {
@@ -53,10 +77,8 @@ namespace myl {
 		as_u64[0] = gen();
 		as_u64[1] = gen();
 
-		bytes[6] &= 0x4F;
-		bytes[6] |= 0x40; // Version random
-		bytes[8] &= 0xBF;
-		bytes[8] |= 0x80; // Variant rfc_4122
+		bytes[6] &= 0x4F; bytes[6] |= 0x40; // Version random
+		bytes[8] &= 0xBF; bytes[8] |= 0x80; // Variant rfc_4122
 	}
 
 	static constexpr void uuid_create_name_sha1(u8* bytes) {
@@ -82,12 +104,12 @@ namespace myl {
 	uuid::uuid(uuid_version a_version) {
 		switch (a_version) {
 			using enum uuid_version;
-			case time:		uuid_create_time(m_bytes); break;
-			case dce:		uuid_create_dce(m_bytes); break;
-			case name_md5:	uuid_create_name_md5(m_bytes); break;
-			case random:	uuid_create_random(m_bytes); break;
-			case name_sha1: uuid_create_name_sha1(m_bytes);
-			default:		uuid_create_unknown(m_bytes); break;
+			case time:		uuid_create_time(m_bytes);		break;
+			case dce:		uuid_create_dce(m_bytes);		break;
+			case name_md5:	uuid_create_name_md5(m_bytes);	break;
+			case random:	uuid_create_random(m_bytes);	break;
+			case name_sha1: uuid_create_name_sha1(m_bytes);	break;
+			default:		uuid_create_unknown(m_bytes);	break;
 		}
 	}
 
@@ -99,7 +121,7 @@ namespace myl {
 		a_bytes[8], a_bytes[9],
 		a_bytes[10], a_bytes[11], a_bytes[12], a_bytes[13], a_bytes[14], a_bytes[15] } {}
 
-	constexpr uuid::uuid(std::string_view a_view)
+	constexpr uuid::uuid(std::string_view a_view) // RFC 4122 Section 3 requires input to be case insensitive
 		: m_bytes{
 		char_to_hex(a_view[0]), char_to_hex(a_view[1]), char_to_hex(a_view[2]), char_to_hex(a_view[3]),
 		char_to_hex(a_view[4]), char_to_hex(a_view[5]),
@@ -134,14 +156,15 @@ namespace myl {
 		else							return unknown;
 	}
 
-	constexpr std::string uuid::string(bool a_brackets, bool a_dashed) const {
+	constexpr std::string uuid::string(bool a_brackets, bool a_dashed) const { // RFC 4122 Section 3 requires output to be lowercase
 		std::string out;
 		out.reserve(32 + (a_brackets ? 2 : 0) + (a_dashed ? 4 : 0));
 		if (a_brackets) out += '{';
 		for (u32 i = 0; i != 16; ++i) {
 			if (a_dashed && (i == 4 || i == 6 || i == 8 || i == 10))
 				out += '-';
-			out += g_uuid_digits[m_bytes[i] >> 4] + g_uuid_digits[m_bytes[i] & 0x0F];
+			out += g_uuid_digits[m_bytes[i] >> 4];
+			out += g_uuid_digits[m_bytes[i] & 0x0F];
 		}
 		if (a_brackets) out += '}';
 		return out;

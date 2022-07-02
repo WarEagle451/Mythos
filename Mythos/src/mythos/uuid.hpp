@@ -34,7 +34,7 @@ namespace myl {
 		MYL_API MYL_NO_DISCARD constexpr uuid_version version() const;
 		MYL_API MYL_NO_DISCARD constexpr uuid_variant variant() const;
 
-		MYL_API MYL_NO_DISCARD constexpr std::string string(bool a_brackets = true, bool a_dashed = true) const;
+		MYL_API MYL_NO_DISCARD constexpr std::string string(bool a_brackets = false, bool a_dashed = true) const;
 
 		MYL_API MYL_NO_DISCARD bool operator==(const uuid& rhs) const;
 		MYL_API MYL_NO_DISCARD bool operator<(const uuid& rhs) const;
