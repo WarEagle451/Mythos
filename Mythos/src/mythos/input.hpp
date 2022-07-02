@@ -1,14 +1,9 @@
 #pragma once
 #include "core/key_codes.hpp"
 #include "core/mouse_codes.hpp"
-
 #include <mythos/math/vec2.hpp>
 
 #include <array>
-
-/// MYTodo: Key mods
-/// MYTodo: Track toggled keys
-/// MYTodo: Key remapping
 
 namespace myl {
 	class input {
@@ -60,7 +55,5 @@ namespace myl {
 		MYL_API MYL_NO_DISCARD static const f32vec2& window_cursor_position();
 		MYL_API MYL_NO_DISCARD static const f32vec2& previous_cursor_delta();
 		MYL_API MYL_NO_DISCARD static const f32vec2& cursor_delta();
-
-		/// MYTodo: fake trigger button clicks, move mouse and key clicks
 	};
 }
