@@ -1,6 +1,7 @@
 #pragma once
 #include "core/key_codes.hpp"
 #include "core/mouse_codes.hpp"
+
 #include <mythos/math/vec2.hpp>
 
 #include <array>

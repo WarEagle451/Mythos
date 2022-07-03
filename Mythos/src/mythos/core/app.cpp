@@ -2,8 +2,8 @@
 #include "assert.hpp"
 #include "log.hpp"
 
-#include <mythos/input.hpp>
 #include <mythos/event/app_event.hpp>
+#include <mythos/input.hpp>
 #include <mythos/render/renderer.hpp>
 
 namespace myl {

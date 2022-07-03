@@ -1,8 +1,8 @@
 #pragma once
 #include <mythos/defines.hpp>
 
-#include <string>
 #include <source_location>
+#include <string>
 
 namespace myl {
 	struct core_exception {

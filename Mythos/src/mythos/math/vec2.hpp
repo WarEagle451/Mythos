@@ -1,7 +1,7 @@
 #pragma once
-#include <mythos/defines.hpp>
-
 #include "structure_def.hpp"
+
+#include <mythos/defines.hpp>
 
 #include <utility> // std::move
 

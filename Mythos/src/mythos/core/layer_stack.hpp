@@ -3,8 +3,8 @@
 
 #include <mythos/defines.hpp>
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace myl {
 	class layer_stack {

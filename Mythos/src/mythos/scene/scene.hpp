@@ -1,10 +1,8 @@
 #pragma once
+#include <mythos/math/matrix.hpp> /// MYTemp:
+#include <mythos/math/projection.hpp> /// MYTemp:
 #include <mythos/core/timestep.hpp>
-
-/// MYTemp:
-#include <mythos/math/matrix.hpp>
-#include <mythos/math/projection.hpp>
-#include <mythos/math/transform.hpp>
+#include <mythos/math/transform.hpp> /// MYTemp:
 
 namespace myl {
 	class camera { /// MYTemp:

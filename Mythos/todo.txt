@@ -1,6 +1,16 @@
-- obj files speed up compliation also precompiled header files
-
 - Native c++ scripting, lua scripting, C# scripting
+
+- Do a conventions.md
+	- Include Order
+		- Local files
+		- Project local files
+		- Mythos files
+		- 3rd party files
+		- standard library files
+
+		- Exceptions
+			- Separations by preprocessor directives
+			- Separations by multiple namespaces
 
 - Install Process:
 	- Download game

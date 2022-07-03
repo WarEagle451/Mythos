@@ -1,8 +1,8 @@
 #pragma once
-#include "mat4x4.hpp"
-#include "vec3.hpp"
-#include "trigonometry.hpp"
 #include "geometric.hpp"
+#include "mat4x4.hpp"
+#include "trigonometry.hpp"
+#include "vec3.hpp"
 
 namespace myl {
 	using transform = mat4x4<float>;

@@ -1,10 +1,9 @@
 #include "renderer.hpp"
 
-#include <mythos/platform/detection.hpp>
 #include <mythos/core/log.hpp>
-
 #include <mythos/math/quaternion.hpp> /// MYTemp:
 #include <mythos/math/transform.hpp> /// MYTemp:
+#include <mythos/platform/detection.hpp>
 
 namespace myl::render {
 	std::unique_ptr<backend> renderer::s_backend = nullptr;

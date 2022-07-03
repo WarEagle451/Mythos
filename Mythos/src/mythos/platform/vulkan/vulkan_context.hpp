@@ -2,8 +2,8 @@
 #include "vulkan_buffer.hpp"
 #include "vulkan_command_buffer.hpp"
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #ifdef MYL_BUILD_DEBUG
 #	define MYL_VK_ENABLE_VALIDATION_LAYERS

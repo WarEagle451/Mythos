@@ -1,10 +1,10 @@
-#include "vulkan_pipeline.hpp"
 #include "vulkan_context.hpp"
+#include "vulkan_pipeline.hpp"
 #include "vulkan_utils.hpp"
 #include "vulkan_vertex_array.hpp"
 
-#include <mythos/math/vec3.hpp>
 #include <mythos/math/mat4x4.hpp>
+#include <mythos/math/vec3.hpp>
 
 namespace myl::vulkan {
 	pipeline::pipeline(context& a_context, render_pass& a_render_pass, const std::vector<VkVertexInputAttributeDescription>& a_attributes, const std::vector<VkDescriptorSetLayout>& a_descriptor_layouts, const std::vector<VkPipelineShaderStageCreateInfo>& a_stages, VkViewport& a_viewport, VkRect2D& a_scissor, bool a_is_wireframe)

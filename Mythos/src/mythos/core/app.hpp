@@ -1,13 +1,12 @@
 #pragma once
-#include "window.hpp"
 #include "layer_stack.hpp"
+#include "window.hpp"
 
 #include <mythos/event/app_event.hpp>
-
 #include <mythos/timer.hpp>
 
-#include <string>
 #include <memory>
+#include <string>
 
 namespace myl {
 	struct app_info {

@@ -1,9 +1,9 @@
 #include "vulkan_backend.hpp"
-#include "vulkan_utils.hpp"
 #include "vulkan_shader.hpp"
+#include "vulkan_utils.hpp"
 
-#include <mythos/core/log.hpp>
 #include <mythos/core/app.hpp>
+#include <mythos/core/log.hpp>
 #include <mythos/math/vec3.hpp>
 
 namespace myl::vulkan {

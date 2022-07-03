@@ -1,6 +1,6 @@
 #pragma once
-#include <mythos/defines.hpp>
 #include <mythos/constants.hpp>
+#include <mythos/defines.hpp>
 
 #include <cmath> /// MYTodo: Get rid of this
 

@@ -1,5 +1,5 @@
-#include "vulkan_swapchain.hpp"
 #include "vulkan_context.hpp"
+#include "vulkan_swapchain.hpp"
 #include "vulkan_utils.hpp"
 
 #include <mythos/algorithm.hpp>

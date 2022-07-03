@@ -4,8 +4,8 @@
 
 #include <vulkan/vulkan.h>
 
-#include <string>
 #include <format>
+#include <string>
 
 namespace myl::vulkan {
 	//@param extended: Indicates whether to also return an extended result

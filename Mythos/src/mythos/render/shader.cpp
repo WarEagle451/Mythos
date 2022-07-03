@@ -1,5 +1,5 @@
-#include "shader.hpp"
 #include "renderer.hpp"
+#include "shader.hpp"
 
 namespace myl::render {
 	constexpr std::string shader_type_to_extenstion(shader_type stage) {

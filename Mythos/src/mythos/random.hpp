@@ -1,8 +1,8 @@
 #pragma once
 #include "defines.hpp"
 
-#include <random>
 #include <memory>
+#include <random>
 
 namespace myl {
 	template<class Engine>

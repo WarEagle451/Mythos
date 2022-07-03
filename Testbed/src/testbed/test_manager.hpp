@@ -3,8 +3,8 @@
 #include <mythos/timer.hpp>
 
 #include <functional>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace tb {
 	using namespace myl; // Yes it's bad practice but it doesn't matter here

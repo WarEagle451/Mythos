@@ -1,6 +1,5 @@
-#include "test_manager.hpp"
-
 #include "tests/math.hpp"
+#include "test_manager.hpp"
 
 namespace tb {
 	test_manager::test_manager() {

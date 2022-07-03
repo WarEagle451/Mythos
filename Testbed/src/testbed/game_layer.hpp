@@ -1,6 +1,6 @@
 #pragma once
-#include <mythos/core/layer.hpp>
 #include <mythos/scene/scene.hpp>
+#include <mythos/core/layer.hpp>
 
 class game_layer : public myl::layer {
 	myl::scene m_scene;

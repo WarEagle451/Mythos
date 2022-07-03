@@ -1,8 +1,8 @@
-#include "uuid.hpp"
 #include "random.hpp"
+#include "uuid.hpp"
 
-#include <chrono>
 #include <atomic>
+#include <chrono>
 
 // https://datatracker.ietf.org/doc/html/rfc4122
 

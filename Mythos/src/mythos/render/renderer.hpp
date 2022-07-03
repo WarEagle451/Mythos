@@ -1,8 +1,8 @@
 #pragma once
 #include "backend.hpp"
 
-#include <mythos/defines.hpp>
 #include <mythos/core/app.hpp>
+#include <mythos/defines.hpp>
 
 namespace myl::render {
 	struct statistics {

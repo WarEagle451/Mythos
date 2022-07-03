@@ -1,9 +1,8 @@
 #pragma once
 #include <testbed/test_manager.hpp>
 
-#include <mythos/math.hpp>
-
 #include <mythos/core/log.hpp>
+#include <mythos/math.hpp>
 
 // Volatile makes the constexpr functions run at runtime instead of compile time
 

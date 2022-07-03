@@ -1,6 +1,6 @@
 #pragma once
-#include "structure_def.hpp"
 #include "common.hpp"
+#include "structure_def.hpp"
 
 namespace myl {
 	template<std::size_t S, typename T>

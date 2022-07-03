@@ -1,8 +1,8 @@
 #pragma once
+#include "geometric.hpp"
 #include "mat4x4.hpp"
 #include "trigonometry.hpp"
 #include "vec3.hpp"
-#include "geometric.hpp"
 
 namespace myl {
 	template<typename T>

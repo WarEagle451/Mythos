@@ -1,6 +1,6 @@
 #pragma once
-#include <mythos/core/mouse_codes.hpp>
 #include <mythos/core/key_codes.hpp>
+#include <mythos/core/mouse_codes.hpp>
 
 #include <string>
 

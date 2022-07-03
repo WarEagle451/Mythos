@@ -1,14 +1,14 @@
 #pragma once
-#include "vulkan_pipeline.hpp"
-#include "vulkan_swapchain.hpp"
-#include "vulkan_render_pass.hpp"
 #include "vulkan_buffer.hpp"
+#include "vulkan_pipeline.hpp"
+#include "vulkan_render_pass.hpp"
+#include "vulkan_swapchain.hpp"
 
-#include <mythos/render/shader.hpp>
 #include <mythos/render/global_uniform_object.hpp>
+#include <mythos/render/shader.hpp>
 
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 
 namespace myl::vulkan {
 	class context; // fwd declaration

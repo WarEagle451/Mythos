@@ -1,11 +1,9 @@
 #include "scene.hpp"
 
+#include <mythos/algorithm.hpp> /// MYTemp:
+#include <mythos/core/app.hpp> /// MYTemp:
+#include <mythos/input.hpp> /// MYTemp:
 #include <mythos/render/renderer.hpp>
-
-/// MYTemp:
-#include <mythos/core/app.hpp>
-#include <mythos/input.hpp>
-#include <mythos/algorithm.hpp>
 
 namespace myl {
 	void camera::update() { /// MYTemp:
