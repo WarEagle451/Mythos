@@ -1,10 +1,10 @@
-#include "vulkan_shader.hpp"
 #include "vulkan_context.hpp"
+#include "vulkan_shader.hpp"
 #include "vulkan_utils.hpp"
 #include "vulkan_vertex_array.hpp"
 
-#include <mythos/io.hpp>
 #include <mythos/core/log.hpp>
+#include <mythos/io.hpp>
 
 #include <shaderc/shaderc.hpp> /// MYTodo: switch to c api
 
@@ -91,7 +91,7 @@ namespace myl::vulkan {
 
 				std::filesystem::create_directories(cache_directory()); // Ensure the caching directory exists
 				if (std::ofstream out(cached, std::ios::binary); out.is_open()) // Caching binary
-					out.write(reinterpret_cast<char*>(binaries[type].data()), binaries[type].size() * sizeof(u32));
+					out.write(reinterpret_cast<char*>(binaries[type].data()), binaries[type].size() * sizeof(u32));  /// MYTodo: Remove reinterpret_cast
 			}
 			else binaries[type] = std::move(bin);
 		}

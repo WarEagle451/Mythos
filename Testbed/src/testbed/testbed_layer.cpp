@@ -1,16 +1,15 @@
 #include "testbed_layer.hpp"
-
-#include <mythos/core/log.hpp>
-#include <mythos/core/app.hpp>
-#include <mythos/event/mouse_event.hpp>
-#include <mythos/event/key_event.hpp>
-#include <mythos/input.hpp>
+#include "test_manager.hpp"
 
 #include <testbed/utils/keys_buttons_string.hpp>
 
-#include "test_manager.hpp"
-
+#include <mythos/core/app.hpp>
+#include <mythos/core/log.hpp>
+#include <mythos/event/key_event.hpp>
+#include <mythos/event/mouse_event.hpp>
+#include <mythos/input.hpp>
 #include <mythos/io.hpp>
+#include <mythos/uuid.hpp>
 
 #define TESTBED_RUN_TESTS 0
 #define TESTBED_ENABLE_EVENT_TESTS 1
@@ -91,6 +90,11 @@ namespace tb {
 
 		if (myl::input::key_released(myl::key::f1))
 			myl::app::get().window()->toggle_fullscreen();
+
+		if (myl::input::key_down(myl::key::g))
+			MYL_CORE_DEBUG(uuid(uuid_version::time).string());
+		if (myl::input::key_down(myl::key::h))
+			MYL_CORE_DEBUG(uuid(uuid_version::random).string());
 	}
 
 	void testbed_layer::render() {

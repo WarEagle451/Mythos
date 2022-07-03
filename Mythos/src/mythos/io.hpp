@@ -1,9 +1,9 @@
 #pragma once
 #include "defines.hpp"
 
-#include <string>
 #include <filesystem>
 #include <fstream>
+#include <string>
 #include <vector>
 
 namespace myl {
@@ -26,7 +26,7 @@ namespace myl {
 			auto size = std::filesystem::file_size(file);
 
 			binary.resize(size / sizeof(IntT));
-			in.read(reinterpret_cast<std::ifstream::char_type*>(binary.data()), size);
+			in.read(reinterpret_cast<std::ifstream::char_type*>(binary.data()), size); /// MYTodo: Make sure reinterpret_cast should be used for this
 			return binary;
 		}
 

@@ -2,18 +2,19 @@
 #ifdef MYL_PLATFORM_WINDOWS
 #	include "win_utils.hpp"
 
-#	include <mythos/core/except.hpp>
 #	include <mythos/core/assert.hpp>
-#	include <mythos/core/log.hpp>
+#	include <mythos/core/except.hpp>
 #	include <mythos/core/keyboard.hpp>
+#	include <mythos/core/log.hpp>
 #	include <mythos/core/mouse_codes.hpp>
 #	include <mythos/event/app_event.hpp>
 #	include <mythos/input.hpp>
 
-#	include <windowsx.h>
 #	include <hidusage.h>
+#	include <windowsx.h>
 
 /// MYTodo: Should have an option that allows to not use raw input
+/// MYBug: When window is covered by another window and this window has focus, scrolling works, it scrolling should only work on hovered window
 
 namespace myl::windows {
 	MYL_NO_DISCARD static constexpr mouse_code translate_raw_mouse_code(USHORT buttons) noexcept {
@@ -90,7 +91,7 @@ namespace myl::windows {
 				
 				RAWINPUT raw{};
 				UINT dw_size = sizeof(RAWINPUT);
-				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &dw_size, sizeof(RAWINPUTHEADER));
+				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &dw_size, sizeof(RAWINPUTHEADER));  /// MYTodo: Remove reinterpret_cast
 				
 				switch (raw.header.dwType) {
 					case RIM_TYPEMOUSE: { // Mouse
