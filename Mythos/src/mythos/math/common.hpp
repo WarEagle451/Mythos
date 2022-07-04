@@ -4,12 +4,7 @@
 namespace myl {
 	/// MYTodo: Template functions
 	
-	MYL_API MYL_NO_DISCARD constexpr i8 abs(i8) noexcept;
-	MYL_API MYL_NO_DISCARD constexpr i16 abs(i16) noexcept;
-	MYL_API MYL_NO_DISCARD constexpr i32 abs(i32) noexcept;
-	MYL_API MYL_NO_DISCARD constexpr i64 abs(i64) noexcept;
-	MYL_API MYL_NO_DISCARD constexpr f32 abs(f32) noexcept;
-	MYL_API MYL_NO_DISCARD constexpr f64 abs(f64) noexcept;
+	template<typename T> MYL_NO_DISCARD T abs(T) noexcept;
 
 	MYL_API MYL_NO_DISCARD constexpr bool approx(i8, i8, i8 flexibility = 1);
 	MYL_API MYL_NO_DISCARD constexpr bool approx(i16, i16, i16 flexibility = 1);
