@@ -56,21 +56,15 @@ namespace myl {
 	using f64	= double;
 }
 
-#if defined(MYL_COMPILER_CLANG) || defined(MYL_COMPILER_GCC)
-#	define MYL_STATIC_ASSERT _Static_assert
-#else
-#	define MYL_STATIC_ASSERT static_assert
-#endif
+static_assert(sizeof(myl::u8) == 1, "Expected u8 to be 1 byte");
+static_assert(sizeof(myl::u16) == 2, "Expected u16 to be 2 bytes");
+static_assert(sizeof(myl::u32) == 4, "Expected u32 to be 4 bytes");
+static_assert(sizeof(myl::u64) == 8, "Expected u64 to be 8 bytes");
 
-MYL_STATIC_ASSERT(sizeof(myl::u8) == 1, "Expected u8 to be 1 byte");
-MYL_STATIC_ASSERT(sizeof(myl::u16) == 2, "Expected u16 to be 2 bytes");
-MYL_STATIC_ASSERT(sizeof(myl::u32) == 4, "Expected u32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(myl::u64) == 8, "Expected u64 to be 8 bytes");
+static_assert(sizeof(myl::i8) == 1, "Expected i8 to be 1 byte");
+static_assert(sizeof(myl::i16) == 2, "Expected i16 to be 2 bytes");
+static_assert(sizeof(myl::i32) == 4, "Expected i32 to be 4 bytes");
+static_assert(sizeof(myl::i64) == 8, "Expected i64 to be 8 bytes");
 
-MYL_STATIC_ASSERT(sizeof(myl::i8) == 1, "Expected i8 to be 1 byte");
-MYL_STATIC_ASSERT(sizeof(myl::i16) == 2, "Expected i16 to be 2 bytes");
-MYL_STATIC_ASSERT(sizeof(myl::i32) == 4, "Expected i32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(myl::i64) == 8, "Expected i64 to be 8 bytes");
-
-MYL_STATIC_ASSERT(sizeof(myl::f32) == 4, "Expected f32 to be 4 bytes");
-MYL_STATIC_ASSERT(sizeof(myl::f64) == 8, "Expected f64 to be 8 bytes");
+static_assert(sizeof(myl::f32) == 4, "Expected f32 to be 4 bytes");
+static_assert(sizeof(myl::f64) == 8, "Expected f64 to be 8 bytes");

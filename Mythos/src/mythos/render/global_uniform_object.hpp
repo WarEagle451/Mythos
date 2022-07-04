@@ -11,4 +11,4 @@ namespace myl::render { /// MYTodo: Hate this design
 }
 
 // Some NVidia cards require uniforms to be 256 bytes
-MYL_STATIC_ASSERT(sizeof(myl::render::global_unifrom_object) == 256, "Expected global_unifrom_object to be 256 bytes");
+static_assert(sizeof(myl::render::global_unifrom_object) == 256, "Expected global_unifrom_object to be 256 bytes");
