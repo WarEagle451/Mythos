@@ -10,7 +10,6 @@
 
 #ifdef MYL_PLATFORM_WINDOWS
 #	include <WinSock2.h>
-#	include <windows.h>
 
 namespace myl {
 	u16 hton16(u16 value) { MYL_ENDIAN_CONVERT_LOGIC(htons, value); }
