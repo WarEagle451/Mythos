@@ -21,19 +21,20 @@ namespace myl {
 		reserved
 	};
 
-	class uuid {
+	class uuid { /// MYTodo: can do clas MYL_API uuid instead of all inside?
 		u8 m_bytes[16]{}; // 128 bits
 	public:
-		MYL_API MYL_NO_DISCARD constexpr uuid();
+		MYL_API MYL_NO_DISCARD constexpr uuid() noexcept;
 		MYL_API MYL_NO_DISCARD uuid(uuid_version);
 		MYL_API MYL_NO_DISCARD constexpr uuid(u8*);
 		MYL_API MYL_NO_DISCARD constexpr uuid(std::string_view);
 
-		MYL_API MYL_NO_DISCARD bool nil() const;
+		MYL_API MYL_NO_DISCARD constexpr u8* data();
+		MYL_API MYL_NO_DISCARD constexpr const u8* data() const;
 
+		MYL_API MYL_NO_DISCARD bool nil() const;
 		MYL_API MYL_NO_DISCARD constexpr uuid_version version() const;
 		MYL_API MYL_NO_DISCARD constexpr uuid_variant variant() const;
-
 		MYL_API MYL_NO_DISCARD constexpr std::string string(bool a_brackets = false, bool a_dashed = true) const;
 
 		MYL_API MYL_NO_DISCARD bool operator==(const uuid& rhs) const;
@@ -44,4 +45,4 @@ namespace myl {
 	};
 }
 
-MYL_STATIC_ASSERT(sizeof(myl::uuid) == 16, "Expected myl::uuid to be 16 bytes");
+static_assert(sizeof(myl::uuid) == 16, "Expected myl::uuid to be 16 bytes");

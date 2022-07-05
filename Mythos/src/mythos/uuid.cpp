@@ -1,6 +1,8 @@
 #include "random.hpp"
 #include "uuid.hpp"
 
+#include <mythos/network/endian.hpp>
+
 #include <atomic>
 #include <chrono>
 
@@ -8,32 +10,6 @@
 
 namespace myl {
 	static const char g_uuid_digits[16]{ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
-
-	static constexpr void copy_bytes(u8(&dst)[16], u64(&src)[2]) {
-		/// MYTodo: Find a way to not brute force this, endianness causes the issues
-		/// memcpy, bit_cast and reinterpret_cast did not work because of endianness
-		/// make a endian_safe_reinterpret_cast<>()
-
-		dst[0] = (src[0] >> 56) & 0xFF;
-		dst[1] = (src[0] >> 48) & 0xFF;
-		dst[2] = (src[0] >> 40) & 0xFF;
-		dst[3] = (src[0] >> 32) & 0xFF;
-
-		dst[4] = (src[0] >> 24) & 0xFF;
-		dst[5] = (src[0] >> 16) & 0xFF;
-		dst[6] = (src[0] >> 8) & 0xFF;
-		dst[7] = src[0] & 0xFF;
-
-		dst[8] = (src[1] >> 56) & 0xFF;
-		dst[9] = (src[1] >> 48) & 0xFF;
-		dst[10] = (src[1] >> 40) & 0xFF;
-		dst[11] = (src[1] >> 32) & 0xFF;
-
-		dst[12] = (src[1] >> 24) & 0xFF;
-		dst[13] = (src[1] >> 16) & 0xFF;
-		dst[14] = (src[1] >> 8) & 0xFF;
-		dst[15] = src[1] & 0xFF;
-	}
 
 	MYL_NO_DISCARD static constexpr u8 char_to_hex(char c) {
 		switch (c) {
@@ -70,19 +46,21 @@ namespace myl {
 
 		u64 nanoseconds_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 		u64 intervals = ns_intervals_since_15_october_1582_to_epoch + (nanoseconds_since_epoch / 100); // RFC states that the time is in 100 nanosecond intervals
-		u64 as_u64[2]{ /// MYBug: This does not match https://www.uuidgenerator.net/version1
+		u64* as_u64 = reinterpret_cast<u64*>(bytes);
+
+		as_u64[0] = /// MYBug: This does not match https://www.uuidgenerator.net/version1
 			(intervals & 0x0000'0000'FFFF'FFFFull) << 32 |	// Low 32 bits
 			(intervals & 0x0000'FFFF'0000'0000ull) >> 16 |	// Mid 16 bits
-			(intervals & 0xFFFF'0000'0000'0000ull) >> 48,	// High 16 bits
-			
-			static_cast<u64>(clock_sequence) << 48 | // 16 bits
-			clock_gen() >> 16 // 48 bits and does not use MAC address for security reasons
-		};
+			(intervals & 0xFFFF'0000'0000'0000ull) >> 48;	// High 16 bits
+		as_u64[1] =
+			static_cast<u64>(clock_sequence) << 48 |	// 16 bits
+			clock_gen() >> 16;							// 48 bits and does not use MAC address for security reasons
 
-		copy_bytes(bytes, as_u64);
+		as_u64[0] = hton64(as_u64[0]); // Ensures data is stored as big endian
+		as_u64[1] = hton64(as_u64[1]); // Ensures data is stored as big endian
 
 		bytes[10] |= 0x01; // If MAC address is replaced with random number, the RFC requires that the least significant bit of the first octet of the node ID should be set to 1
-		
+
 		bytes[6] &= 0x1F; bytes[6] |= 0x10; // Version time
 		bytes[8] &= 0xBF; bytes[8] |= 0x80; // Variant rfc_4122
 
@@ -118,7 +96,7 @@ namespace myl {
 		as_u64[1] = 0;
 	}
 
-	constexpr uuid::uuid()
+	constexpr uuid::uuid() noexcept
 		: m_bytes{
 		0, 0, 0, 0,
 		0, 0,
@@ -154,19 +132,27 @@ namespace myl {
 		char_to_hex(a_view[8]), char_to_hex(a_view[9]),
 		char_to_hex(a_view[10]), char_to_hex(a_view[11]), char_to_hex(a_view[12]), char_to_hex(a_view[13]), char_to_hex(a_view[14]), char_to_hex(a_view[15]) } {}
 
+	constexpr u8* uuid::data() {
+		return m_bytes;
+	}
+
+	constexpr const u8* uuid::data() const {
+		return m_bytes;
+	}
+
 	bool uuid::nil() const { // reinterpret_cast can be used in comparision operations
 		const u64* as_u64 = reinterpret_cast<const u64*>(m_bytes);
 		return as_u64[0] == 0 && as_u64[1] == 0;
 	}
 
 	constexpr uuid_version uuid::version() const { // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx : Getting M
-		switch (uuid_version(m_bytes[6] & 0xF0)) {
+		switch (m_bytes[6] & 0xF0) {
 			using enum uuid_version;
-			case time:		return time;
-			case dce:		return dce;
-			case name_md5:	return name_md5;
-			case random:	return random;
-			case name_sha1:	return name_sha1;
+			case 0x10: return time;
+			case 0x20: return dce;
+			case 0x30: return name_md5;
+			case 0x40: return random;
+			case 0x50: return name_sha1;
 			default: return unknown;
 		}
 	}
@@ -180,6 +166,7 @@ namespace myl {
 		else if ((byte & 0xE0) == 0xE0) return reserved;
 		else							return unknown;
 	}
+
 	constexpr std::string uuid::string(bool a_brackets, bool a_dashed) const { // RFC 4122 Section 3 requires output to be lowercase
 		std::string out;
 		out.reserve(32 + (a_brackets ? 2 : 0) + (a_dashed ? 4 : 0));

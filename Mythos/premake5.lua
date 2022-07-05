@@ -29,6 +29,7 @@ project "Mythos"
 
 	filter "system:windows"
 		systemversion "latest"
+		links { "ws2_32.lib" }
 
 	filter "configurations:Debug"
 		defines "MYL_BUILD_DEBUG"
