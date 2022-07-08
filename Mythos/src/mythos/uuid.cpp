@@ -40,10 +40,11 @@ namespace myl {
 	}
 
 	static void uuid_create_time(u8(&bytes)[16]) {
-		static constexpr const u64 ns_intervals_since_15_october_1582_to_epoch = 12'219'292'800'000'000'0ull; // Magic number!
+		static constexpr const u64 ns_intervals_since_15_october_1582_to_epoch = 128'504'448'000'000'000ull; // Magic number! (148723 days in 100ns intervals)
 		static generator_u64 clock_gen = generator_u64();
 		static std::atomic<u16> clock_sequence = static_cast<u16>(clock_gen());
 
+		// Expects epoch to be Jan 1, 1990
 		u64 nanoseconds_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 		u64 intervals = ns_intervals_since_15_october_1582_to_epoch + (nanoseconds_since_epoch / 100); // RFC states that the time is in 100 nanosecond intervals
 		u64* as_u64 = reinterpret_cast<u64*>(bytes);
