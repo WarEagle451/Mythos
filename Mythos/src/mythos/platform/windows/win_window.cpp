@@ -62,24 +62,18 @@ namespace myl::windows {
 
 	LRESULT CALLBACK win32_process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) {
 		switch (msg) {
+			case WM_CHAR: /// MYTodo: Eventually get this to be processed by WM_INPUT
+				input::process_key_typed(static_cast<WCHAR>(w_param));
+				return 0;
 			case WM_CLOSE: {
 				event::window_close e{};
 				event::fire(e);
 			} return 0;
-			case WM_SIZE: {
-				/// MYTodo: w_param contains SIZE_MAXHIDE, SIZE_MAXIMIZED, SIZE_MAXSHOW, SIZE_MINIMIZED, SIZE_RESTORED
-				/// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-size
-
-				event::window_resize e(LOWORD(l_param), HIWORD(l_param));
-				event::fire(e);
-			} break;
-				/// MYTodo: Eventually get this to be processed by WM_INPUT
-			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position
-				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
-				break;
-			case WM_CHAR: /// MYTodo: Eventually get this to be processed by WM_INPUT
-				input::process_key_typed(static_cast<WCHAR>(w_param));
+			case WM_DESTROY:
+				PostQuitMessage(0);
 				return 0;
+			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
+				return 1;
 			case WM_INPUT: { // https://docs.microsoft.com/en-us/windows/win32/inputdev/raw-input
 				// If cursor is over client area
 				// - Process window_cursor_position (Handled by WM_MOUSEMOVE)
@@ -145,15 +139,25 @@ namespace myl::windows {
 					default: break;
 				}
 			} return 0;
+				/// MYTodo: Eventually get this to be processed by WM_INPUT
+			case WM_KILLFOCUS:
+				input::clear(); // Clear all inputs when the window loses focus
+				return 0;
+			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position
+				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
+				break;
+			case WM_SIZE: {
+				/// MYTodo: w_param contains SIZE_MAXHIDE, SIZE_MAXIMIZED, SIZE_MAXSHOW, SIZE_MINIMIZED, SIZE_RESTORED
+				/// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-size
+
+				event::window_resize e(LOWORD(l_param), HIWORD(l_param));
+				event::fire(e);
+			} break;
+
 			///case WM_INPUT_DEVICE_CHANGE:
 			///	break; /// MYTodo
 			///case WM_DPICHANGED: /// MYTodo: WM_DPICHANGED
 			///	break; /// https://docs.microsoft.com/en-us/windows/win32/hidpi/wm-dpichanged
-			case WM_DESTROY:
-				PostQuitMessage(0);
-				return 0;
-			case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
-				return 1;
 		}
 	
 		return DefWindowProcA(hwnd, msg, w_param, l_param);

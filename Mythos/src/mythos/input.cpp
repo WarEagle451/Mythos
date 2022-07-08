@@ -6,30 +6,30 @@
 namespace myl {
 	std::array<input::state, key::size> input::s_previous_key_states;
 	std::array<input::state, key::size> input::s_key_states;
+
 	mouse_code input::s_previous_mouse_button_states;
 	mouse_code input::s_mouse_button_states;
+
 	f32vec2 input::s_previous_window_cursor_position;
 	f32vec2 input::s_window_cursor_position;
+
 	f32vec2 input::s_mouse_delta;
 	f32vec2 input::s_previous_mouse_delta;
 
 	void input::clear() {
-		s_previous_window_cursor_position = { 0, 0 };
-		s_window_cursor_position = { 0, 0 };
-
-		s_mouse_delta = { 0, 0 };
-		s_previous_mouse_delta = { 0, 0 };
-
 		s_previous_key_states.fill(state::up);
 		s_key_states.fill(state::up);
 
 		s_previous_mouse_button_states = mouse_button::none;
 		s_mouse_button_states = mouse_button::none;
+
+		s_previous_window_cursor_position = { 0, 0 };
+		s_window_cursor_position = { 0, 0 };
+
+		s_mouse_delta = { 0, 0 };
+		s_previous_mouse_delta = { 0, 0 };
 	}
 
-	/// MYBug: If the window loses focus and a key or mouse button is down when the window regains focus it will stay down until the key or button event up happens
-	/// MYTodo: When a window loses focus clear keys
-	/// On refocus maybe query the platform to update all input states
 	void input::update() {
 		s_previous_key_states = s_key_states;
 		s_previous_mouse_button_states = s_mouse_button_states;
