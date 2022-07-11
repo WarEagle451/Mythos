@@ -96,14 +96,6 @@ namespace myl {
 		as_u64[1] = 0;
 	}
 
-	constexpr uuid::uuid() noexcept
-		: m_bytes{
-		0, 0, 0, 0,
-		0, 0,
-		0, 0,
-		0, 0,
-		0, 0, 0, 0, 0, 0 } {}
-
 	uuid::uuid(uuid_version a_version) {
 		switch (a_version) {
 			using enum uuid_version;
@@ -116,7 +108,7 @@ namespace myl {
 		}
 	}
 
-	constexpr uuid::uuid(u8* a_bytes)
+	constexpr uuid::uuid(u8(&a_bytes)[16])
 		: m_bytes{
 		a_bytes[0], a_bytes[1], a_bytes[2], a_bytes[3],
 		a_bytes[4], a_bytes[5],

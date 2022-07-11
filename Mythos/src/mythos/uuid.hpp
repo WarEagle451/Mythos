@@ -3,6 +3,8 @@
 
 #include <string>
 
+/// MYTodo: UUID namespaces
+
 namespace myl {
 	enum class uuid_version {
 		unknown		= 0x00,
@@ -22,11 +24,11 @@ namespace myl {
 	};
 
 	class MYL_API uuid {
-		u8 m_bytes[16]{}; // 128 bits
+		u8 m_bytes[16]{ 0 }; // 128 bits
 	public:
-		constexpr uuid() noexcept;
+		constexpr uuid() noexcept = default;
 		uuid(uuid_version);
-		constexpr uuid(u8*);
+		constexpr uuid(u8(&)[16]);
 		constexpr uuid(std::string_view);
 
 		MYL_NO_DISCARD constexpr u8* data();
