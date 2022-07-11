@@ -3,6 +3,8 @@
 
 #include <string>
 
+/// MYTodo: Add ways to get signifigate data from the uuid types, ie low time, mac address
+
 namespace myl {
 	enum class uuid_version {
 		unknown		= 0x00,

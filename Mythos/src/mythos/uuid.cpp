@@ -40,16 +40,15 @@ namespace myl {
 	}
 
 	static void uuid_create_time(u8(&bytes)[16]) {
-		static constexpr const u64 ns_intervals_since_15_october_1582_to_epoch = 128'504'448'000'000'000ull; // Magic number! (148723 days in 100ns intervals)
+		static constexpr const u64 ns_intervals_15_oct_1582_to_jan_1_1970 = 122'192'928'000'000'000; // Magic number! (141427 days in 100ns intervals)
 		static generator_u64 clock_gen = generator_u64();
 		static std::atomic<u16> clock_sequence = static_cast<u16>(clock_gen());
 
-		// Expects epoch to be Jan 1, 1990
-		u64 nanoseconds_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
-		u64 intervals = ns_intervals_since_15_october_1582_to_epoch + (nanoseconds_since_epoch / 100); // RFC states that the time is in 100 nanosecond intervals
+		const u64 ns_intervals_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::utc_clock::now().time_since_epoch()).count() / 100; // RFC states that the time is in 100 nanosecond intervals
+		const u64 intervals = ns_intervals_15_oct_1582_to_jan_1_1970 + ns_intervals_since_epoch;
 		u64* as_u64 = reinterpret_cast<u64*>(bytes);
 
-		as_u64[0] = /// MYBug: This does not match https://www.uuidgenerator.net/version1
+		as_u64[0] = // Low time is ahead by 27.044887 seconds, reason: https://en.wikipedia.org/wiki/Leap_second#Insertion_of_leap_seconds
 			(intervals & 0x0000'0000'FFFF'FFFFull) << 32 |	// Low 32 bits
 			(intervals & 0x0000'FFFF'0000'0000ull) >> 16 |	// Mid 16 bits
 			(intervals & 0xFFFF'0000'0000'0000ull) >> 48;	// High 16 bits
