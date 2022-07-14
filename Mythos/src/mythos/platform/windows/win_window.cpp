@@ -14,7 +14,7 @@
 #	include <windowsx.h>
 
 /// MYTodo: Should have an option that allows to not use raw input
-/// MYBug: When window is covered by another window and this window has focus, scrolling works, it scrolling should only work on hovered window
+/// MYBug: When the mouse is held down and leaves to client area, released and returns to the client area the app believes it is still pressed
 
 namespace myl::windows {
 	MYL_NO_DISCARD static constexpr mouse_code translate_raw_mouse_code(USHORT buttons) noexcept {
@@ -30,19 +30,19 @@ namespace myl::windows {
 	}
 
 	static bool cursor_over_client_area(HWND hwnd) {
-		RECT client_area{};
-		GetClientRect(hwnd, &client_area);
+		RECT client{};
+		GetClientRect(hwnd, &client);
 
-		POINT tl{ .x = client_area.left, .y = client_area.top };
-		POINT br{ .x = client_area.right, .y = client_area.bottom };
+		POINT tl{ .x = client.left, .y = client.top };
+		POINT br{ .x = client.right, .y = client.bottom };
 		ClientToScreen(hwnd, &tl);
 		ClientToScreen(hwnd, &br);
 
 		POINT cursor{};
 		GetCursorPos(&cursor);
 
-		return cursor.x > tl.x && cursor.x < br.x &&
-			cursor.y > tl.y && cursor.y < br.y;
+		return cursor.x >= tl.x && cursor.x <= br.x &&
+			cursor.y >= tl.y && cursor.y <= br.y;
 	}
 
 	static key_code get_key_mods() {
@@ -82,22 +82,30 @@ namespace myl::windows {
 				// if app is focused
 				// - Process all WM_INPUT except mouse clicks outside of client area
 				const bool app_in_forground = GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT;
-				
+
 				RAWINPUT raw{};
 				UINT dw_size = sizeof(RAWINPUT);
-				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &dw_size, sizeof(RAWINPUTHEADER));  /// MYTodo: Remove reinterpret_cast
-				
+				GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &dw_size, sizeof(RAWINPUTHEADER));
+
 				switch (raw.header.dwType) {
 					case RIM_TYPEMOUSE: { // Mouse
+						const bool cursor_over_client_space = cursor_over_client_area(hwnd);
+
 						/// MYBug: This will only work with deltas, if absolute and 0, 0 = will not fire
 						if (raw.data.mouse.lLastX != 0 || raw.data.mouse.lLastY != 0) { // Mouse move
 							f32vec2 move{ static_cast<f32>(raw.data.mouse.lLastX), static_cast<f32>(raw.data.mouse.lLastY) };
 							raw.data.mouse.usFlags& MOUSE_MOVE_ABSOLUTE ?
 								input::process_cursor_delta_given_absolute(move) :
 								input::process_cursor_delta(move);
+
+							if (cursor_over_client_space) {
+								POINT mouse_coords{};
+								GetCursorPos(&mouse_coords);
+								ScreenToClient(hwnd, &mouse_coords); // Translate to window coords
+								input::process_window_cursor_position(f32vec2(static_cast<f32>(mouse_coords.x), static_cast<f32>(mouse_coords.y)));
+							}
 						}
 
-						const bool cursor_over_client_space = cursor_over_client_area(hwnd);
 						const auto mb_flags = raw.data.mouse.usButtonFlags;
 
 						if (mb_flags != 0 && cursor_over_client_space) { // Mouse buttons / wheel. (Must be in client space to work)
@@ -108,6 +116,7 @@ namespace myl::windows {
 									input::process_mouse_buttons_up(translate_raw_mouse_code(mb_flags));
 							}
 
+							/// MYBug: When window is covered by another window this logic still processes as if the cursor is over this window, scrolling works, it scrolling should only work on hovered window
 							if (mb_flags & RI_MOUSE_WHEEL) { // Mouse wheel (vertical)
 								i16 y_delta = static_cast<i16>(raw.data.mouse.usButtonData);
 								if (y_delta != 0) // Flatten the input to an OS-independent(-1, 1)
@@ -127,8 +136,8 @@ namespace myl::windows {
 						if (app_in_forground) {
 							auto& keyboard = raw.data.keyboard;
 							USHORT scancode = keyboard.MakeCode | ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0);
-							input::state state = (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down;
 							key_code key = translate_ps2_set_1_make(scancode); // PS/2 set 1 makecodes are always used in Windows
+							input::state state = (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down;
 							input::process_key(key, state);
 							/// MYTodo: Should do what WM_CHAR is doing here
 						} break;
@@ -138,14 +147,10 @@ namespace myl::windows {
 						break;
 					default: break;
 				}
-			} return 0;
-				/// MYTodo: Eventually get this to be processed by WM_INPUT
+			} break;
 			case WM_KILLFOCUS:
 				input::clear(); // Clear all inputs when the window loses focus
 				return 0;
-			case WM_MOUSEMOVE: // WM_INPUT does bot handle this as Windows already sends this message and it is already relative to the windows position
-				input::process_window_cursor_position(f32vec2(static_cast<f32>(GET_X_LPARAM(l_param)), static_cast<f32>(GET_Y_LPARAM(l_param))));
-				break;
 			case WM_SIZE: {
 				/// MYTodo: w_param contains SIZE_MAXHIDE, SIZE_MAXIMIZED, SIZE_MAXSHOW, SIZE_MINIMIZED, SIZE_RESTORED
 				/// https://docs.microsoft.com/en-us/windows/win32/winmsg/wm-size
