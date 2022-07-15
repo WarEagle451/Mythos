@@ -3,16 +3,17 @@
 
 #include <string>
 
-/// MYTodo: UUID namespaces
+// RFC 4122 Complient UUIDs
+// https://datatracker.ietf.org/doc/html/rfc4122
 
 namespace myl {
 	enum class uuid_version {
-		unknown		= 0x00,
-		time		= 0x10,
-		dce			= 0x20,
-		name_md5	= 0x30,
-		random		= 0x40,
-		name_sha1	= 0x50
+		unknown,
+		time	= 0x10,
+		dce		= 0x20,
+		md5		= 0x30,
+		random	= 0x40,
+		sha1	= 0x50
 	};
 
 	enum class uuid_variant {
@@ -34,9 +35,11 @@ namespace myl {
 		MYL_NO_DISCARD constexpr u8* data();
 		MYL_NO_DISCARD constexpr const u8* data() const;
 
-		MYL_NO_DISCARD bool nil() const;
 		MYL_NO_DISCARD constexpr uuid_version version() const;
 		MYL_NO_DISCARD constexpr uuid_variant variant() const;
+
+		MYL_NO_DISCARD bool nil() const;
+
 		MYL_NO_DISCARD constexpr std::string string(bool a_brackets = false, bool a_dashed = true) const;
 
 		MYL_NO_DISCARD bool operator==(const uuid& rhs) const;

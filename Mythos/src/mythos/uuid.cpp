@@ -6,7 +6,9 @@
 #include <atomic>
 #include <chrono>
 
-// https://datatracker.ietf.org/doc/html/rfc4122
+/// Sections to review
+/// 4.3
+/// 
 
 namespace myl {
 	static const char g_uuid_digits[16]{ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
@@ -39,22 +41,23 @@ namespace myl {
 		}
 	}
 
-	static void uuid_create_time(u8(&bytes)[16]) {
+	static void assign_time_uuid(u8(&bytes)[16]) { // 4.2
 		static constexpr const u64 ns_intervals_15_oct_1582_to_jan_1_1970 = 122'192'928'000'000'000; // Magic number! (141427 days in 100ns intervals)
-		static generator_u64 clock_gen = generator_u64();
-		static std::atomic<u16> clock_sequence = static_cast<u16>(clock_gen());
+		static generator_u64 node = generator_u64();
+		/// MYTodo: Clock sequence is supposed to be corrected to section 4.5
+		static std::atomic<u16> clock_sequence = generator_u16()(); // 4.1.5
 
 		const u64 ns_intervals_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::utc_clock::now().time_since_epoch()).count() / 100; // RFC states that the time is in 100 nanosecond intervals
 		const u64 intervals = ns_intervals_15_oct_1582_to_jan_1_1970 + ns_intervals_since_epoch;
 		u64* as_u64 = reinterpret_cast<u64*>(bytes);
 
-		as_u64[0] = // Low time is ahead by 27.044887 seconds, reason: https://en.wikipedia.org/wiki/Leap_second#Insertion_of_leap_seconds
+		as_u64[0] = // Low time is ahead by 27 seconds, reason: https://en.wikipedia.org/wiki/Leap_second#Insertion_of_leap_seconds
 			(intervals & 0x0000'0000'FFFF'FFFFull) << 32 |	// Low 32 bits
 			(intervals & 0x0000'FFFF'0000'0000ull) >> 16 |	// Mid 16 bits
 			(intervals & 0xFFFF'0000'0000'0000ull) >> 48;	// High 16 bits
 		as_u64[1] =
 			static_cast<u64>(clock_sequence) << 48 |	// 16 bits
-			clock_gen() >> 16;							// 48 bits and does not use MAC address for security reasons
+			node() >> 16;								// 48 bits and does not use MAC address for security reasons
 
 		as_u64[0] = hton64(as_u64[0]); // Ensures data is stored as big endian
 		as_u64[1] = hton64(as_u64[1]); // Ensures data is stored as big endian
@@ -64,18 +67,18 @@ namespace myl {
 		bytes[6] &= 0x1F; bytes[6] |= 0x10; // Version time
 		bytes[8] &= 0xBF; bytes[8] |= 0x80; // Variant rfc_4122
 
-		++clock_sequence;
+		++clock_sequence; /// MYTodo: 4.2.1, bullet 6. Should not be doing this
 	}
 
-	static constexpr void uuid_create_dce(u8(&bytes)[16]) {
+	static constexpr void assign_dce_uuid(u8(&bytes)[16]) {
 		/// MYTodo: UUID gen
 	}
 
-	static constexpr void uuid_create_name_md5(u8(&bytes)[16]) {
+	static constexpr void assign_md5_uuid(u8(&bytes)[16]) {
 		/// MYTodo: UUID gen
 	}
 
-	static void uuid_create_random(u8(&bytes)[16]) {
+	static void assign_random_uuid(u8(&bytes)[16]) { // 4.4
 		u64* as_u64 = reinterpret_cast<u64*>(bytes); // This is okay because endianess will further randomize the bits
 		generator_u64 gen = generator_u64();
 
@@ -86,25 +89,20 @@ namespace myl {
 		bytes[8] &= 0xBF; bytes[8] |= 0x80; // Variant rfc_4122
 	}
 
-	static constexpr void uuid_create_name_sha1(u8(&bytes)[16]) {
+	static constexpr void assign_sha1_uuid(u8(&bytes)[16]) {
 		/// MYTodo: UUID gen
 	}
-	
-	static void uuid_create_unknown(u8(&bytes)[16]) {
-		u64* as_u64 = reinterpret_cast<u64*>(bytes);
-		as_u64[0] = 0;
-		as_u64[1] = 0;
-	}
+
 
 	uuid::uuid(uuid_version a_version) {
 		switch (a_version) {
 			using enum uuid_version;
-			case time:		uuid_create_time(m_bytes);		break;
-			case dce:		uuid_create_dce(m_bytes);		break;
-			case name_md5:	uuid_create_name_md5(m_bytes);	break;
-			case random:	uuid_create_random(m_bytes);	break;
-			case name_sha1: uuid_create_name_sha1(m_bytes);	break;
-			default:		uuid_create_unknown(m_bytes);	break;
+			case time:		assign_time_uuid(m_bytes);		break;
+			case dce:		assign_dce_uuid(m_bytes);		break;
+			case md5:	assign_md5_uuid(m_bytes);	break;
+			case random:	assign_random_uuid(m_bytes);	break;
+			case sha1: assign_sha1_uuid(m_bytes);	break;
+			default: break; // Default initializes to nil
 		}
 	}
 
@@ -132,24 +130,19 @@ namespace myl {
 		return m_bytes;
 	}
 
-	bool uuid::nil() const { // reinterpret_cast can be used in comparision operations
-		const u64* as_u64 = reinterpret_cast<const u64*>(m_bytes);
-		return as_u64[0] == 0 && as_u64[1] == 0;
-	}
-
-	constexpr uuid_version uuid::version() const { // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx : Getting M
+	constexpr uuid_version uuid::version() const { // Section 4.1.3
 		switch (m_bytes[6] & 0xF0) {
 			using enum uuid_version;
 			case 0x10: return time;
 			case 0x20: return dce;
-			case 0x30: return name_md5;
+			case 0x30: return md5;
 			case 0x40: return random;
-			case 0x50: return name_sha1;
+			case 0x50: return sha1;
 			default: return unknown;
 		}
 	}
 
-	constexpr uuid_variant uuid::variant() const { // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx : Getting N
+	constexpr uuid_variant uuid::variant() const { // Section 4.1.1
 		const u8 byte = m_bytes[8];
 		using enum uuid_variant;
 		if ((byte & 0x80) == 0x00)		return ncs;
@@ -157,6 +150,11 @@ namespace myl {
 		else if ((byte & 0xE0) == 0xC0) return microsoft;
 		else if ((byte & 0xE0) == 0xE0) return reserved;
 		else							return unknown;
+	}
+
+	bool uuid::nil() const { // 4.1.7
+		const u64* as_u64 = reinterpret_cast<const u64*>(m_bytes);
+		return as_u64[0] == 0 && as_u64[1] == 0;
 	}
 
 	constexpr std::string uuid::string(bool a_brackets, bool a_dashed) const { // RFC 4122 Section 3 requires output to be lowercase
