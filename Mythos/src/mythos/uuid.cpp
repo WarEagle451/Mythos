@@ -8,7 +8,6 @@
 
 /// Sections to review
 /// 4.3
-/// 
 
 namespace myl {
 	static const char g_uuid_digits[16]{ '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
@@ -47,11 +46,11 @@ namespace myl {
 		/// MYTodo: Clock sequence is supposed to be corrected to section 4.5
 		static std::atomic<u16> clock_sequence = generator_u16()(); // 4.1.5
 
-		const u64 ns_intervals_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::utc_clock::now().time_since_epoch()).count() / 100; // RFC states that the time is in 100 nanosecond intervals
+		const u64 ns_intervals_since_epoch = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count() / 100; // RFC states that the time is in 100 nanosecond intervals
 		const u64 intervals = ns_intervals_15_oct_1582_to_jan_1_1970 + ns_intervals_since_epoch;
 		u64* as_u64 = reinterpret_cast<u64*>(bytes);
 
-		as_u64[0] = // Low time is ahead by 27 seconds, reason: https://en.wikipedia.org/wiki/Leap_second#Insertion_of_leap_seconds
+		as_u64[0] =
 			(intervals & 0x0000'0000'FFFF'FFFFull) << 32 |	// Low 32 bits
 			(intervals & 0x0000'FFFF'0000'0000ull) >> 16 |	// Mid 16 bits
 			(intervals & 0xFFFF'0000'0000'0000ull) >> 48;	// High 16 bits
