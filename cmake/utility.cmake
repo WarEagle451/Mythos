@@ -1,0 +1,32 @@
+function(gather FILES_OUT DIRECTORY EXTENSIONS)
+    file(GLOB_RECURSE FOUND_FILES ${DIRECTORY} ${EXTENSIONS})
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${FOUND_FILES})
+    set(${FILES_OUT} ${FOUND_FILES} PARENT_SCOPE)
+endfunction(gather)
+
+function(extract_version VERSION_OUT VERSION_PREFIX FILE)
+    file(READ ${FILE} contents)
+
+    string(REGEX MATCH "${VERSION_PREFIX}_MAJOR ([0-9]+)" _ ${contents})
+    if (NOT CMAKE_MATCH_COUNT EQUAL 1)
+        message(FATAL_ERROR "Could not extract major version from ${FILE}")
+    endif()
+    set(major ${CMAKE_MATCH_1})
+
+    string(REGEX MATCH "${VERSION_PREFIX}_MINOR ([0-9]+)" _ ${contents})
+    if (NOT CMAKE_MATCH_COUNT EQUAL 1)
+        message(FATAL_ERROR "Could not extract minor version from ${FILE}")
+    endif()
+    set(minor ${CMAKE_MATCH_1})
+
+    string(REGEX MATCH "${VERSION_PREFIX}_PATCH ([0-9]+)" _ ${contents})
+    if (NOT CMAKE_MATCH_COUNT EQUAL 1)
+        message(FATAL_ERROR "Could not extract patch version from ${FILE}")
+    endif()
+    set(patch ${CMAKE_MATCH_1})
+
+    set(${VERSION_PREFIX}_MAJOR ${major} PARENT_SCOPE)
+    set(${VERSION_PREFIX}_MINOR ${minor} PARENT_SCOPE)
+    set(${VERSION_PREFIX}_PATCH ${patch} PARENT_SCOPE)
+    set(${VERSION_PREFIX} "${major}.${minor}.${patch}" PARENT_SCOPE)
+endfunction(extract_version)

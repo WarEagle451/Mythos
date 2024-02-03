@@ -1,0 +1,29 @@
+{
+    "version": 8,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 28,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "common",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build/bin-int/${presetName}",
+            "cacheVariables": {
+                "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_DEBUG":          "${sourceDir}/build/bin/${presetName}-debug/lib",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY_DEBUG":          "${sourceDir}/build/bin/${presetName}-debug/lib",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG":          "${sourceDir}/build/bin/${presetName}-debug",
+                "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELEASE":        "${sourceDir}/build/bin/${presetName}-release/lib",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE":        "${sourceDir}/build/bin/${presetName}-release/lib",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE":        "${sourceDir}/build/bin/${presetName}-release",
+                "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_RELWITHDEBINFO": "${sourceDir}/build/bin/${presetName}-dev/lib",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELWITHDEBINFO": "${sourceDir}/build/bin/${presetName}-dev/lib",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO": "${sourceDir}/build/bin/${presetName}-dev",
+                "CMAKE_ARCHIVE_OUTPUT_DIRECTORY_MINSIZEREL":     "${sourceDir}/build/bin/${presetName}-tiny/lib",
+                "CMAKE_LIBRARY_OUTPUT_DIRECTORY_MINSIZEREL":     "${sourceDir}/build/bin/${presetName}-tiny/lib",
+                "CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL":     "${sourceDir}/build/bin/${presetName}-tiny"
+            }
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+# Build Artifacts
+build/**
+
+# Cmake
+**/CMakeUserPresets.json
+
+# Caches
+**/[Cc]ache/
+**/__pycache__/
+
+# Vendors
+vendor/ninja/**
+
+# Visual Studio
+/.vs/**
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+
+# Visual Studio Code
+/.vscode/**

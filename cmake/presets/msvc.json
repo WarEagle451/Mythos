@@ -1,0 +1,88 @@
+{
+    "version": 8,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 28,
+        "patch": 0
+    },
+    "include": [
+        "common.json",
+        "generator.json"
+    ],
+    "configurePresets": [
+        {
+            "name": "windows-x86-msvc",
+            "displayName": "Windows x86 - MSVC",
+            "description": "Target Windows with MSVC for a x86 build",
+            "inherits": [ "vs-2022", "common" ],
+            "architecture": { "value": "Win32", "strategy": "set" },
+            "toolchainFile": "${sourceDir}/cmake/toolchain/windows-x86-msvc.cmake"
+        },
+        {
+            "name": "windows-x86_64-msvc",
+            "displayName": "Windows x86_64 - MSVC",
+            "description": "Target Windows with MSVC for a x86_64 build",
+            "inherits": [ "vs-2022", "common" ],
+            "architecture": { "value": "x64", "strategy": "set" },
+            "toolchainFile": "${sourceDir}/cmake/toolchain/windows-x86_64-msvc.cmake"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-x86-msvc-debug",
+            "displayName": "Windows x86 Debug - MSVC",
+            "description": "Target Windows with MSVC for a x86 debug build",
+            "configurePreset": "windows-x86-msvc",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-x86-msvc-release",
+            "displayName": "Windows x86 Release - MSVC",
+            "description": "Target Windows with MSVC for a x86 release build",
+            "configurePreset": "windows-x86-msvc",
+            "configuration": "Release"
+        },
+        {
+            "name": "windows-x86-msvc-dev",
+            "displayName": "Windows x86 Dev - MSVC",
+            "description": "Target Windows with MSVC for a x86 developer build",
+            "configurePreset": "windows-x86-msvc",
+            "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "windows-x86-msvc-tiny",
+            "displayName": "Windows x86 Tiny - MSVC",
+            "description": "Target Windows with MSVC for a x86 tiny build",
+            "configurePreset": "windows-x86-msvc",
+            "configuration": "MinSizeRel"
+        },
+        {
+            "name": "windows-x86_64-msvc-debug",
+            "displayName": "Windows x86_64 Debug - MSVC",
+            "description": "Target Windows with MSVC for a x86_64 debug build",
+            "configurePreset": "windows-x86_64-msvc",
+            "configuration": "Debug"
+        },
+        {
+            "name": "windows-x86_64-msvc-release",
+            "displayName": "Windows x86_64 Release - MSVC",
+            "description": "Target Windows with MSVC for a x86_64 release build",
+            "configurePreset": "windows-x86_64-msvc",
+            "configuration": "Release"
+        },
+        {
+            "name": "windows-x86_64-msvc-dev",
+            "displayName": "Windows x86_64 Dev - MSVC",
+            "description": "Target Windows with MSVC for a x86_64 developer build",
+            "configurePreset": "windows-x86_64-msvc",
+            "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "windows-x86_64-msvc-tiny",
+            "displayName": "Windows x86_64 Tiny - MSVC",
+            "description": "Target Windows with MSVC for a x86_64 tiny build",
+            "configurePreset": "windows-x86_64-msvc",
+            "configuration": "MinSizeRel"
+        }
+    ]
+}

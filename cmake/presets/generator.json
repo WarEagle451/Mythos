@@ -1,0 +1,41 @@
+{
+    "version": 8,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 28,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "ninja",
+            "hidden": true,
+            "generator": "Ninja",
+            "environment": {
+                "PATH": "$penv{PATH}${pathListSep}${sourceDir}/vendor/ninja/bin"
+            }
+        },
+        {
+            "name": "multi-config",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo;MinSizeRel"
+            }
+        },
+        {
+            "name": "ninja-multi",
+            "hidden": true,
+            "generator": "Ninja Multi-Config",
+            "inherits": [ "ninja", "multi-config" ]
+        },
+        {
+            "name": "vs-2022",
+            "hidden": true,
+            "generator": "Visual Studio 17 2022"
+        },
+        {
+            "name": "vs-2019",
+            "hidden": true,
+            "generator": "Visual Studio 16 2019"
+        }
+    ]
+}
