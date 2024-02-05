@@ -1,11 +1,14 @@
+#include <mythos/core/application.hpp>
+#include <mythos/core/log.hpp>
 #include <mythos/version.hpp>
 
-#include <iostream>
+auto main(MYL_MAYBE_UNUSED int arg_count, MYL_MAYBE_UNUSED char** args) -> int {
+    myth::log::init();
+    MYTHOS_INFO("Mythos:");
+    MYTHOS_INFO("\t- Version: {}", MYTHOS_VERSION_STRING);
 
-auto main(int arg_count, char** args) -> int {
-    std::cout << "Major: " << MYTHOS_VERSION_MAJOR << std::endl;
-    std::cout << "Minor: " << MYTHOS_VERSION_MINOR << std::endl;
-    std::cout << "Patch: " << MYTHOS_VERSION_PATCH << std::endl;
-
+    auto app = myth::create_application();
+    app->run();
+    
     return 0;
 }

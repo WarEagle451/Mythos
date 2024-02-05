@@ -20,7 +20,8 @@
 - [A supported compiler](#compilers)
 
 # 3rd Party Libraries
-- 
+- [myl](https://github.com/WarEagle451/myl)
+- [spdlog](https://github.com/gabime/spdlog)
 
 # Getting Started
 1. Nativate to `Mythos/scripts` and run setup. If needed the python file can also be ran manually, however submodules should be updated and initialized beforehand.

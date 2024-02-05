@@ -12,7 +12,7 @@ set(CMAKE_C_FLAGS_DEBUG          "/Od /Zi /DDEBUG")
 set(CMAKE_C_FLAGS_MINSIZEREL     "/O1 /DNDEBUG")
 
 set(CMAKE_CXX_COMPILER "clang-cl")
-set(CMAKE_CXX_FLAGS "/Wall /std:c++${CMAKE_CXX_STANDARD}")
+set(CMAKE_CXX_FLAGS "/Wall /std:c++${CMAKE_CXX_STANDARD} -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-pre-c++14-compat")
 set(CMAKE_CXX_FLAGS_RELEASE        "/O2 /DNDEBUG")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Zo /DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG          "/Od /Zi /DDEBUG")
