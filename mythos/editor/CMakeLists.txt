@@ -24,10 +24,10 @@ target_include_directories(editor
         ${MYTHOS_EDITOR_INCLUDE_DIR}
 )
 
-# Definitions
+# Linking
+get_build_type_nickname(BUILD_EXTENSION)
+string(REGEX REPLACE "bin-int(.+)" "bin\\1-${BUILD_EXTENSION}/lib/mythos_engine.lib" MYTHOS_ENGINE_LIB_PATH "${CMAKE_BINARY_DIR}")
 target_link_libraries(editor
     PRIVATE
-        #"${CMAKE_BINARY_DIR}/mythos_engine${CMAKE_SHARED_LIBRARY_SUFFIX}"
-        #"D:/Dev/C++/Mythos/build/bin/windows-x86_64-clang-cl-debug/mythos_engine.dll"
-        "D:/Dev/C++/Mythos/build/bin/windows-x86_64-clang-cl-debug/lib/mythos_engine.lib"
+        ${MYTHOS_ENGINE_LIB_PATH}
 )
