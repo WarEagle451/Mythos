@@ -20,7 +20,7 @@ project(
 )
 message(STATUS "Build Mythos: ${MYTHOS_VERSION}")
 
-# add_compile_options
+# This is a mess
 #set(SPDLOG_BUILD_WARNINGS OFF)
 set(SPDLOG_NO_EXCEPTIONS ON)
 #set(SPDLOG_USE_STD_FORMAT ON)
