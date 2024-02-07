@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="https://github.com/WarEagle451/Mythos/blob/main/mythos/resources/branding/logo-name.png">
+    <img src="https://github.com/WarEagle451/Mythos/blob/main/mythos/resources/branding/logo_name.png">
 </p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/WarEagle451/Blue/blob/main/LICENSE)
