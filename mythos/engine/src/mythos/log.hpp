@@ -1,4 +1,6 @@
 #pragma once
+#include <myl/definitions.hpp>
+
 #define SPDLOG_LEVEL_NAMES { "Trace", "Debug", "Info", "Warning", "Error", "Fatal", "Off" }
 #define SPDLOG_SHORT_LEVEL_NAMES { "T", "D", "I", "W", "E", "F", "O" }
 #include <spdlog/spdlog.h>
@@ -11,10 +13,11 @@ namespace myth {
     public:
         static auto init() -> void;
         static auto get() noexcept -> std::shared_ptr<spdlog::logger>;
+
+        MYL_NO_DISCARD static auto color(spdlog::level::level_enum level) -> const char*;
     };
 }
 
-#include <myl/definitions.hpp>
 #ifdef MYL_DEBUG
 #   define MYTHOS_DEBUG(...) ::myth::log::get()->debug(__VA_ARGS__)
 #else

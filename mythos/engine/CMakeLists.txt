@@ -24,8 +24,7 @@ target_include_directories(mythos_engine
 )
 
 # Definitions
-include("${PROJECT_SOURCE_DIR}/cmake/definitions.cmake")
 target_compile_definitions(mythos_engine
-    PUBLIC
-        ${MYTHOS_DEFINITIONS}
+    PRIVATE
+        "MYL_SHARED_LIBRARY"
 )
