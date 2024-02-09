@@ -31,8 +31,8 @@ namespace myth {
 
     MYL_NO_DISCARD auto log::color(spdlog::level::level_enum level) -> const char* {
         switch (level) {
-            case spdlog::level::trace:    return "\033[38;2;240;130;20m";
-            case spdlog::level::debug:    return "\033[38;2;230;230;230m";
+            case spdlog::level::trace:    return "\033[38;2;230;230;230m";
+            case spdlog::level::debug:    return "\033[38;2;240;130;20m";
             case spdlog::level::info:     return "\033[38;2;50;150;40m";
             case spdlog::level::warn:     return "\033[38;2;230;185;50m";
             case spdlog::level::err:      return "\033[38;2;200;50;50m";

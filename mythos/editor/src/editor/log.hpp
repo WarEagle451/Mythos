@@ -11,7 +11,7 @@ namespace editor {
 }
 
 #ifdef MYL_DEBUG
-#   define EDITOR_DEBUG(...) ::myth::log::get()->debug(__VA_ARGS__)
+#   define EDITOR_DEBUG(...) ::editor::log::get()->debug(__VA_ARGS__)
 #else
 #   define EDITOR_DEBUG(...)
 #endif

@@ -5,9 +5,21 @@
 #include <myl/memory.hpp>
 
 namespace myth {
+    struct application_info {
+        const char* name;
+        myl::u16 version_major;
+        myl::u16 version_minor;
+        myl::u16 version_patch;
+    };
+
+    struct application_spec {
+        application_info info;
+    };
+
     class application {
         static myl::observer_ptr<application> s_instance;
 
+        application_info m_info;
         layer_stack m_layer_stack;
 
         bool m_running;
@@ -15,7 +27,7 @@ namespace myth {
     public:
         MYL_NO_DISCARD MYL_API constexpr auto get() -> application&;
 
-        MYL_NO_DISCARD application();
+        MYL_NO_DISCARD application(const application_spec& specs);
         application(const application&) = delete;
         virtual ~application();
 

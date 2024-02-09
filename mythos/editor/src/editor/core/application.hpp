@@ -4,7 +4,7 @@
 namespace editor {
     class application : public myth::application {
     public:
-        MYL_NO_DISCARD application();
+        MYL_NO_DISCARD application(const myth::application_spec& specs);
         ~application();
     };
 }

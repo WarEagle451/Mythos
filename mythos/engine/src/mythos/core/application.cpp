@@ -11,18 +11,27 @@ namespace myth {
         return *s_instance;
     }
     
-    MYL_NO_DISCARD application::application() {
+    MYL_NO_DISCARD application::application(const application_spec& specs)
+        : m_info{ specs.info } {
+        MYTHOS_TRACE("Creating application...");
+        MYTHOS_INFO("Version: {} ({})", MYTHOS_VERSION_STRING, MYTHOS_VERSION);
         ///TODO: MYTHOS_INTERNAL_ASSERT(s_instance == nullptr, "Application has already been created");
         s_instance = this;
-
-        MYTHOS_INFO("Version: {} ({})", MYTHOS_VERSION_STRING, MYTHOS_VERSION);
-
         m_running = true;
         m_suspended = false;
+
+        // Initialize all systems
+
+        MYTHOS_TRACE("Application created");
     }
 
     application::~application() {
-        m_layer_stack.clear();
+        MYTHOS_TRACE("Terminating application...");
+        m_layer_stack.clear(); // Layers should be destroyed before systems are shutdown
+
+        // Shutdown all systems
+
+        MYTHOS_TRACE("Application terminated");
     }
 
     auto application::push_layer(std::unique_ptr<layer>&& l) -> void {

@@ -3,12 +3,13 @@
 #include <editor/log.hpp>
 
 #include <mythos/entry.hpp>
+#include <mythos/version.hpp>
 
 #include <memory>
 
 namespace editor {
-    application::application()
-        : myth::application() {
+    application::application(const myth::application_spec& specs)
+        : myth::application(specs) {
         log::init();
         push_layer(std::make_unique<editor_layer>());
     }
@@ -20,7 +21,16 @@ namespace editor {
 
 namespace myth {
     auto create_application() -> std::unique_ptr<application> {
-        auto app = std::make_unique<editor::application>();
+        myth::application_spec specs{
+            .info{
+               .name = "Mythos Editor",
+               .version_major = MYTHOS_VERSION_MAJOR,
+               .version_minor = MYTHOS_VERSION_MINOR,
+               .version_patch = MYTHOS_VERSION_PATCH,
+            }
+        };
+
+        auto app = std::make_unique<editor::application>(specs);
         return app;
     }
 }
