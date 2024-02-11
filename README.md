@@ -31,8 +31,8 @@
 5. Mythos should be ready to use!
 
 # Building Mythos
-1. Run cmake and select your desired [configuration](https://github.com/WarEagle451/Mythos/blob/main/CMakePresets.json). If the build fails see [Common Issues](#common-issues)
-2. The executable will be located in `Mythos/bin/{configuration}`.
+1. Run cmake and select your desired [configuration](https://github.com/WarEagle451/Mythos/blob/main/CMakePresets.json). Build Mythos, if the build fails see [Common Issues](#common-issues)
+2. The executable will be located in `Mythos/build/bin/{configuration}`.
 
 # Supported Tooling
 ### Compilers
