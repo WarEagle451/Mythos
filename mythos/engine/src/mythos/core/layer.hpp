@@ -1,4 +1,6 @@
 #pragma once
+#include <mythos/core/timestep.hpp>
+
 #include <myl/definitions.hpp>
 
 #include <string>
@@ -16,7 +18,7 @@ namespace myth {
 
         virtual auto on_attach() -> void = 0;
 		virtual auto on_detach() -> void = 0;
-        virtual auto update() -> void = 0;
+        virtual auto update(timestep ts) -> void = 0;
 		virtual auto render() -> void = 0;
 
         MYL_NO_DISCARD constexpr auto name() const noexcept -> std::string_view { return m_name; }

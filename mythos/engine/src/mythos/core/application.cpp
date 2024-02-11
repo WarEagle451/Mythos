@@ -3,6 +3,8 @@
 #include <mythos/log.hpp>
 #include <mythos/version.hpp>
 
+#include <myl/timer.hpp>
+
 #include <utility>
 
 namespace myth {
@@ -12,12 +14,12 @@ namespace myth {
         return *s_instance;
     }
     
-    MYL_NO_DISCARD application::application(const application_spec& specs)
+    MYL_NO_DISCARD application::application(const application_specification& specs)
         : m_info{ specs.info } {
         MYTHOS_TRACE("Creating application...");
         MYTHOS_INFO("Version: {} ({})", MYTHOS_VERSION_STRING, MYTHOS_VERSION);
-        MYTHOS_VERIFY(s_instance.get() == nullptr, "Application has already been created");
 
+        MYTHOS_VERIFY(s_instance.get() == nullptr, "Application has already been created");
         s_instance = this;
         m_running = true;
         m_suspended = false;
@@ -36,6 +38,14 @@ namespace myth {
         MYTHOS_TRACE("Application terminated");
     }
 
+    MYL_NO_DISCARD constexpr auto application::info() const noexcept -> const application_information& {
+        return m_info;
+    }
+
+    MYL_NO_DISCARD constexpr auto application::stats() const noexcept -> const application_statistics& {
+        return m_stats;
+    }
+
     auto application::push_layer(std::unique_ptr<layer>&& l) -> void {
         m_layer_stack.push(std::move(l));
     }
@@ -45,20 +55,30 @@ namespace myth {
     }
 
     auto application::run() -> void {
+        myl::high_resolution_stopwatch timer;
+        timestep ts = 0;
+        timer.reset();
+
         while(m_running) {
+            /// BUG: Keeping track of the time split like this is bad, if the app is paused or the os has
+            /// pause it the game loop will not run and a large value will acculate for ts
+
+            ts = timer.split<std::chrono::seconds, myl::f64>();
+            m_stats.timestep = ts;
+
             if (!m_suspended) {
                 for (auto& l : m_layer_stack)
-                    l->update();
+                    l->update(ts);
                 for (auto& l : m_layer_stack)
                     l->render();
             }
-            ///TEMP: prevent infinite loop
+            /// TEMP: prevent infinite loop
             m_running = false;
         }
     }
 
     auto application::quit() noexcept -> void {
-        ///TODO: This should send a request to quit event, there may be some operations that can not be interupted.
+        /// TODO: This should send a request to quit event, there may be some operations that can not be interupted.
         m_running = false;
     }
 }

@@ -8,7 +8,7 @@
 #include <memory>
 
 namespace editor {
-    application::application(const myth::application_spec& specs)
+    application::application(const myth::application_specification& specs)
         : myth::application(specs) {
         log::init();
         push_layer(std::make_unique<editor_layer>());
@@ -21,7 +21,7 @@ namespace editor {
 
 namespace myth {
     auto create_application() -> std::unique_ptr<application> {
-        myth::application_spec specs{
+        myth::application_specification specs{
             .info{
                .name = "Mythos Editor",
                .version_major = MYTHOS_VERSION_MAJOR,

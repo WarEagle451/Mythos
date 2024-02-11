@@ -9,7 +9,7 @@ namespace editor {
 
         auto on_attach() -> void override;
 		auto on_detach() -> void override;
-        auto update() -> void override;
+        auto update(myth::timestep ts) -> void override;
 		auto render() -> void override;
     };
 }

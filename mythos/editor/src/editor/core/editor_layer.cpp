@@ -19,7 +19,7 @@ namespace editor {
 
     }
 
-    auto editor_layer::update() -> void {
+    auto editor_layer::update(myth::timestep ts) -> void {
 
     }
 
