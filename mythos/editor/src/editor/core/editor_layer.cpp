@@ -4,12 +4,7 @@
 namespace editor {
     MYL_NO_DISCARD editor_layer::editor_layer()
         : myth::layer("Editor") {
-        EDITOR_TRACE("Trace");
-        EDITOR_DEBUG("Debug");
-        EDITOR_INFO("Info");
-        EDITOR_WARN("Warning");
-        EDITOR_ERROR("Error");
-        EDITOR_FATAL("Fatal");
+            
     }
 
     editor_layer::~editor_layer() {

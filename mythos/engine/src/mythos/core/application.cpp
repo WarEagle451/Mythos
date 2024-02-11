@@ -1,3 +1,4 @@
+#include <mythos/assert.hpp>
 #include <mythos/core/application.hpp>
 #include <mythos/log.hpp>
 #include <mythos/version.hpp>
@@ -15,7 +16,8 @@ namespace myth {
         : m_info{ specs.info } {
         MYTHOS_TRACE("Creating application...");
         MYTHOS_INFO("Version: {} ({})", MYTHOS_VERSION_STRING, MYTHOS_VERSION);
-        ///TODO: MYTHOS_INTERNAL_ASSERT(s_instance == nullptr, "Application has already been created");
+        MYTHOS_VERIFY(s_instance.get() == nullptr, "Application has already been created");
+
         s_instance = this;
         m_running = true;
         m_suspended = false;
