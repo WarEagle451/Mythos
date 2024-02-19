@@ -21,6 +21,9 @@ namespace myth {
 
         MYTHOS_VERIFY(s_instance.get() == nullptr, "Application has already been created");
         s_instance = this;
+
+        m_window = window::create();
+
         m_running = true;
         m_suspended = false;
 
@@ -35,15 +38,9 @@ namespace myth {
 
         // Shutdown all systems
 
+        m_window.reset();
+
         MYTHOS_TRACE("Application terminated");
-    }
-
-    MYL_NO_DISCARD constexpr auto application::info() const noexcept -> const application_information& {
-        return m_info;
-    }
-
-    MYL_NO_DISCARD constexpr auto application::stats() const noexcept -> const application_statistics& {
-        return m_stats;
     }
 
     auto application::push_layer(std::unique_ptr<layer>&& l) -> void {
@@ -72,8 +69,11 @@ namespace myth {
                 for (auto& l : m_layer_stack)
                     l->render();
             }
+
+            m_window->update();
+
             /// TEMP: prevent infinite loop
-            m_running = false;
+            //m_running = false;
         }
     }
 
