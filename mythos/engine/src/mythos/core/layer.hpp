@@ -1,5 +1,6 @@
 #pragma once
 #include <mythos/core/timestep.hpp>
+#include <mythos/event/event.hpp>
 
 #include <myl/definitions.hpp>
 
@@ -18,6 +19,7 @@ namespace myth {
 
         virtual auto on_attach() -> void = 0;
 		virtual auto on_detach() -> void = 0;
+        virtual auto on_event(event::base& e) -> void = 0;
         virtual auto update(timestep ts) -> void = 0;
 		virtual auto render() -> void = 0;
 

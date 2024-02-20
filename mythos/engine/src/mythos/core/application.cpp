@@ -22,12 +22,15 @@ namespace myth {
         MYTHOS_VERIFY(s_instance.get() == nullptr, "Application has already been created");
         s_instance = this;
 
+        // Initialize all systems
+
+        // 
+        m_event_cb = MYTHOS_BIND_EVENT_FUNC(application::on_event);
+        event::set_callback(m_event_cb);
         m_window = window::create();
 
         m_running = true;
         m_suspended = false;
-
-        // Initialize all systems
 
         MYTHOS_TRACE("Application created");
     }
@@ -71,14 +74,32 @@ namespace myth {
             }
 
             m_window->update();
-
-            /// TEMP: prevent infinite loop
-            //m_running = false;
         }
     }
 
     auto application::quit() noexcept -> void {
         /// TODO: This should send a request to quit event, there may be some operations that can not be interupted.
         m_running = false;
+    }
+
+    auto application::on_window_close(event::window_close& e) -> bool {
+        if (m_window.get() == &e.window()) {
+            quit();
+            return true;
+        }
+
+        return false;
+    }
+
+    auto application::on_event(event::base& e) -> void {
+        event::dispatcher d(e);
+        d.dispatch<event::window_close>(MYTHOS_BIND_EVENT_FUNC(application::on_window_close));
+
+        if (!e.handled)
+            for (auto& l : m_layer_stack) {
+                if (e.handled)
+                    break;
+                l->on_event(e);
+            }
     }
 }

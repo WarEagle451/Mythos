@@ -19,6 +19,10 @@ namespace editor {
 
     }
 
+    auto editor_layer::on_event(myth::event::base& e) -> void {
+        
+    }
+
     auto editor_layer::update(myth::timestep ts) -> void {
 
     }

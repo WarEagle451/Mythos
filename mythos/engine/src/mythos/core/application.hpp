@@ -1,5 +1,6 @@
 #pragma once
 #include <mythos/core/layer_stack.hpp>
+#include <mythos/event/window_event.hpp>
 #include <mythos/platform/window.hpp>
 
 #include <myl/definitions.hpp>
@@ -28,6 +29,7 @@ namespace myth {
         application_statistics m_stats;
 
         layer_stack m_layer_stack;
+        event::callback m_event_cb;
         std::unique_ptr<window> m_window;
 
         bool m_running;
@@ -50,6 +52,10 @@ namespace myth {
         auto quit() noexcept -> void;
 
         auto operator=(const application&) -> application& = delete;
+    private:
+        auto on_window_close(event::window_close& e) -> bool;
+
+        auto on_event(event::base&) -> void;
     };
 
     // To be defined in client

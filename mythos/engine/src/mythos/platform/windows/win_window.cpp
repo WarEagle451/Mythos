@@ -66,6 +66,11 @@ namespace myth::win {
     auto CALLBACK window::process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) -> LRESULT {
         win::window* target = static_cast<win::window*>(application::get().main_window());
         switch (msg) {
+            case WM_CLOSE: {
+                event::window_close e(*target);
+                event::fire(e);
+                return 0;
+            }
             case WM_DESTROY:
                 PostQuitMessage(0);
                 return 0;
