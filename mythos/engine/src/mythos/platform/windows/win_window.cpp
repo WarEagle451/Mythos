@@ -9,7 +9,7 @@
 ///BUG: Somewhere in here causes a bad termination
 
 namespace myth::win {
-    MYL_NO_DISCARD window::window()
+    MYL_NO_DISCARD window::window(const window_configuration& config)
         : myth::window() {
 
         constexpr const char* class_name = "mythos_window";
@@ -35,15 +35,13 @@ namespace myth::win {
         DWORD window_style = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_OVERLAPPED | WS_THICKFRAME;
         myl::u32 window_ex_style = WS_EX_APPWINDOW;
 
-        int w = 800;
-        int h = 600;
-        int x = (GetSystemMetrics(SM_CXSCREEN) - w) / 2;
-        int y = (GetSystemMetrics(SM_CYSCREEN) - h) / 2;
+        int x = (GetSystemMetrics(SM_CXSCREEN) - config.dimensions.w) / 2;
+        int y = (GetSystemMetrics(SM_CYSCREEN) - config.dimensions.h) / 2;
 
         RECT window_rect = { 0, 0, 0, 0 };
 		AdjustWindowRectEx(&window_rect, window_style, FALSE, window_ex_style);
 
-        m_handle = CreateWindowExA(window_ex_style, class_name, "Add Title", window_style, x, y, w, h, NULL, NULL, m_instance, NULL);
+        m_handle = CreateWindowExA(window_ex_style, class_name, config.title, window_style, x, y, config.dimensions.w, config.dimensions.h, NULL, NULL, m_instance, NULL);
         if (!m_handle)
             MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string(GetLastError()));
 

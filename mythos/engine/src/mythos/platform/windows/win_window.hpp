@@ -10,7 +10,7 @@ namespace myth::win {
         HINSTANCE m_instance;
         HWND m_handle;
     public:
-        MYL_NO_DISCARD window();
+        MYL_NO_DISCARD window(const window_configuration& config);
         ~window();
 
         auto update() -> void;

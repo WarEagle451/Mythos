@@ -16,6 +16,7 @@ namespace myth {
 
     struct application_specification {
         application_information info{};
+        window_configuration window_config{};
     };
 
     struct application_statistics {
