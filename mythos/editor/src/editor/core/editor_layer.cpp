@@ -1,6 +1,8 @@
 #include <editor/core/editor_layer.hpp>
 #include <editor/log.hpp>
 
+#include <mythos/core/application.hpp>
+
 namespace editor {
     MYL_NO_DISCARD editor_layer::editor_layer()
         : myth::layer("Editor") {
@@ -12,7 +14,7 @@ namespace editor {
     }
 
     auto editor_layer::on_attach() -> void {
-
+    
     }
 
 	auto editor_layer::on_detach() -> void {

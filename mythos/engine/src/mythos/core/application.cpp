@@ -24,10 +24,10 @@ namespace myth {
 
         // Initialize all systems
 
-        // 
+        // Window may receive bad events if callback is set first
+        m_window = window::create(specs.window_config);
         m_event_cb = MYTHOS_BIND_EVENT_FUNC(application::on_event);
         event::set_callback(m_event_cb);
-        m_window = window::create(specs.window_config);
 
         m_running = true;
         m_suspended = false;
@@ -61,7 +61,8 @@ namespace myth {
 
         while(m_running) {
             /// BUG: Keeping track of the time split like this is bad, if the app is paused or the os has
-            /// pause it the game loop will not run and a large value will acculate for ts
+            /// pause it the game loop will not run and a large value will accumulate for ts, this
+            /// accumulation should be ignored
 
             ts = timer.split<std::chrono::seconds, myl::f64>();
             m_stats.timestep = ts;
@@ -82,6 +83,14 @@ namespace myth {
         m_running = false;
     }
 
+    auto application::on_window_resize(event::window_resize& e) -> bool {
+        if (m_window.get() == &e.window()) {
+            return true;
+        }
+
+        return false;
+    }
+    
     auto application::on_window_close(event::window_close& e) -> bool {
         if (m_window.get() == &e.window()) {
             quit();
@@ -91,9 +100,28 @@ namespace myth {
         return false;
     }
 
+    auto application::on_window_focus_gain(event::window_focus_gain& e) -> bool {
+        if (m_window.get() == &e.window()) {
+            return true;
+        }
+
+        return false;
+    }
+
+    auto application::on_window_focus_lost(event::window_focus_lost& e) -> bool {
+        if (m_window.get() == &e.window()) {
+            return true;
+        }
+
+        return false;
+    }
+
     auto application::on_event(event::base& e) -> void {
         event::dispatcher d(e);
+        d.dispatch<event::window_resize>(MYTHOS_BIND_EVENT_FUNC(application::on_window_resize));
         d.dispatch<event::window_close>(MYTHOS_BIND_EVENT_FUNC(application::on_window_close));
+        d.dispatch<event::window_focus_gain>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_gain));
+        d.dispatch<event::window_focus_lost>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_lost));
 
         if (!e.handled)
             for (auto& l : m_layer_stack) {

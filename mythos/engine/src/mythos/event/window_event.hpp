@@ -6,14 +6,18 @@
 
 namespace myth::event {
     class window_resize : public base {
+        window& m_window;
         myl::i32vec2 m_dimensions;
     public:
-        MYL_NO_DISCARD constexpr window_resize(myl::i32 w, myl::i32 h)
-            : m_dimensions{ w, h } {}
-        MYL_NO_DISCARD constexpr window_resize(const myl::i32vec2& dimensions)
-            : m_dimensions(dimensions) {}
+        MYL_NO_DISCARD constexpr window_resize(window& window, myl::i32 w, myl::i32 h)
+            : m_window{ window }
+            , m_dimensions{ w, h } {}
+        MYL_NO_DISCARD constexpr window_resize(window& window, const myl::i32vec2& dimensions)
+            : m_window{ window }
+            , m_dimensions(dimensions) {}
 
         MYL_NO_DISCARD constexpr auto dim() const -> const myl::i32vec2& { return m_dimensions; }
+        MYL_NO_DISCARD constexpr auto window() -> window& { return m_window; }
 
         MYTHOS_IMPL_EVENT_CATEGORY(category_flags::application)
         MYTHOS_IMPL_EVENT_TYPE(window_resize)

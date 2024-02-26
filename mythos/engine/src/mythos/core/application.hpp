@@ -54,7 +54,10 @@ namespace myth {
 
         auto operator=(const application&) -> application& = delete;
     private:
+        auto on_window_resize(event::window_resize& e) -> bool;
         auto on_window_close(event::window_close& e) -> bool;
+        auto on_window_focus_gain(event::window_focus_gain& e) -> bool;
+        auto on_window_focus_lost(event::window_focus_lost& e) -> bool;
 
         auto on_event(event::base&) -> void;
     };

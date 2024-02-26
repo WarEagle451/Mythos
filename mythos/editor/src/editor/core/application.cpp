@@ -27,6 +27,9 @@ namespace myth {
                .version_major = MYTHOS_VERSION_MAJOR,
                .version_minor = MYTHOS_VERSION_MINOR,
                .version_patch = MYTHOS_VERSION_PATCH,
+            },
+            .window_config{
+                .title = "Mythos Editor"
             }
         };
 
