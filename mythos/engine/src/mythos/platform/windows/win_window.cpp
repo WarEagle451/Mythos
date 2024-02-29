@@ -4,11 +4,76 @@
 #   include <mythos/log.hpp>
 #   include <mythos/platform/windows/win_utilities.hpp>
 
-#    include <WinUser.h>
-
-///BUG: Somewhere in here causes a bad termination
+#	include <hidusage.h>
+#   include <WinUser.h>
 
 namespace myth::win {
+    static auto register_raw_input_devices(HWND window_handle) -> void {
+        constexpr UINT device_type_count = 4;
+        RAWINPUTDEVICE devices[device_type_count]{
+            { // Mouse
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_MOUSE,
+                //.dwFlags = RIDEV_NOLEGACY,
+                .hwndTarget = window_handle
+            },
+            { // Joy Stick
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_JOYSTICK,
+                //.dwFlags = RIDEV_NOLEGACY,
+                .hwndTarget = window_handle
+            },
+            { // Gamepad
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_GAMEPAD,
+                //.dwFlags = RIDEV_NOLEGACY,
+                .hwndTarget = window_handle
+            },
+            { // Keyboard
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_KEYBOARD,
+                //.dwFlags = RIDEV_NOLEGACY,
+                .hwndTarget = window_handle
+            }
+        };
+
+        if (!RegisterRawInputDevices(devices, device_type_count, sizeof(RAWINPUTDEVICE)))
+            MYTHOS_FATAL("Failed to register raw input devices: {}", win::last_error_as_string(GetLastError()));
+    }
+
+    static auto unregister_raw_input_devices(HWND window_handle) -> void {
+        constexpr UINT device_type_count = 4;
+        RAWINPUTDEVICE devices[device_type_count]{
+            { // Mouse
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_MOUSE,
+                .dwFlags = RIDEV_REMOVE,
+                .hwndTarget = window_handle
+            },
+            { // Joy Stick
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_JOYSTICK,
+                .dwFlags = RIDEV_REMOVE,
+                .hwndTarget = window_handle
+            },
+            { // Gamepad
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_GAMEPAD,
+                .dwFlags = RIDEV_REMOVE,
+                .hwndTarget = window_handle
+            },
+            { // Keyboard
+                .usUsagePage = HID_USAGE_PAGE_GENERIC,
+                .usUsage = HID_USAGE_GENERIC_KEYBOARD,
+                .dwFlags = RIDEV_REMOVE,
+                .hwndTarget = window_handle
+            }
+        };
+
+        if (!RegisterRawInputDevices(devices, device_type_count, sizeof(RAWINPUTDEVICE)))
+            MYTHOS_ERROR("Failed to unregister raw input devices: {}", win::last_error_as_string(GetLastError()));
+    }
+
     MYL_NO_DISCARD static auto client_dimensions_to_window_dimensions(HWND handle, const myl::i32vec2& client_dimensions) -> myl::i32vec2 {
         RECT cr{}, wr{};
         GetClientRect(handle, &cr);
@@ -82,9 +147,14 @@ namespace myth::win {
             m_dimensions.x = client.right;
             m_dimensions.y = client.bottom;
         }
+
+        register_raw_input_devices(NULL);
     }
 
     window::~window() {
+        ///BUG: for some reason passing the window handle hits the error message
+        unregister_raw_input_devices(NULL);
+
         if (m_handle)
             DestroyWindow(m_handle);
     }
@@ -132,7 +202,7 @@ namespace myth::win {
 
     auto window::set_dimensions(const myl::i32vec2& dimensions) -> void {
         auto dim = client_dimensions_to_window_dimensions(m_handle, dimensions);
-        // Sends WM_SIZE and therefore calls on_resize
+        ///MYTODO: Sends WM_SIZE and therefore calls on_resize, Should not need the else statement I think
         if (!SetWindowPos(m_handle, NULL, 0, 0, dim.w, dim.h, SWP_NOMOVE))
             MYTHOS_ERROR("Window set dimensions failed: {}", win::last_error_as_string(GetLastError()));
         else
@@ -149,7 +219,6 @@ namespace myth::win {
 
     // Unimplemented (possibly useful) messages
     // - WM_ENTERSIZEMOVE, WM_EXITSIZEMOVE
-    // - WM_INPUT
     // - WM_CREATE, WM_NCCREATE, WM_NCDESTROY
     // - WM_SHOWWINDOW, WM_ACTIVATEAPP, WM_ACTIVATE, WM_NCACTIVATE
     // - WM_ENABLE
@@ -188,7 +257,6 @@ namespace myth::win {
     // - HKM_GETHOTKEY, HKM_SETHOTKEY, HKM_SETRULES
     // - WM_CAPTURECHANGED
     // - WM_POWERBROADCAST
-    // - WM_DEVICECHANGE
     // - WM_DROPFILES
     // - WM_RENDERFORMAT, WM_RENDERALLFORMATS, WM_DESTROYCLIPBOARD, WM_DRAWCLIPBOARD, WM_PAINTCLIPBOARD, WM_VSCROLLCLIPBOARD, WM_SIZECLIPBOARD, WM_ASKCBFORMATNAME, WM_CHANGECBCHAIN, WM_HSCROLLCLIPBOARD
     // - WM_QUERYNEWPALETTE, WM_PALETTEISCHANGING, WM_PALETTECHANGED
@@ -197,7 +265,8 @@ namespace myth::win {
     // - WM_APPCOMMAND
     // - WM_HANDHELDFIRST, WM_HANDHELDLAST
     // - WM_DPICHANGED
-    
+    // - WM_DEVICECHANGE
+
     auto CALLBACK window::process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) -> LRESULT {
         win::window* target = static_cast<win::window*>(application::get().main_window()); 
         if (target)
@@ -226,13 +295,13 @@ namespace myth::win {
                     break;
                 }
                 case WM_SETFOCUS: {
-                    /// wParam contains: A handle to the window that has lost the keyboard focus. This parameter can be NULL.
+                    ///MYTODO: wParam contains: A handle to the window that has lost the keyboard focus. This parameter can be NULL.
                     event::window_focus_gain e(*target);
                     event::fire(e);
                     return 0;
                 }
                 case WM_KILLFOCUS: {
-                    /// wParam contains: A handle to the window that receives the keyboard focus. This parameter can be NULL.
+                    ///MYTODO: wParam contains: A handle to the window that receives the keyboard focus. This parameter can be NULL.
                     event::window_focus_lost e(*target);
                     event::fire(e);
                     return 0;
@@ -244,6 +313,10 @@ namespace myth::win {
                 }
                 case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
 					return 1;
+                case WM_INPUT:
+                    ///MYTODO: Possibly relavent https://devblogs.microsoft.com/oldnewthing/20160627-00/?p=93755#:~:text=Finally%2C%20we%20call-,Def%C2%ADRaw%C2%ADInput%C2%ADProc,-to%20allow%20default
+                    MYTHOS_WARN("WM_INPUT Detected");
+                    break;
             }
 
         return DefWindowProcA(hwnd, msg, w_param, l_param);
