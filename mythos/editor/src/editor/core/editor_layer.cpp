@@ -17,7 +17,7 @@ namespace editor {
     
     }
 
-	auto editor_layer::on_detach() -> void {
+    auto editor_layer::on_detach() -> void {
 
     }
 
@@ -26,13 +26,17 @@ namespace editor {
         d.dispatch<myth::event::key_pressed>(MYTHOS_BIND_EVENT_FUNC(editor_layer::on_key_pressed));
         d.dispatch<myth::event::key_released>(MYTHOS_BIND_EVENT_FUNC(editor_layer::on_key_released));
         d.dispatch<myth::event::typed>(MYTHOS_BIND_EVENT_FUNC(editor_layer::on_typed));
+        d.dispatch<myth::event::mouse_moved>(MYTHOS_BIND_EVENT_FUNC(editor_layer::on_mouse_moved));
+        d.dispatch<myth::event::mouse_scrolled>(MYTHOS_BIND_EVENT_FUNC(editor_layer::on_mouse_scrolled));
+        d.dispatch<myth::event::mouse_pressed>(MYTHOS_BIND_EVENT_FUNC(editor_layer::on_mouse_pressed));
+        d.dispatch<myth::event::mouse_released>(MYTHOS_BIND_EVENT_FUNC(editor_layer::on_mouse_released));
     }
 
     auto editor_layer::update(myth::timestep ts) -> void {
 
     }
 
-	auto editor_layer::render() -> void {
+    auto editor_layer::render() -> void {
         
     }
 
@@ -48,6 +52,26 @@ namespace editor {
 
     auto editor_layer::on_typed(myth::event::typed& e) -> bool {
         EDITOR_TRACE("Typed '{}'", e.character());
+        return true;
+    }
+
+    auto editor_layer::on_mouse_moved(myth::event::mouse_moved& e) -> bool {
+        EDITOR_TRACE("Mouse moved [{}, {}]", e.position().x, e.position().y);
+        return true;
+    }
+
+    auto editor_layer::on_mouse_scrolled(myth::event::mouse_scrolled& e) -> bool {
+        EDITOR_TRACE("Mouse scrolled [{}, {}]", e.delta().x, e.delta().y);
+        return true;
+    }
+
+    auto editor_layer::on_mouse_pressed(myth::event::mouse_pressed& e) -> bool {
+        EDITOR_TRACE("Mouse button(s) '{}' pressed", e.buttons());
+        return true;
+    }
+
+    auto editor_layer::on_mouse_released(myth::event::mouse_released& e) -> bool {
+        EDITOR_TRACE("Mouse button(s) '{}' released", e.buttons());
         return true;
     }
 }

@@ -2,22 +2,36 @@
 #ifdef MYL_OS_WINDOWS
 #   include <mythos/core/application.hpp>
 #   include <mythos/core/keyboard.hpp>
+#   include <mythos/core/mousecodes.hpp>
 #   include <mythos/input.hpp>
 #   include <mythos/log.hpp>
 #   include <mythos/platform/windows/win_utilities.hpp>
 
 #   include <Windows.h> // WinUser.h
-#	include <hidusage.h>
+#   include <hidusage.h>
 
 // https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
 
 namespace myth::win {
+    MYL_NO_DISCARD static auto translate_raw_mouse_code(USHORT buttons) noexcept -> mousecode {
+        using namespace mouse_button;
+        mousecode code = none;
+        if ((buttons & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_LEFT_BUTTON_DOWN)) != 0)     code |= left;
+        if ((buttons & (RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_DOWN)) != 0)   code |= right;
+        if ((buttons & (RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_DOWN)) != 0) code |= middle;
+        if ((buttons & (RI_MOUSE_BUTTON_4_UP | RI_MOUSE_BUTTON_4_DOWN)) != 0)           code |= button4;
+        if ((buttons & (RI_MOUSE_BUTTON_5_UP | RI_MOUSE_BUTTON_5_DOWN)) != 0)           code |= button5;
+
+        return code;
+    }
+
     static auto register_for_raw_input_devices(HWND window_handle) -> void {
         constexpr UINT device_type_count = 4;
         RAWINPUTDEVICE devices[device_type_count]{
             { // Mouse
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
                 .usUsage = HID_USAGE_GENERIC_MOUSE,
+                /// MYBUG: RIDEV_NOLEGACY prevents the use of the close button
                 //.dwFlags = RIDEV_NOLEGACY, // RIDEV_CAPTUREMOUSE; Will mouse buttons will not activate other windows, but how to toggle this?
                 .hwndTarget = window_handle
             },
@@ -36,7 +50,7 @@ namespace myth::win {
             { // Keyboard
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
                 .usUsage = HID_USAGE_GENERIC_KEYBOARD,
-                ///MYBUG: RIDEV_NOLEGACY blocks WM_CHAR messages, an alternative method of sending typed events must be implemented,
+                /// MYBUG: RIDEV_NOLEGACY blocks WM_CHAR messages, an alternative method of sending typed events must be implemented,
                 /// maybe process_typed after process_key in RIM_TYPEKEYBOARD if state == to down
                 //.dwFlags = RIDEV_NOLEGACY,
                 .hwndTarget = window_handle
@@ -314,16 +328,64 @@ namespace myth::win {
                     return 0;
                 }
                 case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
-					return 1;
+                    return 1;
                 case WM_INPUT: {
-                    ///MYTODO: Possibly relavent https://devblogs.microsoft.com/oldnewthing/20160627-00/?p=93755#:~:text=Finally%2C%20we%20call-,Def%C2%ADRaw%C2%ADInput%C2%ADProc,-to%20allow%20default
-                    
                     RAWINPUT raw{};
                     UINT pcb_size = sizeof(RAWINPUT);
                     GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &pcb_size, sizeof(RAWINPUTHEADER));
                     switch (raw.header.dwType) {
-                        case RIM_TYPEMOUSE:
-                            // https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawmouse
+                        case RIM_TYPEMOUSE: {
+                            POINT mouse_coords{};
+                            GetCursorPos(&mouse_coords);
+                            const bool hovered = WindowFromPoint(mouse_coords) == target->m_handle;
+                            auto& mouse = raw.data.mouse;
+
+                            // Mouse movement
+                            if (mouse.lLastX != 0 || mouse.lLastY != 0) {
+                                myl::f32vec2 deltas{ static_cast<myl::f32>(raw.data.mouse.lLastX), static_cast<myl::f32>(raw.data.mouse.lLastY) };
+                                if (mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
+                                    /// MYTODO: Find a way to get RIM_TYPEMOUSE to work with absolute mouse movement
+                                    MYTHOS_ERROR("Mythos does not currently support absolute mouse movement on Windows");
+                                else
+                                    input::process_cursor_delta(deltas);
+
+                                if (hovered) {
+                                    ScreenToClient(hwnd, &mouse_coords); // Translate to window coords
+                                    input::process_window_cursor_position(myl::f32vec2(static_cast<myl::f32>(mouse_coords.x), static_cast<myl::f32>(mouse_coords.y)));
+                                }
+                            }
+
+                            // Other mouse inputs
+                            const auto& mb_flags = raw.data.mouse.usButtonFlags;
+                            if (mb_flags != 0) {
+                                constexpr auto mouse_button_up_flags = RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_BUTTON_4_UP | RI_MOUSE_BUTTON_5_UP;
+                                constexpr auto mouse_button_down_flags = RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN;
+                                if (hovered) { // Most other mouse inputs should only be evaluated if in the client area of the window
+                                    if ((mb_flags & mouse_button_down_flags) != 0)
+                                        input::process_mouse_buttons_down(translate_raw_mouse_code(mb_flags));
+
+                                    /// MYTODO: Enable the use of no notch mouse wheels
+                                    /// https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawmouse#:~:text=a%20multiple%20of-,WHEEL_DELTA,-%2C%20which%20is%20set
+
+                                    if (mb_flags & RI_MOUSE_WHEEL) { // Vertical mouse wheel
+                                        myl::i16 delta_y = static_cast<myl::i16>(mouse.usButtonData);
+                                        if (delta_y != 0)
+                                            input::process_mouse_wheel({ 0.f, delta_y < 0 ? -1.f : 1.f }); // Flatten to an OS-independent(-1, 1)
+                                    }
+                                    else if (mb_flags & RI_MOUSE_HWHEEL) { // Horizontal mouse wheel
+                                        myl::i16 delta_x = static_cast<myl::i16>(mouse.usButtonData);
+                                        if (delta_x != 0)
+                                            input::process_mouse_wheel({ delta_x < 0 ? -1.f : 1.f, 0.f }); // Flatten to an OS-independent(-1, 1)
+                                    }
+                                }
+                
+                                // Application thinks mouse buttons are pressed, confirm this
+                                // Prevents pressing a button in the client area and releasing outside the client area tricking the window into thinking the button is still pressed when it is not
+                                if (input::mouse_button_states() != mouse_button::none) // Button(s) are pressed
+                                    if ((mb_flags & mouse_button_up_flags) != 0)
+                                        input::process_mouse_buttons_up(translate_raw_mouse_code(mb_flags));
+                            }
+                        }
                             break;
                         case RIM_TYPEKEYBOARD:
                             if (GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT) { // Only handle keyboard with the window is in the foreground
@@ -338,7 +400,7 @@ namespace myth::win {
                                 if (code == key::unknown)
                                     MYTHOS_WARN("Unknown scancode: {}", code);
 #endif
-								input::process_key(code, (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down);
+                                input::process_key(code, (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down);
                             }
                             break;
                         case RIM_TYPEHID:
@@ -348,10 +410,10 @@ namespace myth::win {
                             MYTHOS_ERROR("Unknown raw input message, this should not be possible!");
                             break;
                     }
-
                     break; // Return?
                 }
                 case WM_CHAR:
+                /// MYTODO: Replace using WM_INPUT
                     input::process_typed(static_cast<WCHAR>(w_param));
                     return 0;
             }

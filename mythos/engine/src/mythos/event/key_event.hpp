@@ -8,7 +8,7 @@ namespace myth::event {
         bool m_repeat;
     public:
         MYL_NO_DISCARD constexpr key_pressed(const keycode code, bool repeat)
-			: m_code{ code }
+            : m_code{ code }
             , m_repeat{ repeat } {}
 
         MYL_NO_DISCARD constexpr auto key() const noexcept -> keycode { return m_code; }
@@ -22,7 +22,7 @@ namespace myth::event {
         keycode m_code;
     public:
         MYL_NO_DISCARD constexpr key_released(const keycode code)
-			: m_code{ code } {}
+            : m_code{ code } {}
 
         MYL_NO_DISCARD constexpr auto key() const noexcept -> keycode { return m_code; }
 
@@ -34,7 +34,7 @@ namespace myth::event {
         myl::u16 m_character;
     public:
         MYL_NO_DISCARD constexpr typed(myl::u16 character)
-			: m_character{ character } {}
+            : m_character{ character } {}
 
         MYL_NO_DISCARD constexpr auto character() const noexcept -> myl::u16 { return m_character; }
 

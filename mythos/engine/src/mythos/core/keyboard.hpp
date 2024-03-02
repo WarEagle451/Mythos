@@ -192,7 +192,7 @@ namespace myth {
             ///MYBUG: Below makes no sense for a u16 number
             case 0xE19DC5: return pause;
 
-			case 0xE1D145: return pause;
+            case 0xE1D145: return pause;
             default: return unknown;
         }
     }

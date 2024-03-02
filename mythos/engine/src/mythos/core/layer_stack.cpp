@@ -39,6 +39,6 @@ namespace myth {
         if (it < m_layers.begin() + m_layer_insert_index) // it is a layer. Popping overlays doesn't decrement m_layer_insert_index
             --m_layer_insert_index;
         l->on_detach();
-		m_layers.erase(it);
+        m_layers.erase(it);
     }
 }

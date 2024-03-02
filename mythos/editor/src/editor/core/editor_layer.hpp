@@ -1,6 +1,7 @@
 #pragma once
 #include <mythos/core/layer.hpp>
 #include <mythos/event/key_event.hpp>
+#include <mythos/event/mouse_event.hpp>
 
 namespace editor {
     class editor_layer final : public myth::layer {
@@ -9,13 +10,17 @@ namespace editor {
         ~editor_layer() override;
 
         auto on_attach() -> void override;
-		auto on_detach() -> void override;
+        auto on_detach() -> void override;
         auto on_event(myth::event::base& e) -> void override;
         auto update(myth::timestep ts) -> void override;
-		auto render() -> void override;
+        auto render() -> void override;
     private:
         auto on_key_pressed(myth::event::key_pressed& e) -> bool;
         auto on_key_released(myth::event::key_released& e) -> bool;
         auto on_typed(myth::event::typed& e) -> bool;
+        auto on_mouse_moved(myth::event::mouse_moved& e) -> bool;
+        auto on_mouse_scrolled(myth::event::mouse_scrolled& e) -> bool;
+        auto on_mouse_pressed(myth::event::mouse_pressed& e) -> bool;
+        auto on_mouse_released(myth::event::mouse_released& e) -> bool;
     };
 }

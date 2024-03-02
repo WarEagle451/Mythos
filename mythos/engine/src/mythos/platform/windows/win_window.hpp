@@ -3,7 +3,7 @@
 #ifdef MYL_OS_WINDOWS
 #   include <mythos/platform/window.hpp>
 
-#	include <windows.h>
+#   include <windows.h>
 
 namespace myth::win {
     class window : public myth::window {
