@@ -1,5 +1,6 @@
 #include <mythos/assert.hpp>
 #include <mythos/core/application.hpp>
+#include <mythos/input.hpp>
 #include <mythos/log.hpp>
 #include <mythos/version.hpp>
 
@@ -23,6 +24,8 @@ namespace myth {
         s_instance = this;
 
         // Initialize all systems
+
+        input::init();
 
         // Window may receive bad events if callback is set first
         m_window = window::create(specs.window_config);
@@ -75,6 +78,10 @@ namespace myth {
             }
 
             m_window->update();
+
+            // Window's update function will process input related messages
+            if (!m_suspended)
+                input::update();
         }
     }
 

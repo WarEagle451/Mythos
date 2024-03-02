@@ -1,5 +1,6 @@
 #pragma once
 #include <mythos/core/layer.hpp>
+#include <mythos/event/key_event.hpp>
 
 namespace editor {
     class editor_layer final : public myth::layer {
@@ -12,5 +13,9 @@ namespace editor {
         auto on_event(myth::event::base& e) -> void override;
         auto update(myth::timestep ts) -> void override;
 		auto render() -> void override;
+    private:
+        auto on_key_pressed(myth::event::key_pressed& e) -> bool;
+        auto on_key_released(myth::event::key_released& e) -> bool;
+        auto on_typed(myth::event::typed& e) -> bool;
     };
 }
