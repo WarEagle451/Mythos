@@ -139,7 +139,7 @@ namespace myth::win {
         myl::u32 window_ex_style = WS_EX_APPWINDOW;
     
         int x{}, y{}, w{}, h{};
-        { // Create a normal window
+        { // Create a windowed window
             RECT window_rect = { 0, 0, 0, 0 };
             AdjustWindowRectEx(&window_rect, window_style, FALSE, window_ex_style);
             m_position = correct_negative_position(m_position, m_dimensions);
@@ -175,6 +175,9 @@ namespace myth::win {
         }
 
         register_for_raw_input_devices(m_handle);
+
+        if (config.center_cursor)
+            input::set_cursor_position(m_position + m_dimensions / 2);
     }
 
     window::~window() {
@@ -199,7 +202,7 @@ namespace myth::win {
             case unknown:
                 MYTHOS_WARN("Unknown window state, maintaining currrent state");
                 return;
-            case normal:
+            case windowed:
                 ShowWindow(m_handle, SW_SHOWNORMAL);
                 break;
             case maximized:
@@ -304,7 +307,7 @@ namespace myth::win {
                 }
                 case WM_SIZE: {
                     switch (w_param) {
-                        case SIZE_RESTORED:  target->m_state = window_state::normal; break;
+                        case SIZE_RESTORED:  target->m_state = window_state::windowed; break;
                         case SIZE_MINIMIZED: target->m_state = window_state::minimized; break;
                         case SIZE_MAXSHOW:   MYTHOS_WARN("WM_SIZE value 'SIZE_MAXSHOW' not implemented"); return 0;
                         case SIZE_MAXIMIZED: target->m_state = window_state::maximized; break;

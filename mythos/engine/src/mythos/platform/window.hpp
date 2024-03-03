@@ -4,20 +4,45 @@
 
 #include <memory>
 
+/// MYTODO: Window configuration
+/// - Implement window states on creation. Add fullscreen
+/// - Window is resizeable by user
+/// - Window is moveable by user
+/// - Window has decoration
+/// - Window is given focus on creation
+/// - Window can be created on different monitors
+/// - Limit window size, small and big
+/// - Load window icon
+/// - Restore a window to windowed mode
+/// - window state change callbacks, windowed, minimized, fullscreen, maximized
+/// - Application can tell OS to focus/unfocus on a window
+/// - Window attention request like glfw
+
 namespace myth {
     enum class window_state {
         unknown,
-        normal,
+        windowed,
+        //fullscreen,
         maximized,
         minimized
     };
 
     struct window_configuration {
-        const char* title = "Mythos Application";
+        const char* title = "Mythos Application Window";
+        //const char* icon = "mythos/resources/branding/logo.png";
 
         myl::i32vec2 dimensions = { 800, 600 };
-        myl::i32vec2 position = { -1, -1 };
-        window_state state = window_state::normal;
+        //myl::i32vec2 limit_upper_dimensions = myl::i32vec2(std::numeric_limits<myl::i32>::max());
+        //myl::i32vec2 limit_lower_dimensions = myl::i32vec2(0);
+        myl::i32vec2 position = myl::i32vec2(-1);
+        window_state state = window_state::windowed;
+        //myl::i32 monitor = 0;
+
+        //bool moveable = true;
+        //bool resizable = true;
+        //bool decorated = true;
+        //bool gets_focus = true;
+        bool center_cursor = true;
     };
 
     class window {

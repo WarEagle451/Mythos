@@ -29,7 +29,8 @@ namespace myth {
                .version_patch = MYTHOS_VERSION_PATCH,
             },
             .window_config{
-                .title = "Mythos Testbed"
+                .title = "Mythos Testbed",
+                .center_cursor = true
             }
         };
 
