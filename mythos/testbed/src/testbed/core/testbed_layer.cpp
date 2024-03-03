@@ -45,21 +45,27 @@ namespace testbed {
         TESTBED_TRACE("Key '{}' {}", e.key(), e.repeated() ? "held" : "pressed");
 
         switch(e.key()) {
-            case myth::key::f1:
-                myth::application::get().capture_cursor(myth::application::get().main_window(), true);
+            case myth::key::f1: {
+                auto& app = myth::application::get();
+                app.cursor_captured() ?
+                    app.release_cursor() :
+                    app.capture_cursor(app.main_window(), myth::input::key_down(myth::key::left_shift));
                 return true;
+            }
             case myth::key::f2:
-                myth::application::get().release_cursor();
-                return true;
-            case myth::key::f3:
                 myth::application::get().main_window()->set_position({ 100, 100 });
                 return true;
-            case myth::key::f4:
+            case myth::key::f3:
                 if (myth::input::key_down(myth::key::left_alt))
                     myth::application::get().quit();
                 else
                     myth::application::get().main_window()->set_dimensions({ 400, 400 });
                 return true;
+            case myth::key::f4: {
+                auto& window = *myth::application::get().main_window();
+                window.set_style(window.style() == myth::window_style::fullscreen ? myth::window_style::windowed : myth::window_style::fullscreen);
+                return true;
+            }
         }
 
         return false;

@@ -9,11 +9,15 @@ namespace myth::win {
     class window : public myth::window {
         HINSTANCE m_instance;
         HWND m_handle;
+
+        myl::i32vec2 m_fullscreen_position_cache;
+        myl::i32vec2 m_fullscreen_dimension_cache;
     public:
         MYL_NO_DISCARD window(const window_configuration& config);
         ~window();
 
         auto set_title(const char*) -> void override;
+        auto set_style(window_style) -> void override;
         auto set_state(window_state) -> void override;
         auto set_position(const myl::i32vec2&) -> void override;
         auto set_dimensions(const myl::i32vec2&) -> void override;

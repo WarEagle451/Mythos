@@ -11,8 +11,11 @@ namespace myth {
         SetCursorPos(position.x, position.y);
     }
 
-    auto input::set_cursor_visability(bool visable) -> void {
-        ShowCursor(visable);
+    auto input::set_cursor_visibility(bool visibility) -> void {
+        CURSORINFO ci{ .cbSize = sizeof(CURSORINFO) };
+        GetCursorInfo(&ci);
+        if ((ci.flags & CURSOR_SHOWING) != visibility)
+            ShowCursor(visibility);
     }
 
     auto input::confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void {
@@ -25,7 +28,7 @@ namespace myth {
         ClipCursor(&rect);
     }
 
-    auto input::unconfine_cursor() -> void {
+    auto input::release_cursor() -> void {
         ClipCursor(NULL);
     }
 

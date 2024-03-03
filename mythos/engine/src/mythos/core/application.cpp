@@ -54,19 +54,19 @@ namespace myth {
     }
 
     auto application::capture_cursor(window* window, bool hide) -> void {
-        if (window == nullptr)
+        if (window == nullptr || window->state() == window_state::minimized)
             return;
 
         m_cursor_capturing_window = window;
         update_cursor_capture();
-        input::set_cursor_visability(!hide);
+        input::set_cursor_visibility(!hide);
     }
 
     auto application::release_cursor() -> void {
         if (m_cursor_capturing_window) {
-            input::unconfine_cursor();
+            input::release_cursor();
             input::set_cursor_position(m_cursor_capturing_window->position() + (m_cursor_capturing_window->dimensions() / 2));
-            input::set_cursor_visability(true);
+            input::set_cursor_visibility(true);
             m_cursor_capturing_window = nullptr;
         }
     }

@@ -10,10 +10,11 @@
 #   include <Windows.h> // WinUser.h
 #   include <hidusage.h>
 
-// https://learn.microsoft.com/en-us/windows/win32/winmsg/window-styles
+/// MYTODO: Having client_dimensions_to_window_dimensions, AdjustWindowRectEx and GetClientRect/GetWindowRect is dumb, consolidate under 1 function
+/// Maybe split into 2 functions, client to window, window to client
 
 namespace myth::win {
-    MYL_NO_DISCARD static auto translate_raw_mouse_code(USHORT buttons) noexcept -> mousecode {
+    MYL_NO_DISCARD static constexpr auto translate_raw_mouse_code(USHORT buttons) noexcept -> mousecode {
         using namespace mouse_button;
         mousecode code = none;
         if ((buttons & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_LEFT_BUTTON_DOWN)) != 0)     code |= left;
@@ -23,6 +24,19 @@ namespace myth::win {
         if ((buttons & (RI_MOUSE_BUTTON_5_UP | RI_MOUSE_BUTTON_5_DOWN)) != 0)           code |= button5;
 
         return code;
+    }
+
+    MYL_NO_DISCARD static constexpr auto win_window_style(window_style style) -> DWORD {
+        switch (style) {
+            using enum window_style;
+            case windowed:   return WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_OVERLAPPED | WS_THICKFRAME;
+            case fullscreen: return WS_POPUP;
+            case popup:      return WS_POPUPWINDOW;
+            case unknown:    MYL_FALLTHROUGH;
+            default:
+                MYTHOS_ERROR("Unknown window style");
+                return win_window_style(windowed);
+        }
     }
 
     static auto register_for_raw_input_devices(HWND window_handle) -> void {
@@ -114,7 +128,11 @@ namespace myth::win {
     }
 
     MYL_NO_DISCARD window::window(const window_configuration& config)
-        : myth::window(config) {
+        : myth::window(config)
+        , m_fullscreen_dimension_cache{ config.dimensions } {
+        m_position = correct_negative_position(m_position, m_dimensions);
+        m_fullscreen_position_cache = m_position;
+
         constexpr const char* class_name = "mythos_window";
     
         // Setup and register window class
@@ -135,15 +153,23 @@ namespace myth::win {
         if (!RegisterClassA(&window_class))
             MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string(GetLastError()));
         
-        DWORD window_style = WS_SYSMENU | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_OVERLAPPED | WS_THICKFRAME;
+        DWORD window_style = win_window_style(m_style);
         myl::u32 window_ex_style = WS_EX_APPWINDOW;
     
         int x{}, y{}, w{}, h{};
-        { // Create a windowed window
+        if (m_style == window_style::fullscreen){
+            x = 0;
+            y = 0;
+            w = GetSystemMetrics(SM_CXSCREEN);
+            h = GetSystemMetrics(SM_CYSCREEN);
+
+            m_position = { x, y };
+            m_dimensions = { w, h };
+        }
+        else { // Create a non fullscreen window
             RECT window_rect = { 0, 0, 0, 0 };
             AdjustWindowRectEx(&window_rect, window_style, FALSE, window_ex_style);
-            m_position = correct_negative_position(m_position, m_dimensions);
-    
+            
             // Ignore the border (negative value) for a window,
             // the client area x axis should be the same coordinate on the screen (+ window_rect.left)
             x = m_position.x + window_rect.left;
@@ -165,18 +191,19 @@ namespace myth::win {
         m_state = window_state::unknown; // Ensures set_state will not immediately return
         ///MYTODO: Can I window be initialized as minimized? Will the renderer allow this?
         set_state(config.state);
-        
-        /// Initial ShowWindow does not send WM_SIZE because events are not working, this should be done earlier
-        if (m_state == window_state::maximized) {
+        if (m_state == window_state::maximized) { // Messages will not be posted to this window during creation, simulate WM_MOVE and WM_SIZE
             RECT client{};
             GetClientRect(m_handle, &client);
-            m_dimensions.x = client.right;
-            m_dimensions.y = client.bottom;
+            m_dimensions = { client.right, client.bottom };
+
+            RECT wind{};
+            GetWindowRect(m_handle, &wind);
+            m_position = { client.left, wind.bottom - client.bottom + wind.top };
         }
 
         register_for_raw_input_devices(m_handle);
 
-        if (config.center_cursor)
+        if (config.center_cursor && m_state != window_state::minimized)
             input::set_cursor_position(m_position + m_dimensions / 2);
     }
 
@@ -193,16 +220,53 @@ namespace myth::win {
         m_title = title;
     }
 
+    auto window::set_style(window_style style) -> void {
+        if (style == m_style)
+            return;
+
+        int x{}, y{}, w{}, h{};
+        if (style == window_style::fullscreen) {
+            MONITORINFO monitor_info{ .cbSize = sizeof(MONITORINFO) };
+            GetMonitorInfoA(MonitorFromWindow(m_handle, MONITOR_DEFAULTTONEAREST), &monitor_info);
+            x = static_cast<int>(monitor_info.rcMonitor.left);
+            y = static_cast<int>(monitor_info.rcMonitor.top);
+            w = static_cast<int>(monitor_info.rcMonitor.right - monitor_info.rcMonitor.left);
+            h = static_cast<int>(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top);
+
+            m_fullscreen_position_cache = m_position;
+            m_fullscreen_dimension_cache = m_dimensions;
+        }
+        else {
+            RECT window_rect = { 0, 0, 0, 0 };
+            AdjustWindowRectEx(&window_rect, win_window_style(style), FALSE, WS_EX_APPWINDOW);
+
+            if (m_style == window_style::fullscreen){
+                x = m_fullscreen_position_cache.x + window_rect.left;
+                y = m_fullscreen_position_cache.y + window_rect.top;
+                w = m_fullscreen_dimension_cache.w + window_rect.right - window_rect.left;
+                h = m_fullscreen_dimension_cache.h + window_rect.bottom - window_rect.top;
+            }
+            else {
+                x = m_position.x + window_rect.left;
+                y = m_position.y + window_rect.top;
+                w = m_dimensions.w + window_rect.right - window_rect.left;
+                h = m_dimensions.h + window_rect.bottom - window_rect.top;
+            }
+        }
+
+        SetWindowLongPtr(m_handle, GWL_STYLE, win_window_style(style));
+        SetWindowPos(m_handle, NULL, x, y, w, h, SWP_FRAMECHANGED);
+        ShowWindow(m_handle, SW_SHOW);
+        m_style = style;
+    }
+
     auto window::set_state(window_state state) -> void {
         if (state == m_state)
             return;
             
         switch (state) {
             using enum window_state;
-            case unknown:
-                MYTHOS_WARN("Unknown window state, maintaining currrent state");
-                return;
-            case windowed:
+            case normal:
                 ShowWindow(m_handle, SW_SHOWNORMAL);
                 break;
             case maximized:
@@ -211,6 +275,9 @@ namespace myth::win {
             case minimized:
                 CloseWindow(m_handle);
                 break;
+            case unknown:
+                MYTHOS_WARN("Unknown window state, maintaining currrent state");
+                return;
             default:
                 MYTHOS_ERROR("Unhandled window state, maintaining currrent state");
                 return;
@@ -307,7 +374,7 @@ namespace myth::win {
                 }
                 case WM_SIZE: {
                     switch (w_param) {
-                        case SIZE_RESTORED:  target->m_state = window_state::windowed; break;
+                        case SIZE_RESTORED:  target->m_state = window_state::normal; break;
                         case SIZE_MINIMIZED: target->m_state = window_state::minimized; break;
                         case SIZE_MAXSHOW:   MYTHOS_WARN("WM_SIZE value 'SIZE_MAXSHOW' not implemented"); return 0;
                         case SIZE_MAXIMIZED: target->m_state = window_state::maximized; break;

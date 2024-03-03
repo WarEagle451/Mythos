@@ -34,9 +34,9 @@ namespace myth {
         MYL_NO_DISCARD static MYL_API auto cursor_delta() noexcept -> const myl::f32vec2& { return s_cursor_delta; }
 
         static auto MYL_API set_cursor_position(const myl::i32vec2& position) -> void;
-        static auto MYL_API set_cursor_visability(bool visable) -> void;
+        static auto MYL_API set_cursor_visibility(bool visibility) -> void;
         static auto MYL_API confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void;
-        static auto MYL_API unconfine_cursor() -> void;
+        static auto MYL_API release_cursor() -> void;
 
         static auto MYL_API process_key(keycode code, state state) -> void;
         static auto MYL_API process_typed(myl::u16 character) -> void;

@@ -47,6 +47,7 @@ namespace myth {
         MYL_NO_DISCARD constexpr auto info() const noexcept -> const application_information& { return m_info; }
         MYL_NO_DISCARD constexpr auto stats() const noexcept -> const application_statistics& { return m_stats; }
         MYL_NO_DISCARD constexpr auto main_window() noexcept -> window* { return m_window.get(); }
+        MYL_NO_DISCARD constexpr auto cursor_captured() const noexcept -> bool { return m_cursor_capturing_window; }
 
         auto capture_cursor(window* window, bool hide = false) -> void;
         auto release_cursor() -> void;
