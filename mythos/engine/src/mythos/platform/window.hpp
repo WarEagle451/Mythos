@@ -28,7 +28,7 @@ namespace myth {
         myl::i32vec2 m_position;
         window_state m_state;
     public:
-        MYL_NO_DISCARD static auto create(const window_configuration& config) -> std::unique_ptr<window>;
+        MYL_NO_DISCARD static auto create(const window_configuration& config = window_configuration{}) -> std::unique_ptr<window>;
 
         MYL_NO_DISCARD constexpr window(const window_configuration& config)
             : m_title{ config.title }

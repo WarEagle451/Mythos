@@ -23,6 +23,21 @@ namespace myth::event {
         MYTHOS_IMPL_EVENT_TYPE(window_resize)
     };
 
+    class window_move : public base {
+        window& m_window;
+        myl::i32vec2 m_position;
+    public:
+        MYL_NO_DISCARD constexpr window_move(window& window, const myl::i32vec2& position)
+            : m_window{ window }
+            , m_position{ position } {}
+
+        MYL_NO_DISCARD constexpr auto position() const -> const myl::i32vec2& { return m_position; }
+        MYL_NO_DISCARD constexpr auto window() -> window& { return m_window; }
+
+        MYTHOS_IMPL_EVENT_CATEGORY(category_flags::application)
+        MYTHOS_IMPL_EVENT_TYPE(window_moved)
+    };
+
     class window_close : public base {
         window& m_window;
     public:

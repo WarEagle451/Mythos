@@ -2,11 +2,34 @@
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/input.hpp>
 
-/// MYTODO: Would be preferable to have the query_lockable_key_states in the platform folder
+/// MYTODO: Split this up into seperate source files
 #ifdef MYL_OS_WINDOWS
 #   include <Windows.h> // WinUser.h
+
 namespace myth {
-    static auto query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void {
+    auto input::set_cursor_position(const myl::i32vec2& position) -> void {
+        SetCursorPos(position.x, position.y);
+    }
+
+    auto input::set_cursor_visability(bool visable) -> void {
+        ShowCursor(visable);
+    }
+
+    auto input::confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void {
+        RECT rect{
+            .left = tl.x,
+            .top = tl.y,
+            .right = br.x,
+            .bottom = br.y
+        };
+        ClipCursor(&rect);
+    }
+
+    auto input::unconfine_cursor() -> void {
+        ClipCursor(NULL);
+    }
+
+    auto input::query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void {
         if (caps_lock)
             *caps_lock = (GetKeyState(VK_CAPITAL) & 0x0001) == 0 ? input::state::up : input::state::down;
         if (num_lock)
@@ -18,8 +41,24 @@ namespace myth {
 #else
 #   include <mythos/log.hpp>
 namespace myth {
-    static auto query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void {
-        MYTHOS_WARN("Mythos does not support querying toggleable key states on this platform");
+    auto input::set_cursor_position(const myl::i32vec2& position) -> void {
+        MYTHOS_ERROR("myth::input::set_cursor_position is not available on this platform");
+    }
+
+    auto input::set_cursor_visability(bool visable) -> void {
+        MYTHOS_ERROR("myth::input::set_cursor_visability is not available on this platform");
+    }
+
+    auto input::confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void {
+        MYTHOS_ERROR("myth::input::confine_cursor is not available on this platform");
+    }
+
+    auto input::unconfine_cursor() -> void {
+        MYTHOS_ERROR("myth::input::unconfine_cursor is not available on this platform");
+    }
+
+    auto input::query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void {
+        MYTHOS_ERROR("myth::input::query_toggleable_key_states is not available on this platform");    
     }
 }
 #endif

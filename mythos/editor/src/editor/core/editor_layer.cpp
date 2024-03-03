@@ -2,6 +2,7 @@
 #include <editor/log.hpp>
 
 #include <mythos/core/application.hpp>
+#include <mythos/input.hpp>
 
 namespace editor {
     MYL_NO_DISCARD editor_layer::editor_layer()
@@ -33,7 +34,7 @@ namespace editor {
     }
 
     auto editor_layer::update(myth::timestep ts) -> void {
-
+        
     }
 
     auto editor_layer::render() -> void {
@@ -42,7 +43,26 @@ namespace editor {
 
     auto editor_layer::on_key_pressed(myth::event::key_pressed& e) -> bool {
         EDITOR_TRACE("Key '{}' {}", e.key(), e.repeated() ? "held" : "pressed");
-        return true;
+
+        switch(e.key()) {
+            case myth::key::f1:
+                myth::application::get().capture_cursor(myth::application::get().main_window(), true);
+                return true;
+            case myth::key::f2:
+                myth::application::get().release_cursor();
+                return true;
+            case myth::key::f3:
+                myth::application::get().main_window()->set_position({ 100, 100 });
+                return true;
+            case myth::key::f4:
+                if (myth::input::key_down(myth::key::left_alt))
+                    myth::application::get().quit();
+                else
+                    myth::application::get().main_window()->set_dimensions({ 400, 400 });
+                return true;
+        }
+
+        return false;
     }
 
     auto editor_layer::on_key_released(myth::event::key_released& e) -> bool {

@@ -35,6 +35,8 @@ namespace myth {
         m_running = true;
         m_suspended = false;
 
+        m_cursor_capturing_window = nullptr; // Window may want to be created while capturing the cursor
+
         MYTHOS_TRACE("Application created");
     }
 
@@ -44,9 +46,29 @@ namespace myth {
 
         // Shutdown all systems
 
+        if (!m_cursor_capturing_window)
+            release_cursor();
         m_window.reset();
 
         MYTHOS_TRACE("Application terminated");
+    }
+
+    auto application::capture_cursor(window* window, bool hide) -> void {
+        if (window == nullptr)
+            return;
+
+        m_cursor_capturing_window = window;
+        update_cursor_capture();
+        input::set_cursor_visability(!hide);
+    }
+
+    auto application::release_cursor() -> void {
+        if (m_cursor_capturing_window) {
+            input::unconfine_cursor();
+            input::set_cursor_position(m_cursor_capturing_window->position() + (m_cursor_capturing_window->dimensions() / 2));
+            input::set_cursor_visability(true);
+            m_cursor_capturing_window = nullptr;
+        }
     }
 
     auto application::push_layer(std::unique_ptr<layer>&& l) -> void {
@@ -90,16 +112,39 @@ namespace myth {
         m_running = false;
     }
 
-    auto application::on_window_resize(event::window_resize& e) -> bool {
-        if (m_window.get() == &e.window()) {
-            return true;
-        }
+    auto application::update_cursor_capture() -> void {
+        if (m_cursor_capturing_window == nullptr)
+            return;
 
+        const myl::i32vec2& tl = m_cursor_capturing_window->position();
+        input::confine_cursor(tl, tl + m_cursor_capturing_window->dimensions());
+        input::set_cursor_position(tl + (m_cursor_capturing_window->dimensions() / 2));
+    }
+
+    auto application::on_window_resize(event::window_resize& e) -> bool {
+        // Window's values should already be updated
+        if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
+            update_cursor_capture();
+
+        if (&e.window() == m_window.get())
+            return true;
+        return false;
+    }
+
+    auto application::on_window_move(event::window_move& e) -> bool {
+        if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
+            update_cursor_capture();
+
+        if (&e.window() == m_window.get())
+            return true;
         return false;
     }
     
     auto application::on_window_close(event::window_close& e) -> bool {
-        if (m_window.get() == &e.window()) {
+        if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
+            release_cursor();
+
+        if (&e.window() == m_window.get()) {
             quit();
             return true;
         }
@@ -108,24 +153,24 @@ namespace myth {
     }
 
     auto application::on_window_focus_gain(event::window_focus_gain& e) -> bool {
-        if (m_window.get() == &e.window()) {
+        if (&e.window() == m_window.get())
             return true;
-        }
-
         return false;
     }
 
     auto application::on_window_focus_lost(event::window_focus_lost& e) -> bool {
-        if (m_window.get() == &e.window()) {
-            return true;
-        }
+        if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
+            release_cursor();
 
+        if (&e.window() == m_window.get())
+            return true;
         return false;
     }
 
     auto application::on_event(event::base& e) -> void {
         event::dispatcher d(e);
         d.dispatch<event::window_resize>(MYTHOS_BIND_EVENT_FUNC(application::on_window_resize));
+        d.dispatch<event::window_move>(MYTHOS_BIND_EVENT_FUNC(application::on_window_move));
         d.dispatch<event::window_close>(MYTHOS_BIND_EVENT_FUNC(application::on_window_close));
         d.dispatch<event::window_focus_gain>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_gain));
         d.dispatch<event::window_focus_lost>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_lost));

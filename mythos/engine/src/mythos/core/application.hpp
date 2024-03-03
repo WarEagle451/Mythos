@@ -33,6 +33,8 @@ namespace myth {
         event::callback m_event_cb;
         std::unique_ptr<window> m_window;
 
+        myl::observer_ptr<window> m_cursor_capturing_window;
+
         bool m_running;
         bool m_suspended;
     public:
@@ -46,6 +48,9 @@ namespace myth {
         MYL_NO_DISCARD constexpr auto stats() const noexcept -> const application_statistics& { return m_stats; }
         MYL_NO_DISCARD constexpr auto main_window() noexcept -> window* { return m_window.get(); }
 
+        auto capture_cursor(window* window, bool hide = false) -> void;
+        auto release_cursor() -> void;
+
         auto push_layer(std::unique_ptr<layer>&& l) -> void;
         auto push_overlay(std::unique_ptr<layer>&& o) -> void;
 
@@ -54,7 +59,10 @@ namespace myth {
 
         auto operator=(const application&) -> application& = delete;
     private:
+        auto update_cursor_capture() -> void;
+
         auto on_window_resize(event::window_resize& e) -> bool;
+        auto on_window_move(event::window_move& e) -> bool;
         auto on_window_close(event::window_close& e) -> bool;
         auto on_window_focus_gain(event::window_focus_gain& e) -> bool;
         auto on_window_focus_lost(event::window_focus_lost& e) -> bool;

@@ -139,15 +139,19 @@ namespace myth::win {
         myl::u32 window_ex_style = WS_EX_APPWINDOW;
     
         int x{}, y{}, w{}, h{};
-        { ///TEMP: This is good for non fullscreen
+        { // Create a normal window
             RECT window_rect = { 0, 0, 0, 0 };
             AdjustWindowRectEx(&window_rect, window_style, FALSE, window_ex_style);
-
             m_position = correct_negative_position(m_position, m_dimensions);
     
-            // Client area position - border rect. (In this case, the border rect is negative)
-            x = m_position.x - window_rect.left;
-            y = m_position.y - window_rect.top;
+            // Ignore the border (negative value) for a window,
+            // the client area x axis should be the same coordinate on the screen (+ window_rect.left)
+            x = m_position.x + window_rect.left;
+            // Take into account for the toolbar (Windows does this automatically)
+            y = m_position.y;
+
+            // m_position refers to the client area of the window, adjust it to match when the window is created
+            m_position.y -= window_rect.top;
     
             // Client size + the size of OS bordering
             w = m_dimensions.w + window_rect.right - window_rect.left;
@@ -260,7 +264,6 @@ namespace myth::win {
     // - WM_SYSKEYDOWN, WM_SYSKEYUP, WM_SYSCHAR, WM_SYSDEADCHAR
     // - WM_APP
     // - WM_CAP_SET_CALLBACK_ERRORW, WM_CAP_SET_CALLBACK_STATUSW, WM_CAP_DRIVER_GET_NAMEW, WM_CAP_DRIVER_GET_VERSIONW, WM_CAP_FILE_SET_CAPTURE_FILEW, WM_CAP_FILE_GET_CAPTURE_FILEW, WM_CAP_FILE_SAVEASW, WM_CAP_SET_MCI_DEVICEW, WM_CAP_GET_MCI_DEVICEW, WM_CAP_PAL_OPENW, WM_CAP_PAL_SAVEW, WM_CAP_FILE_SAVEDIBW
-    // - WM_HSCROLL, WM_VSCROLL
     // - WM_MOUSEFIRST, WM_MOUSELAST
     // - WM_CUT, WM_COPY, WM_PASTE, WM_CLEAR, WM_UNDO
     // - WM_SIZING, WM_MOVING
@@ -272,16 +275,19 @@ namespace myth::win {
     // - WM_QUERYNEWPALETTE, WM_PALETTEISCHANGING, WM_PALETTECHANGED
     // - WM_HOTKEY
     // - WM_PRINT, WM_PRINTCLIENT
-    // - WM_APPCOMMAND
     // - WM_HANDHELDFIRST, WM_HANDHELDLAST
     // - WM_DPICHANGED
     // - WM_DEVICECHANGE
+    // - WM_APPCOMMAND
     
     // Using WM_INPUT and RIDEV_NOLEGACY disables the following messages;
     // WM_CAPTURECHANGED, WM_LBUTTONDOWN, WM_LBUTTONUP, WM_LBUTTONDBLCLK, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_RBUTTONDBLCLK, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_MBUTTONDBLCLK, WM_XBUTTONDOWN, WM_XBUTTONUP,
     // WM_XBUTTONDBLCLK, WM_MOUSEACTIVATE, WM_MOUSEHOVER, WM_MOUSEWHEEL, WM_MOUSEHWHEEL, WM_MOUSELEAVE, WM_MOUSEMOVE, WM_NCLBUTTONDOWN, WM_NCLBUTTONUP, WM_NCLBUTTONUP, WM_NCLBUTTONDBLCLK, WM_NCRBUTTONDOWN,
     // WM_NCRBUTTONUP, WM_NCRBUTTONDBLCLK, WM_NCMBUTTONDOWN, WM_NCMBUTTONUP, WM_NCMBUTTONDBLCLK, WM_NCXBUTTONDOWN, WM_NCXBUTTONUP, WM_NCXBUTTONDBLCLK, WM_NCMOUSEMOVE, WM_NCMOUSEHOVER, WM_NCMOUSELEAVE
     // Minic behaviour of them
+
+    // Using WM_INPUT and RIDEV_NOLEGACY also disables the following messages when the docs don't include;
+    // WM_CHAR
 
     auto CALLBACK window::process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) -> LRESULT {
         win::window* target = static_cast<win::window*>(application::get().main_window()); 
@@ -290,9 +296,12 @@ namespace myth::win {
                 case WM_DESTROY:
                     PostQuitMessage(0);
                     return 0;
-                case WM_MOVE:
+                case WM_MOVE: {
                     target->m_position = { static_cast<myl::i32>(LOWORD(l_param)), static_cast<myl::i32>(HIWORD(l_param)) };
+                    event::window_move e(*target, target->m_position);
+                    event::fire(e);
                     break;
+                }
                 case WM_SIZE: {
                     switch (w_param) {
                         case SIZE_RESTORED:  target->m_state = window_state::normal; break;
@@ -385,8 +394,8 @@ namespace myth::win {
                                     if ((mb_flags & mouse_button_up_flags) != 0)
                                         input::process_mouse_buttons_up(translate_raw_mouse_code(mb_flags));
                             }
-                        }
                             break;
+                        }
                         case RIM_TYPEKEYBOARD:
                             if (GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT) { // Only handle keyboard with the window is in the foreground
                                 auto& keyboard = raw.data.keyboard;
