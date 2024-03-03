@@ -3,11 +3,11 @@
 #include <mythos/event/key_event.hpp>
 #include <mythos/event/mouse_event.hpp>
 
-namespace editor {
-    class editor_layer final : public myth::layer {
+namespace testbed {
+    class testbed_layer final : public myth::layer {
     public:
-        MYL_NO_DISCARD editor_layer();
-        ~editor_layer() override;
+        MYL_NO_DISCARD testbed_layer();
+        ~testbed_layer() override;
 
         auto on_attach() -> void override;
         auto on_detach() -> void override;

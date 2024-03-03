@@ -35,4 +35,4 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE) # Must be set to TRUE for spdlog to wo
 add_subdirectory("vendor/myl")
 add_subdirectory("vendor/spdlog")
 add_subdirectory("mythos/engine")
-add_subdirectory("mythos/editor")
+add_subdirectory("mythos/testbed")

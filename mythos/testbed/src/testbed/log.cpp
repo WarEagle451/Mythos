@@ -1,10 +1,10 @@
-#include <editor/log.hpp>
+#include <testbed/log.hpp>
 
 #include <spdlog/sinks/ansicolor_sink.h>
 
 #include <vector>
 
-namespace editor {
+namespace testbed {
     std::shared_ptr<spdlog::logger> log::s_logger = nullptr;
 
     auto log::init() -> void {
@@ -20,7 +20,7 @@ namespace editor {
         sinks.emplace_back(color_sink);
         sinks.back()->set_pattern("%^[%L] %n: %v%$");
 
-        s_logger = std::make_shared<spdlog::logger>("Editor", sinks.begin(), sinks.end());
+        s_logger = std::make_shared<spdlog::logger>("Testbed", sinks.begin(), sinks.end());
         s_logger->set_level(spdlog::level::trace);
         spdlog::register_logger(s_logger);
     }
