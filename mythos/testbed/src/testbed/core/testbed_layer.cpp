@@ -49,7 +49,7 @@ namespace testbed {
                 auto& app = myth::application::get();
                 app.cursor_captured() ?
                     app.release_cursor() :
-                    app.capture_cursor(app.main_window(), myth::input::key_down(myth::key::left_shift));
+                    app.capture_cursor(app.main_window(), !myth::input::key_down(myth::key::left_shift));
                 return true;
             }
             case myth::key::f2:
@@ -64,6 +64,10 @@ namespace testbed {
             case myth::key::f4: {
                 auto& window = *myth::application::get().main_window();
                 window.set_style(window.style() == myth::window_style::fullscreen ? myth::window_style::windowed : myth::window_style::fullscreen);
+                return true;
+            }
+            case myth::key::f5: {
+                myth::application::get().main_window()->restore();
                 return true;
             }
         }

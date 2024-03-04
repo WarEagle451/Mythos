@@ -22,6 +22,8 @@ namespace myth::win {
         auto set_position(const myl::i32vec2&) -> void override;
         auto set_dimensions(const myl::i32vec2&) -> void override;
 
+        auto close() -> void override;
+        auto restore() -> void override;
         auto update() -> void override;
     private:
         static auto CALLBACK process_message(HWND, UINT, WPARAM, LPARAM) -> LRESULT;

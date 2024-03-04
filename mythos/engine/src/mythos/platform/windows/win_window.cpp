@@ -11,7 +11,13 @@
 #   include <hidusage.h>
 
 /// MYTODO: Having client_dimensions_to_window_dimensions, AdjustWindowRectEx and GetClientRect/GetWindowRect is dumb, consolidate under 1 function
-/// Maybe split into 2 functions, client to window, window to client
+/// - Maybe split into 2 functions, client to window, window to client
+
+/// MYTODO: Improve RIM_KEYBOARD
+/// - https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
+
+/// MYTODO: Get gamepad, joystick and multi-axis controller input working
+/// - https://github.com/nuzayets/rawinput-debug/tree/master
 
 namespace myth::win {
     MYL_NO_DISCARD static constexpr auto translate_raw_mouse_code(USHORT buttons) noexcept -> mousecode {
@@ -49,16 +55,16 @@ namespace myth::win {
                 //.dwFlags = RIDEV_NOLEGACY, // RIDEV_CAPTUREMOUSE; Will mouse buttons will not activate other windows, but how to toggle this?
                 .hwndTarget = window_handle
             },
-            { // Joy Stick
+            { // Joystick
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
                 .usUsage = HID_USAGE_GENERIC_JOYSTICK,
-                //.dwFlags = RIDEV_NOLEGACY,
+                .dwFlags = RIDEV_INPUTSINK,
                 .hwndTarget = window_handle
             },
             { // Gamepad
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
                 .usUsage = HID_USAGE_GENERIC_GAMEPAD,
-                //.dwFlags = RIDEV_NOLEGACY,
+                .dwFlags = RIDEV_INPUTSINK,
                 .hwndTarget = window_handle
             },
             { // Keyboard
@@ -87,7 +93,7 @@ namespace myth::win {
                 .dwFlags = RIDEV_REMOVE,
                 .hwndTarget = NULL
             },
-            { // Joy Stick
+            { // Joystick
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
                 .usUsage = HID_USAGE_GENERIC_JOYSTICK,
                 .dwFlags = RIDEV_REMOVE,
@@ -134,7 +140,7 @@ namespace myth::win {
         m_fullscreen_position_cache = m_position;
 
         constexpr const char* class_name = "mythos_window";
-    
+
         // Setup and register window class
         m_instance = GetModuleHandleA(0);
         WNDCLASSA window_class{
@@ -157,7 +163,7 @@ namespace myth::win {
         myl::u32 window_ex_style = WS_EX_APPWINDOW;
     
         int x{}, y{}, w{}, h{};
-        if (m_style == window_style::fullscreen){
+        if (m_style == window_style::fullscreen) {
             x = 0;
             y = 0;
             w = GetSystemMetrics(SM_CXSCREEN);
@@ -300,6 +306,17 @@ namespace myth::win {
             MYTHOS_ERROR("Window set dimensions failed: {}", win::last_error_as_string(GetLastError()));
     }
 
+    auto window::close() -> void {
+        PostMessageA(m_handle, WM_CLOSE, 0, 0);
+    }
+
+    auto window::restore() -> void {
+        if (m_style == window_style::fullscreen)
+            set_style(window_style::windowed);
+        else // WM_SIZE handles window restoring
+            ShowWindow(m_handle, SW_RESTORE);
+    }
+
     auto window::update() -> void {
         MSG msg;
         while (PeekMessageA(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -367,7 +384,10 @@ namespace myth::win {
                     PostQuitMessage(0);
                     return 0;
                 case WM_MOVE: {
-                    target->m_position = { static_cast<myl::i32>(LOWORD(l_param)), static_cast<myl::i32>(HIWORD(l_param)) };
+                    target->m_position = {
+                        static_cast<myl::i32>(static_cast<short>(LOWORD(l_param))),
+                        static_cast<myl::i32>(static_cast<short>(HIWORD(l_param)))
+                    };
                     event::window_move e(*target, target->m_position);
                     event::fire(e);
                     break;
@@ -411,17 +431,21 @@ namespace myth::win {
                 case WM_INPUT: {
                     RAWINPUT raw{};
                     UINT pcb_size = sizeof(RAWINPUT);
+
+                    /// MYTODO: There must be a better way of obtaining header info than having to call this twice
+                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_HEADER, &raw, &pcb_size, sizeof(RAWINPUTHEADER));
                     GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &pcb_size, sizeof(RAWINPUTHEADER));
+
                     switch (raw.header.dwType) {
                         case RIM_TYPEMOUSE: {
                             POINT mouse_coords{};
                             GetCursorPos(&mouse_coords);
                             const bool hovered = WindowFromPoint(mouse_coords) == target->m_handle;
                             auto& mouse = raw.data.mouse;
-
+                            
                             // Mouse movement
                             if (mouse.lLastX != 0 || mouse.lLastY != 0) {
-                                myl::f32vec2 deltas{ static_cast<myl::f32>(raw.data.mouse.lLastX), static_cast<myl::f32>(raw.data.mouse.lLastY) };
+                                myl::f32vec2 deltas{ static_cast<myl::f32>(mouse.lLastX), static_cast<myl::f32>(mouse.lLastY) };
                                 if (mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
                                     /// MYTODO: Find a way to get RIM_TYPEMOUSE to work with absolute mouse movement
                                     MYTHOS_ERROR("Mythos does not currently support absolute mouse movement on Windows");
@@ -435,7 +459,7 @@ namespace myth::win {
                             }
 
                             // Other mouse inputs
-                            const auto& mb_flags = raw.data.mouse.usButtonFlags;
+                            const auto& mb_flags = mouse.usButtonFlags;
                             if (mb_flags != 0) {
                                 constexpr auto mouse_button_up_flags = RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_BUTTON_4_UP | RI_MOUSE_BUTTON_5_UP;
                                 constexpr auto mouse_button_down_flags = RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN;
@@ -482,19 +506,29 @@ namespace myth::win {
                                 input::process_key(code, (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down);
                             }
                             break;
-                        case RIM_TYPEHID:
+                        case RIM_TYPEHID: {
+                            // Maybe something like a switch on the device type then fun stuff
+                            auto& hid = raw.data.hid;
+                            { // Figure out how to distingish things correctly
+
+                            }
+
+                            MYTHOS_TRACE("HID");
                             // https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawhid
                             break;
+                        }
                         default:
                             MYTHOS_ERROR("Unknown raw input message, this should not be possible!");
                             break;
                     }
-                    break; // Return?
+                    break;
                 }
                 case WM_CHAR:
                 /// MYTODO: Replace using WM_INPUT
                     input::process_typed(static_cast<WCHAR>(w_param));
                     return 0;
+                default:
+                    break;
             }
 
         return DefWindowProcA(hwnd, msg, w_param, l_param);

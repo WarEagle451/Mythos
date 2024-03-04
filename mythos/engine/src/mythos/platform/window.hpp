@@ -5,15 +5,8 @@
 #include <memory>
 
 /// MYTODO: Window configuration
-/// - Restore a window to windowed mode - Add as additional window_state
-/// - Window can be created on different monitors
-/// - Window is resizeable by user
-/// - Window is moveable by user
-/// - Window has decoration
-/// - Window is given focus on creation
 /// - Load window icon
-/// - Application can tell OS to focus/unfocus on a window
-/// - Window attention request like glfw
+/// - Window can be created on different monitors
 /// - Multiple windows
 
 namespace myth {
@@ -41,10 +34,6 @@ namespace myth {
         window_state state = window_state::normal;
         //myl::i32 monitor = 0;
 
-        //bool moveable = true;
-        //bool resizable = true;
-        //bool decorated = true;
-        //bool gets_focus = true;
         bool center_cursor = true;
     };
 
@@ -57,7 +46,7 @@ namespace myth {
         window_style m_style;
         window_state m_state;
     public:
-        MYL_NO_DISCARD static auto create(const window_configuration& config = window_configuration{}) -> std::unique_ptr<window>;
+        MYL_NO_DISCARD static MYL_API auto create(const window_configuration& config = window_configuration{}) -> std::unique_ptr<window>;
 
         MYL_NO_DISCARD constexpr window(const window_configuration& config)
             : m_title{ config.title }
@@ -80,6 +69,8 @@ namespace myth {
         virtual auto set_position(const myl::i32vec2&) -> void = 0;
         virtual auto set_dimensions(const myl::i32vec2&) -> void = 0;
 
+        virtual auto close() -> void = 0;
+        virtual auto restore() -> void = 0;
         virtual auto update() -> void = 0;
     };
 }
