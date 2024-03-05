@@ -27,17 +27,21 @@ namespace myth::event {
         mouse_pressed,
         mouse_released,
         mouse_moved,
-        mouse_scrolled
+        mouse_scrolled,
+
+        gamepad_button_pressed,
+        gamepad_button_released,
     };
 
     namespace category_flags {
         enum bits : myl::u32 {
-            none         = 0,
-            application  = 1 << 0,
-            input        = 1 << 1,
-            keyboard     = 1 << 2,
-            mouse        = 1 << 3,
-            mouse_button = 1 << 4
+            none           = 0,
+            application    = 1 << 0,
+            input          = 1 << 1,
+            keyboard       = 1 << 2,
+            mouse          = 1 << 3,
+            mouse_button   = 1 << 4,
+            gamepad_button = 1 << 5
         };
     }
     using category = typename std::underlying_type<category_flags::bits>::type;

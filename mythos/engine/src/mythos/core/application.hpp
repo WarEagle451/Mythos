@@ -1,6 +1,8 @@
 #pragma once
 #include <mythos/core/layer_stack.hpp>
+#include <mythos/event/gamepad_event.hpp>
 #include <mythos/event/window_event.hpp>
+#include <mythos/input.hpp>
 #include <mythos/platform/window.hpp>
 
 #include <myl/definitions.hpp>
@@ -17,6 +19,7 @@ namespace myth {
     struct application_specification {
         application_information info{};
         window_configuration window_config{};
+        input_configuration input_config{};
     };
 
     struct application_statistics {
@@ -67,6 +70,8 @@ namespace myth {
         auto on_window_close(event::window_close& e) -> bool;
         auto on_window_focus_gain(event::window_focus_gain& e) -> bool;
         auto on_window_focus_lost(event::window_focus_lost& e) -> bool;
+        auto on_gamepad_button_pressed(event::gamepad_button_pressed& e) -> bool;
+        auto on_gamepad_button_released(event::gamepad_button_released& e) -> bool;
 
         auto on_event(event::base&) -> void;
     };

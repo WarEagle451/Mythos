@@ -507,14 +507,14 @@ namespace myth::win {
                             }
                             break;
                         case RIM_TYPEHID: {
-                            // Maybe something like a switch on the device type then fun stuff
-                            auto& hid = raw.data.hid;
-                            { // Figure out how to distingish things correctly
+                            UINT size2;
+                            GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, NULL, &size2, sizeof(RAWINPUTHEADER));
+                            RAWINPUT* raw2 = (RAWINPUT*)malloc(size2);
 
+                            if (GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, raw2, &size2, sizeof(RAWINPUTHEADER)) > 0) {
+                                input::process_controller_dualsense5(raw2->data.hid.bRawData, raw2->data.hid.dwSizeHid);
                             }
-
-                            MYTHOS_TRACE("HID");
-                            // https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawhid
+                            free(raw2);
                             break;
                         }
                         default:

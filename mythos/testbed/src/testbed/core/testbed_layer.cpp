@@ -55,17 +55,18 @@ namespace testbed {
             case myth::key::f2:
                 myth::application::get().main_window()->set_position({ 100, 100 });
                 return true;
-            case myth::key::f3:
+            case myth::key::f3: {
+                auto& window = *myth::application::get().main_window();
+                window.set_style(window.style() == myth::window_style::fullscreen ? myth::window_style::windowed : myth::window_style::fullscreen);
+                return true;
+            }
+            case myth::key::f4:
                 if (myth::input::key_down(myth::key::left_alt))
                     myth::application::get().quit();
                 else
                     myth::application::get().main_window()->set_dimensions({ 400, 400 });
                 return true;
-            case myth::key::f4: {
-                auto& window = *myth::application::get().main_window();
-                window.set_style(window.style() == myth::window_style::fullscreen ? myth::window_style::windowed : myth::window_style::fullscreen);
-                return true;
-            }
+           
             case myth::key::f5: {
                 myth::application::get().main_window()->restore();
                 return true;
