@@ -62,12 +62,20 @@ namespace myth {
             ps_square   = symbol_left,
             ps_share    = start,
             ps_logo     = system,
-            ps_touchpad = auxiliary1
+            ps_touchpad = auxiliary1,
+
+            xb_y    = symbol_up,
+            xb_b    = symbol_right,
+            xb_a    = symbol_down,
+            xb_x    = symbol_left,
+            xb_view = start,
+            xb_menu = options,
+            xb_logo = system
         };
     }
 
     struct input_configuration {
-        myl::f32vec2 stick_deadzones = { .1f, .1f };
+        myl::f32vec2 stick_deadzones = { .2f, .2f };
     };
 
     class input {

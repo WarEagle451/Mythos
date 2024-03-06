@@ -5,12 +5,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/WarEagle451/Blue/blob/main/LICENSE)
 
 # Table of Contents
-1. [Requirements](#requirements)
-2. [Libraries](#3rd-party-libraries)
-3. [Getting Started](#getting-started)
-4. [Building Mythos](#building-mythos)
-5. [Supported Tooling](#supported-tooling)
-6. [Common Issues](#common-issues)
+1. [Features](#features)
+2. [Requirements](#requirements)
+3. [Libraries](#3rd-party-libraries)
+4. [Getting Started](#getting-started)
+5. [Building Mythos](#building-mythos)
+6. [Supported Tooling](#supported-tooling)
+7. [Common Issues](#common-issues)
+
+# Features
+- Controller support; DualSense
 
 # Requirements
 - C++20

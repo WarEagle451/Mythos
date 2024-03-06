@@ -38,7 +38,7 @@ namespace testbed {
     }
 
     auto testbed_layer::update(myth::timestep ts) -> void {
-        auto ls = myth::input::left_stick_delta(); 
+        auto ls = myth::input::left_stick_delta();
         if (ls.x != 0.f || ls.y != 0.f) {
             ls = myl::normalize(ls);
             ls += 1.f;
@@ -46,6 +46,7 @@ namespace testbed {
 
             POINT p{};
             GetCursorPos(&p);
+            /// MYTODO: Make this smoother, AKA Windows needs to be more percise than 1 int
             p.x += static_cast<LONG>(std::lerp(-3.f, 3.f, ls.x));
             p.y += static_cast<LONG>(std::lerp(-3.f, 3.f, ls.y));
             SetCursorPos(p.x, p.y);

@@ -72,6 +72,13 @@ namespace myth {
 ///     - https://www.psdevwiki.com/ps4/DS4-USB
 /// - Dualshock 3
 ///     - https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information
+/// - DualSense Edge
+/// - Xbox 360
+/// - Sixaxis
+/// - Xbox Wireless Controller
+///     - Models: 1537, 1697, 1698 "Elite", 1708, 1797 "Elite 2", 1914
+/// - Google Stadia
+/// - Luna Controller
 
 namespace myth {
     std::array<input::state, key::size> input::s_key_states;
@@ -191,20 +198,9 @@ namespace myth {
     auto input::process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void {
         switch (vendor_id) {
             case 0x54C: // Sony
-                /// MYTODO: Process other Sony devices
                 switch (product_id) {
-                    case 0x05C4: // Dualshock 4 Generation 1
-                        break;
-                    case 0x09CC: // Dualshock 4 Generation 2
-                        break;
-                    case 0x0BA0: // Dualshock 3 Wireless Adaptor
-                        break;
                     case 0x0CE6: // DualSense 5
                         process_controller_dualsense(data, byte_count);
-                        break;
-                    case 0x0CDA: // PlayStation Classic Controller
-                        break;
-                    case 0x0DF2: // DualSense Edge
                         break;
                     default:
                         break;
@@ -220,7 +216,7 @@ namespace myth {
         ((bytes[byte] >> bit) & 1) ? changed_to_down_buttons |= button : changed_to_up_buttons |= button;
 
     auto input::process_controller_dualsense(myl::u8* bytes, myl::u32 byte_count) -> void {
-        /// MYTODO: Dualsense Controller
+        /// MYTODO: DualSense Controller
         /// - Mute Button on Bluetooth (USB is byte 10, bit 2)
 
         // From: https://github.com/nondebug/dualsense
