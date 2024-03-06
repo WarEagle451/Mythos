@@ -97,13 +97,11 @@ namespace myth {
                     l->update(ts);
                 for (auto& l : m_layer_stack)
                     l->render();
+
+                input::update();
             }
 
             m_window->update();
-
-            // Window's update function will process input related messages
-            if (!m_suspended)
-                input::update();
         }
     }
 

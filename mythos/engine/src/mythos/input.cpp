@@ -66,9 +66,12 @@ namespace myth {
 }
 #endif
 
-#define MYTHOS_IMPL_GAMEPAD_BUTTON(byte, bit, button)\
-    if ((bytes[byte] >> bit) != (s_gamepad_button_states & button))\
-        ((bytes[byte] >> bit) & 1) ? changed_to_down_buttons |= button : changed_to_up_buttons |= button;
+/// MYTODO: Implement Controllers
+/// - Dualshock 4
+///     - https://www.psdevwiki.com/ps4/DS4-BT
+///     - https://www.psdevwiki.com/ps4/DS4-USB
+/// - Dualshock 3
+///     - https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information
 
 namespace myth {
     std::array<input::state, key::size> input::s_key_states;
@@ -92,7 +95,11 @@ namespace myth {
     }
 
     auto input::update() -> void {
-
+        s_cursor_delta = { 0.f, 0.f };
+        s_scroll_delta = { 0.f, 0.f };
+        s_left_stick_delta = { 0.f, 0.f };
+        s_right_stick_delta = { 0.f, 0.f };
+        s_trigger_delta = { 0.f, 0.f };
     }
 
     auto input::clear() -> void {
@@ -193,7 +200,7 @@ namespace myth {
                     case 0x0BA0: // Dualshock 3 Wireless Adaptor
                         break;
                     case 0x0CE6: // DualSense 5
-                        process_controller_dualsense5(data, byte_count);
+                        process_controller_dualsense(data, byte_count);
                         break;
                     case 0x0CDA: // PlayStation Classic Controller
                         break;
@@ -208,7 +215,14 @@ namespace myth {
         }
     }
 
-    auto input::process_controller_dualsense5(myl::u8* bytes, myl::u32 byte_count) -> void {
+#define MYTHOS_IMPL_GAMEPAD_BUTTON(byte, bit, button)\
+    if ((bytes[byte] >> bit) != (s_gamepad_button_states & button))\
+        ((bytes[byte] >> bit) & 1) ? changed_to_down_buttons |= button : changed_to_up_buttons |= button;
+
+    auto input::process_controller_dualsense(myl::u8* bytes, myl::u32 byte_count) -> void {
+        /// MYTODO: Dualsense Controller
+        /// - Mute Button on Bluetooth (USB is byte 10, bit 2)
+
         // From: https://github.com/nondebug/dualsense
 
         // USB connection is 64 bytes, bluetooth uses more
@@ -243,57 +257,74 @@ namespace myth {
         button_code changed_to_up_buttons = button::none;
         button_code changed_to_down_buttons = button::none;
 
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 4, button::symbol_left);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 5, button::symbol_down);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 6, button::symbol_right);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 7, button::symbol_up);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 4, button::ps_square);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 5, button::ps_cross);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 6, button::ps_circle);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 7, button::ps_triangle);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 0, button::left_bumper);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 1, button::right_bumper);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 2, button::left_trigger);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 3, button::right_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 4, button::start);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 4, button::ps_share);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 5, button::options);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 6, button::left_stick);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 7, button::right_stick);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::system);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::ps_logo);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 1, button::ps_touchpad);
 
-        /// MYTODO: D-Pad switch not working correctly
-        //switch (bytes[5 + offset] & 0xF) { // D-Pad
-        //using namespace button;
-        //    case 0x0:
-        //        changed_to_down_buttons |= up;
-        //        changed_to_up_buttons |= down | left | right;
-        //        break;
-        //    case 0x1:
-        //        changed_to_down_buttons |= up | right;
-        //        changed_to_up_buttons |= down | left;
-        //        break;
-        //    case 0x2:
-        //        changed_to_down_buttons |= right;
-        //        changed_to_up_buttons |= up | down | left;
-        //        break;
-        //    case 0x3:
-        //        changed_to_down_buttons |= down | right;
-        //        changed_to_up_buttons |= up | left;
-        //        break;
-        //    case 0x4:
-        //        changed_to_down_buttons |= down;
-        //        changed_to_up_buttons |= up | left | right;
-        //        break;
-        //    case 0x5:
-        //        changed_to_down_buttons |= down | left;
-        //        changed_to_up_buttons |= up | right;
-        //        break;
-        //    case 0x6:
-        //        changed_to_down_buttons |= left;
-        //        changed_to_up_buttons |= up | down | right;
-        //        break;
-        //    case 0x7:
-        //        changed_to_down_buttons |= up | left;
-        //        changed_to_up_buttons |= down | right;
-        //        break;
-        //}
+        switch (bytes[5 + offset] & 0xF) { // D-Pad
+        using namespace button;
+            case 0x0:
+                changed_to_down_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+            case 0x1:
+                changed_to_down_buttons |= up | right;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x2:
+                changed_to_down_buttons |= right;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x3:
+                changed_to_down_buttons |= down | right;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x4:
+                changed_to_down_buttons |= down;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x5:
+                changed_to_down_buttons |= down | left;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+            case 0x6:
+                changed_to_down_buttons |= left;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+            case 0x7:
+                changed_to_down_buttons |= up | left;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= left;
+                break;
+            case 0x8:
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+        }
 
         // Refer too process_mouse_buttons_down
         changed_to_down_buttons = ~(s_gamepad_button_states | ~changed_to_down_buttons);
@@ -340,8 +371,6 @@ namespace myth {
         //    i + 8, bytes[i + 8],
         //    i + 9, bytes[i + 9]
         //);
-
-        //if ((bytes[offset + 7] >> 2) & 1) MYTHOS_WARN("Mute Button"); /// Is this correct for bluetooth? no
 
         /// Unknown Data
         /// - Byte 7 (8 Bits) - Sometype of counter, increments everytime hid recieves input

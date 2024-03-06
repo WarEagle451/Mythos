@@ -13,6 +13,8 @@
 /// - Maybe even scrap mousecode and replace with a button_code
 /// - event::mouse_xxx could be made into button_event
 
+/// MYTODO: Controllers should not have a linear stick input, it should be like a S
+
 namespace myth {
     using button_code = myl::u32;
     namespace button {
@@ -52,8 +54,14 @@ namespace myth {
             auxiliary7 = 1 << 23,
             auxiliary8 = 1 << 24,
 
-            // Platform specific aliases for auxiliary bits
+            // Platform specific aliases
 
+            ps_triangle = symbol_up,
+            ps_circle   = symbol_right,
+            ps_cross    = symbol_down,
+            ps_square   = symbol_left,
+            ps_share    = start,
+            ps_logo     = system,
             ps_touchpad = auxiliary1
         };
     }
@@ -92,6 +100,7 @@ namespace myth {
         MYL_NO_DISCARD static MYL_API auto mouse_buttons_down(mousecode code) noexcept -> bool { return (s_mouse_button_states & code) == code; }
 
         MYL_NO_DISCARD static MYL_API auto cursor_delta() noexcept -> const myl::f32vec2& { return s_cursor_delta; }
+        MYL_NO_DISCARD static MYL_API auto scroll_delta() noexcept -> const myl::f32vec2& { return s_scroll_delta; }
 
         MYL_NO_DISCARD static MYL_API auto gamepad_button_states() noexcept -> button_code { return s_gamepad_button_states; }
         MYL_NO_DISCARD static MYL_API auto gamepad_buttons_up(button_code code) noexcept -> bool { return (s_gamepad_button_states & code) == code; }
@@ -116,7 +125,7 @@ namespace myth {
 
         static auto process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void;
     private:
-        static auto process_controller_dualsense5(myl::u8* data, myl::u32 byte_count) -> void;
+        static auto process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void;
 
         static auto query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void;
     };

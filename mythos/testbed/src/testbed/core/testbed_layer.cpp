@@ -4,6 +4,8 @@
 #include <mythos/core/application.hpp>
 #include <mythos/input.hpp>
 
+#include <Windows.h>
+
 namespace testbed {
     MYL_NO_DISCARD testbed_layer::testbed_layer()
         : myth::layer("testbed") {
@@ -36,7 +38,18 @@ namespace testbed {
     }
 
     auto testbed_layer::update(myth::timestep ts) -> void {
-        
+        auto ls = myth::input::left_stick_delta(); 
+        if (ls.x != 0.f || ls.y != 0.f) {
+            ls = myl::normalize(ls);
+            ls += 1.f;
+            ls *= .5f;
+
+            POINT p{};
+            GetCursorPos(&p);
+            p.x += static_cast<LONG>(std::lerp(-3.f, 3.f, ls.x));
+            p.y += static_cast<LONG>(std::lerp(-3.f, 3.f, ls.y));
+            SetCursorPos(p.x, p.y);
+        }
     }
 
     auto testbed_layer::render() -> void {
@@ -110,6 +123,32 @@ namespace testbed {
 
     auto testbed_layer::on_gamepad_button_pressed(myth::event::gamepad_button_pressed& e) -> bool {
         MYTHOS_ERROR("Gamepad button(s): {} pressed", e.buttons());
+        if (e.buttons() & myth::button::ps_cross) {
+            constexpr int count = 2;
+            INPUT click[count]{
+                {
+                    .type = INPUT_MOUSE,
+                    .mi = {
+                        .dx = 0,
+                        .dy = 0,
+                        .mouseData = XBUTTON1,
+                        .dwFlags = MOUSEEVENTF_LEFTDOWN
+                    }
+                },
+                {
+                    .type = INPUT_MOUSE,
+                    .mi = {
+                        .dx = 0,
+                        .dy = 0,
+                        .mouseData = XBUTTON1,
+                        .dwFlags = MOUSEEVENTF_LEFTUP
+                    }
+                }
+            };
+
+            SendInput(count, click, sizeof(INPUT));
+        }
+
         return true;
     }
 
