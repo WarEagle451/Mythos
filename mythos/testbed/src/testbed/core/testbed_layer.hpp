@@ -1,5 +1,6 @@
 #pragma once
 #include <mythos/core/layer.hpp>
+#include <mythos/event/gamepad_event.hpp>
 #include <mythos/event/key_event.hpp>
 #include <mythos/event/mouse_event.hpp>
 
@@ -22,5 +23,7 @@ namespace testbed {
         auto on_mouse_scrolled(myth::event::mouse_scrolled& e) -> bool;
         auto on_mouse_pressed(myth::event::mouse_pressed& e) -> bool;
         auto on_mouse_released(myth::event::mouse_released& e) -> bool;
+        auto on_gamepad_button_pressed(myth::event::gamepad_button_pressed& e) -> bool;
+        auto on_gamepad_button_released(myth::event::gamepad_button_released& e) -> bool;
     };
 }

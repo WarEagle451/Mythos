@@ -7,6 +7,8 @@
 #   include <mythos/log.hpp>
 #   include <mythos/platform/windows/win_utilities.hpp>
 
+#   include <myl/memory.hpp>
+
 #   include <Windows.h> // WinUser.h
 #   include <hidusage.h>
 
@@ -15,9 +17,6 @@
 
 /// MYTODO: Improve RIM_KEYBOARD
 /// - https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
-
-/// MYTODO: Get gamepad, joystick and multi-axis controller input working
-/// - https://github.com/nuzayets/rawinput-debug/tree/master
 
 namespace myth::win {
     MYL_NO_DISCARD static constexpr auto translate_raw_mouse_code(USHORT buttons) noexcept -> mousecode {
@@ -429,19 +428,22 @@ namespace myth::win {
                 case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
                     return 1;
                 case WM_INPUT: {
-                    RAWINPUT raw{};
-                    UINT pcb_size = sizeof(RAWINPUT);
+                    UINT size = sizeof(RAWINPUT);
+                    myl::buffer raw(size);
+                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_HEADER, raw.data(), &size, sizeof(RAWINPUTHEADER));
+                    DWORD device_type = raw.as<RAWINPUT>()->header.dwType;
 
-                    /// MYTODO: There must be a better way of obtaining header info than having to call this twice
-                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_HEADER, &raw, &pcb_size, sizeof(RAWINPUTHEADER));
-                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, &raw, &pcb_size, sizeof(RAWINPUTHEADER));
+                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER));
+                    raw.reallocate(size);
+                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, raw.data(), &size, sizeof(RAWINPUTHEADER));
+                    auto& data = raw.as<RAWINPUT>()->data;
 
-                    switch (raw.header.dwType) {
+                    switch (device_type) {
                         case RIM_TYPEMOUSE: {
                             POINT mouse_coords{};
                             GetCursorPos(&mouse_coords);
                             const bool hovered = WindowFromPoint(mouse_coords) == target->m_handle;
-                            auto& mouse = raw.data.mouse;
+                            auto& mouse = data.mouse;
                             
                             // Mouse movement
                             if (mouse.lLastX != 0 || mouse.lLastY != 0) {
@@ -492,7 +494,7 @@ namespace myth::win {
                         }
                         case RIM_TYPEKEYBOARD:
                             if (GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT) { // Only handle keyboard with the window is in the foreground
-                                auto& keyboard = raw.data.keyboard;
+                                auto& keyboard = data.keyboard;
                                 USHORT scancode = keyboard.MakeCode |
                                     ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0); // Distinguish if left or right key is pressed
 
@@ -507,14 +509,11 @@ namespace myth::win {
                             }
                             break;
                         case RIM_TYPEHID: {
-                            UINT size2;
-                            GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, NULL, &size2, sizeof(RAWINPUTHEADER));
-                            RAWINPUT* raw2 = (RAWINPUT*)malloc(size2);
+                            RID_DEVICE_INFO rid_info{};
+                            UINT rid_info_size = sizeof(RID_DEVICE_INFO);
+                            GetRawInputDeviceInfoA(raw.as<RAWINPUT>()->header.hDevice, RIDI_DEVICEINFO, &rid_info, &rid_info_size);
 
-                            if (GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, raw2, &size2, sizeof(RAWINPUTHEADER)) > 0) {
-                                input::process_controller_dualsense5(raw2->data.hid.bRawData, raw2->data.hid.dwSizeHid);
-                            }
-                            free(raw2);
+                            input::process_hid(rid_info.hid.dwVendorId, rid_info.hid.dwProductId, data.hid.bRawData, data.hid.dwSizeHid);
                             break;
                         }
                         default:

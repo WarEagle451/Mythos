@@ -31,6 +31,8 @@ namespace testbed {
         d.dispatch<myth::event::mouse_scrolled>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_mouse_scrolled));
         d.dispatch<myth::event::mouse_pressed>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_mouse_pressed));
         d.dispatch<myth::event::mouse_released>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_mouse_released));
+        d.dispatch<myth::event::gamepad_button_pressed>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_gamepad_button_pressed));
+        d.dispatch<myth::event::gamepad_button_released>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_gamepad_button_released));
     }
 
     auto testbed_layer::update(myth::timestep ts) -> void {
@@ -103,6 +105,16 @@ namespace testbed {
 
     auto testbed_layer::on_mouse_released(myth::event::mouse_released& e) -> bool {
         TESTBED_TRACE("Mouse button(s) '{}' released", e.buttons());
+        return true;
+    }
+
+    auto testbed_layer::on_gamepad_button_pressed(myth::event::gamepad_button_pressed& e) -> bool {
+        MYTHOS_ERROR("Gamepad button(s): {} pressed", e.buttons());
+        return true;
+    }
+
+    auto testbed_layer::on_gamepad_button_released(myth::event::gamepad_button_released& e) -> bool {
+        MYTHOS_ERROR("Gamepad button(s): {} released", e.buttons());
         return true;
     }
 }

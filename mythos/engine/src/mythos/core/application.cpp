@@ -167,16 +167,6 @@ namespace myth {
         return false;
     }
 
-    auto application::on_gamepad_button_pressed(event::gamepad_button_pressed& e) -> bool {
-        MYTHOS_ERROR("1");
-        return true;
-    }
-
-    auto application::on_gamepad_button_released(event::gamepad_button_released& e) -> bool {
-        MYTHOS_ERROR("2");
-        return true;
-    }
-
     auto application::on_event(event::base& e) -> void {
         event::dispatcher d(e);
         d.dispatch<event::window_resize>(MYTHOS_BIND_EVENT_FUNC(application::on_window_resize));
@@ -184,8 +174,6 @@ namespace myth {
         d.dispatch<event::window_close>(MYTHOS_BIND_EVENT_FUNC(application::on_window_close));
         d.dispatch<event::window_focus_gain>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_gain));
         d.dispatch<event::window_focus_lost>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_lost));
-        d.dispatch<event::gamepad_button_pressed>(MYTHOS_BIND_EVENT_FUNC(application::on_gamepad_button_pressed));
-        d.dispatch<event::gamepad_button_released>(MYTHOS_BIND_EVENT_FUNC(application::on_gamepad_button_released));
 
         if (!e.handled)
             for (auto& l : m_layer_stack) {

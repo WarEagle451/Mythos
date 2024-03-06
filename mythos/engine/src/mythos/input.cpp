@@ -6,7 +6,6 @@
 /// MYTODO: Split this up into seperate source files
 #ifdef MYL_OS_WINDOWS
 #   include <Windows.h> // WinUser.h
-
 namespace myth {
     auto input::set_cursor_position(const myl::i32vec2& position) -> void {
         SetCursorPos(position.x, position.y);
@@ -182,6 +181,33 @@ namespace myth {
         }
     }
 
+    auto input::process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void {
+        switch (vendor_id) {
+            case 0x54C: // Sony
+                /// MYTODO: Process other Sony devices
+                switch (product_id) {
+                    case 0x05C4: // Dualshock 4 Generation 1
+                        break;
+                    case 0x09CC: // Dualshock 4 Generation 2
+                        break;
+                    case 0x0BA0: // Dualshock 3 Wireless Adaptor
+                        break;
+                    case 0x0CE6: // DualSense 5
+                        process_controller_dualsense5(data, byte_count);
+                        break;
+                    case 0x0CDA: // PlayStation Classic Controller
+                        break;
+                    case 0x0DF2: // DualSense Edge
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     auto input::process_controller_dualsense5(myl::u8* bytes, myl::u32 byte_count) -> void {
         // From: https://github.com/nondebug/dualsense
 
@@ -291,6 +317,7 @@ namespace myth {
         /// - Microphone
         /// - Headset Jack
         /// - Battery Status
+        /// - Mute button on bluetooth
 
         // Outputs
         /// - Haptic Feedback

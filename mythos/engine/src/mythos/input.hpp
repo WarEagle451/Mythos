@@ -114,11 +114,10 @@ namespace myth {
         static auto process_cursor_delta(const myl::f32vec2& delta) -> void;
         static auto process_window_cursor_position(const myl::f32vec2& position) -> void;
 
-        //static auto process_controller_dualsense3(myl::u8* data, myl::u32 byte_count) -> void;
-        //static auto process_controller_dualsense4(myl::u8* data, myl::u32 byte_count) -> void;
-        static auto process_controller_dualsense5(myl::u8* data, myl::u32 byte_count) -> void;
-        //static auto process_controller_dualsense_edge(myl::u8* data, myl::u32 byte_count) -> void;
+        static auto process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void;
     private:
+        static auto process_controller_dualsense5(myl::u8* data, myl::u32 byte_count) -> void;
+
         static auto query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void;
     };
 }
