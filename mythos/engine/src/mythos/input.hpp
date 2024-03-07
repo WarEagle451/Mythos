@@ -61,6 +61,7 @@ namespace myth {
             ps_cross    = symbol_down,
             ps_square   = symbol_left,
             ps_share    = start,
+            ps_create   = start,
             ps_logo     = system,
             ps_touchpad = auxiliary1,
 
@@ -134,6 +135,7 @@ namespace myth {
         static auto process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void;
     private:
         static auto process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void;
+        static auto process_controller_dualshock4(myl::u8* data, myl::u32 byte_count) -> void;
 
         static auto query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void;
     };

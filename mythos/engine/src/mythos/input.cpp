@@ -67,9 +67,6 @@ namespace myth {
 #endif
 
 /// MYTODO: Implement Controllers
-/// - Dualshock 4
-///     - https://www.psdevwiki.com/ps4/DS4-BT
-///     - https://www.psdevwiki.com/ps4/DS4-USB
 /// - Dualshock 3
 ///     - https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information
 /// - DualSense Edge
@@ -199,6 +196,9 @@ namespace myth {
         switch (vendor_id) {
             case 0x54C: // Sony
                 switch (product_id) {
+                    case 0x05C4: // Dualshock 4
+                        process_controller_dualshock4(data, byte_count);
+                        break;
                     case 0x0CE6: // DualSense 5
                         process_controller_dualsense(data, byte_count);
                         break;
@@ -212,21 +212,21 @@ namespace myth {
     }
 
 #define MYTHOS_IMPL_GAMEPAD_BUTTON(byte, bit, button)\
-    if ((bytes[byte] >> bit) != (s_gamepad_button_states & button))\
-        ((bytes[byte] >> bit) & 1) ? changed_to_down_buttons |= button : changed_to_up_buttons |= button;
+    if ((data[byte] >> bit) != (s_gamepad_button_states & button))\
+        ((data[byte] >> bit) & 1) ? changed_to_down_buttons |= button : changed_to_up_buttons |= button;
 
-    auto input::process_controller_dualsense(myl::u8* bytes, myl::u32 byte_count) -> void {
+    auto input::process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void {
+        // From: https://github.com/nondebug/dualsense
+
         /// MYTODO: DualSense Controller
         /// - Mute Button on Bluetooth (USB is byte 10, bit 2)
-
-        // From: https://github.com/nondebug/dualsense
 
         // USB connection is 64 bytes, bluetooth uses more
         const myl::u32 offset = byte_count == 64 ? 3 : 0;
 
         myl::f32vec2 incoming_left_stick_delta{
-            static_cast<myl::f32>(static_cast<myl::u16>(bytes[1]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(bytes[2]) - 0x80) / 128.f
+            static_cast<myl::f32>(static_cast<myl::u16>(data[1]) - 0x80) / 128.f,
+            static_cast<myl::f32>(static_cast<myl::u16>(data[2]) - 0x80) / 128.f
         };
 
         if (incoming_left_stick_delta.x > s_stick_deadzones[0] ||
@@ -236,8 +236,8 @@ namespace myth {
             s_left_stick_delta = incoming_left_stick_delta;
 
         myl::f32vec2 incoming_right_stick_delta{
-            static_cast<myl::f32>(static_cast<myl::u16>(bytes[3]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(bytes[4]) - 0x80) / 128.f
+            static_cast<myl::f32>(static_cast<myl::u16>(data[3]) - 0x80) / 128.f,
+            static_cast<myl::f32>(static_cast<myl::u16>(data[4]) - 0x80) / 128.f
         };
 
         if (incoming_right_stick_delta.x > s_stick_deadzones[1] ||
@@ -246,13 +246,11 @@ namespace myth {
             incoming_right_stick_delta.y < -s_stick_deadzones[1])
             s_right_stick_delta = incoming_right_stick_delta;
 
-        s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(bytes[8 - offset])) / 255.f;
-        s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(bytes[9 - offset])) / 255.f;
+        s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8 - offset])) / 255.f;
+        s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9 - offset])) / 255.f;
 
-        // Used in MYTHOS_IMPL_GAMEPAD_BUTTON
         button_code changed_to_up_buttons = button::none;
         button_code changed_to_down_buttons = button::none;
-
         MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 4, button::ps_square);
         MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 5, button::ps_cross);
         MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 6, button::ps_circle);
@@ -261,14 +259,14 @@ namespace myth {
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 1, button::right_bumper);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 2, button::left_trigger);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 3, button::right_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 4, button::ps_share);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 4, button::ps_create);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 5, button::options);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 6, button::left_stick);
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 7, button::right_stick);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::ps_logo);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 1, button::ps_touchpad);
 
-        switch (bytes[5 + offset] & 0xF) { // D-Pad
+        switch (data[5 + offset] & 0xF) { // D-Pad
         using namespace button;
             case 0x0:
                 changed_to_down_buttons |= up;
@@ -356,16 +354,16 @@ namespace myth {
         //int i = 00;
         //MYTHOS_TRACE(
         //    "Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b}",
-        //    i + 0, bytes[i + 0],
-        //    i + 1, bytes[i + 1],
-        //    i + 2, bytes[i + 2],
-        //    i + 3, bytes[i + 3],
-        //    i + 4, bytes[i + 4],
-        //    i + 5, bytes[i + 5],
-        //    i + 6, bytes[i + 6],
-        //    i + 7, bytes[i + 7],
-        //    i + 8, bytes[i + 8],
-        //    i + 9, bytes[i + 9]
+        //    i + 0, data[i + 0],
+        //    i + 1, data[i + 1],
+        //    i + 2, data[i + 2],
+        //    i + 3, data[i + 3],
+        //    i + 4, data[i + 4],
+        //    i + 5, data[i + 5],
+        //    i + 6, data[i + 6],
+        //    i + 7, data[i + 7],
+        //    i + 8, data[i + 8],
+        //    i + 9, data[i + 9]
         //);
 
         /// Unknown Data
@@ -428,5 +426,142 @@ namespace myth {
         /// - 61: ?
         /// - 62: ?
         /// - 63: ?
+    }
+
+    auto input::process_controller_dualshock4(myl::u8* data, myl::u32 byte_count) -> void {
+        /// https://www.psdevwiki.com/ps4/DS4-BT
+        /// https://www.psdevwiki.com/ps4/DS4-USB
+
+        /// MYTODO: Additional Dualshock inputs
+        ///                             USB            Bluetooth
+        /// Battery                  : Byte[12] Bit[-] | Byte[15] Bit[-]
+        /// Gyro X                   : Byte[13 - 14]   | Byte[16 - 17]
+        /// Gyro Y                   : Byte[15 - 16]   | Byte[18 - 19]
+        /// Gyro Z                   : Byte[17 - 18]   | Byte[20 - 21]
+        /// Accel X (signed)         : Byte[19 - 20]   | Byte[22 - 23]
+        /// Accel Y (signed)         : Byte[21 - 22]   | Byte[24 - 25]
+        /// Accel Z (signed)         : Byte[23 - 24]   | Byte[26 - 27]
+        /// AUX connection           : Byte[30] Bit[-] | Byte[33] Bit[-] ? Is this the Same
+        /// Touchpad finger 1 touch  : Byte[35] Bit[-] | Byte[] Bit[] // Refer to https://www.psdevwiki.com/ps4/DS4-BT for Trackpad info
+        /// Touchpad Data finger 1   : Byte[36 - 38]   | Byte[] Bit[]
+        /// Touchpad finger 2 touch  : Byte[39] Bit[-] | Byte[] Bit[]
+        /// Touchpad Data finger 2   : Byte[40 - 42]   | Byte[] Bit[]
+        /// Touchpad More Data fin 1 : Byte[44 - 47]   | Byte[] Bit[]
+        /// Touchpad More Data fin 2 : Byte[48 - 51]   | Byte[] Bit[]
+
+        // Bluetooth is offset by +1 vs USB inputs, USB inputs byte format is 64 bytes
+        const myl::u32 offset = byte_count == 64 ? 0 : 1;
+
+        myl::f32vec2 incoming_left_stick_delta{
+            static_cast<myl::f32>(static_cast<myl::u16>(data[1 + offset]) - 0x80) / 128.f,
+            static_cast<myl::f32>(static_cast<myl::u16>(data[2 + offset]) - 0x80) / 128.f
+        };
+
+        if (incoming_left_stick_delta.x > s_stick_deadzones[0] ||
+            incoming_left_stick_delta.x < -s_stick_deadzones[0] ||
+            incoming_left_stick_delta.y > s_stick_deadzones[0] ||
+            incoming_left_stick_delta.y < -s_stick_deadzones[0])
+            s_left_stick_delta = incoming_left_stick_delta;
+
+        myl::f32vec2 incoming_right_stick_delta{
+            static_cast<myl::f32>(static_cast<myl::u16>(data[3 + offset]) - 0x80) / 128.f,
+            static_cast<myl::f32>(static_cast<myl::u16>(data[4 + offset]) - 0x80) / 128.f
+        };
+
+        if (incoming_right_stick_delta.x > s_stick_deadzones[1] ||
+            incoming_right_stick_delta.x < -s_stick_deadzones[1] ||
+            incoming_right_stick_delta.y > s_stick_deadzones[1] ||
+            incoming_right_stick_delta.y < -s_stick_deadzones[1])
+            s_right_stick_delta = incoming_right_stick_delta;
+
+        s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8 + offset])) / 255.f;
+        s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9 + offset])) / 255.f;
+        
+        button_code changed_to_up_buttons = button::none;
+        button_code changed_to_down_buttons = button::none;
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 4, button::ps_square);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 5, button::ps_cross);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 6, button::ps_circle);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 7, button::ps_triangle);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 0, button::left_bumper);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 1, button::right_bumper);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 2, button::left_trigger);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 3, button::right_trigger);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 4, button::ps_share);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 5, button::options);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 6, button::left_stick);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 7, button::right_stick);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::ps_logo);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 1, button::ps_touchpad);
+
+        switch (data[5 + offset] & 0xF) { // D-Pad
+        using namespace button;
+            case 0x0:
+                changed_to_down_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+            case 0x1:
+                changed_to_down_buttons |= up | right;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x2:
+                changed_to_down_buttons |= right;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x3:
+                changed_to_down_buttons |= down | right;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x4:
+                changed_to_down_buttons |= down;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                break;
+            case 0x5:
+                changed_to_down_buttons |= down | left;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+            case 0x6:
+                changed_to_down_buttons |= left;
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+            case 0x7:
+                changed_to_down_buttons |= up | left;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= left;
+                break;
+            case 0x8:
+                if (s_gamepad_button_states & up) changed_to_up_buttons |= up;
+                if (s_gamepad_button_states & down) changed_to_up_buttons |= down;
+                if (s_gamepad_button_states & left) changed_to_up_buttons |= left;
+                if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
+                break;
+        }
+
+        // Refer too process_mouse_buttons_down
+        changed_to_down_buttons = ~(s_gamepad_button_states | ~changed_to_down_buttons);
+        if (changed_to_down_buttons != 0) { // Only update if there is a change
+            s_gamepad_button_states |= changed_to_down_buttons; // Set bits to down
+            event::gamepad_button_pressed e(changed_to_down_buttons);
+            event::fire(e);
+        }
+
+        // Refer too process_mouse_buttons_up
+        changed_to_up_buttons = s_gamepad_button_states & changed_to_up_buttons;
+        if (changed_to_up_buttons != 0) { // Only update if there is a change
+            s_gamepad_button_states &= ~changed_to_up_buttons; // Clear bits to up
+            event::gamepad_button_released e(changed_to_up_buttons);
+            event::fire(e);
+        }
     }
 }
