@@ -3,6 +3,8 @@
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/input.hpp>
 
+#include <mythos/log.hpp>
+
 /// MYTODO: Split this up into seperate source files
 #ifdef MYL_OS_WINDOWS
 #   include <Windows.h> // WinUser.h
@@ -76,6 +78,10 @@ namespace myth {
 ///     - Models: 1537, 1697, 1698 "Elite", 1708, 1797 "Elite 2", 1914
 /// - Google Stadia
 /// - Luna Controller
+
+/// MYTODO: Additional Dualsense resources
+/// - https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db
+/// - https://controllers.fandom.com/wiki/Sony_DualSense
 
 namespace myth {
     std::array<input::state, key::size> input::s_key_states;
@@ -194,20 +200,39 @@ namespace myth {
 
     auto input::process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void {
         switch (vendor_id) {
-            case 0x54C: // Sony
+            case 0x18D1: // Google
+                ///if (product_id == 0x9400) // Stadia Controller
+                ///    process_controller_stadia(data, byte_count);
+                break;
+            case 0x045E: // Microsoft
                 switch (product_id) {
-                    case 0x05C4: // Dualshock 4
-                        process_controller_dualshock4(data, byte_count);
-                        break;
-                    case 0x0CE6: // DualSense 5
-                        process_controller_dualsense(data, byte_count);
-                        break;
-                    default:
-                        break;
+                    ///case 0x0202: process_controller_(data, byte_count); break; // Xbox Controller
+                    ///case 0x0285: process_controller_(data, byte_count); break; // Xbox Controller S
+                    ///case 0x0288: process_controller_(data, byte_count); break; // Xbox Controller S Hub
+                    ///case 0x0289: process_controller_(data, byte_count); break; // Xbox Controller S 
+                    ///case 0x028E: process_controller_(data, byte_count); break; // Xbox360 Controller
+                    ///case 0x028F: process_controller_(data, byte_count); break; // Xbox360 Wireless Contoller via Plug & Charge Cable
+                    ///case 0x02D1: process_controller_(data, byte_count); break; // Xbox One Controller
+                    ///case 0x02DD: process_controller_(data, byte_count); break; // Xbox One Controller (Firmware 2015)
+                    ///case 0x02E0: process_controller_(data, byte_count); break; // Xbox One Wireless Controller
+                    ///case 0x02E3: process_controller_(data, byte_count); break; // Xbox One Elite Controller
+                    ///case 0x02EA: process_controller_(data, byte_count); break; // Xbox One Controller
+                    ///case 0x02FD: process_controller_(data, byte_count); break; // Xbox One S Controller (Bluetooth)
+                    ///case 0x0B00: process_controller_(data, byte_count); break; // Xbox Elite Series 2 Controller (model 1797)
+                    ///case 0x0B12: process_controller_(data, byte_count); break; // Xbox Controller
+                    default: break;
                 }
                 break;
-            default:
+            case 0x054C: // Sony
+                switch (product_id) {
+                    case 0x05C4: MYL_FALLTHROUGH;
+                    case 0x09CC: process_controller_dualshock4(data, byte_count); break;
+                    case 0x0CE6: process_controller_dualsense(data, byte_count); break;
+                    ///case 0x0DF2: // Dualsense Edge 
+                    default: break;
+                }
                 break;
+            default: break;
         }
     }
 
@@ -386,11 +411,11 @@ namespace myth {
         /// - 21: ? Accel
         /// - 22: ?
         /// - 23: Gyro Roll
-        /// - 24: ?
-        /// - 25: ? Gyro Yaw
-        /// - 26: ?
+        /// - 24: Gyro Roll
+        /// - 25: Gyro Yaw
+        /// - 26: Gyro Yaw
         /// - 27: Gyro Pitch
-        /// - 28: ?
+        /// - 28: Gyro Pitch
         /// - 29: ?
         /// - 30: ? Some type of counter
         /// - 31: ? Some type of counter

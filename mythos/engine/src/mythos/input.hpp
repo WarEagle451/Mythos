@@ -41,7 +41,7 @@ namespace myth {
 
             start   = 1 << 14,
             options = 1 << 15,
-            system  = 1 << 16,
+            home  = 1 << 16,
 
             // Reserved for controller specific support
 
@@ -62,7 +62,7 @@ namespace myth {
             ps_square   = symbol_left,
             ps_share    = start,
             ps_create   = start,
-            ps_logo     = system,
+            ps_logo     = home,
             ps_touchpad = auxiliary1,
 
             xb_y    = symbol_up,
@@ -71,7 +71,7 @@ namespace myth {
             xb_x    = symbol_left,
             xb_view = start,
             xb_menu = options,
-            xb_logo = system
+            xb_logo = home
         };
     }
 

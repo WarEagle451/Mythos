@@ -14,7 +14,11 @@
 7. [Common Issues](#common-issues)
 
 # Features
-- Controller support; DualSense
+- <details><summary>Controller Support</summary>
+
+    - Dualsense
+    - Dualshock4
+</details>
 
 # Requirements
 - C++20

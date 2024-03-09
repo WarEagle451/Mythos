@@ -87,7 +87,7 @@ namespace myth {
         while(m_running) {
             /// BUG: Keeping track of the time split like this is bad, if the app is paused or the os has
             /// pause it the game loop will not run and a large value will accumulate for ts, this
-            /// accumulation should be ignored
+            /// accumulation should be ignored, "split" should occur again when the application is unsuspended
 
             ts = timer.split<std::chrono::seconds, myl::f64>();
             m_stats.timestep = ts;

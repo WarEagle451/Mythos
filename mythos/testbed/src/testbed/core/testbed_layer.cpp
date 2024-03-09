@@ -47,6 +47,7 @@ namespace testbed {
             POINT p{};
             GetCursorPos(&p);
             /// MYTODO: Make this smoother, AKA Windows needs to be more percise than 1 int
+            /// basically a subpixel set cursor
             p.x += static_cast<LONG>(std::lerp(-3.f, 3.f, ls.x));
             p.y += static_cast<LONG>(std::lerp(-3.f, 3.f, ls.y));
             SetCursorPos(p.x, p.y);
