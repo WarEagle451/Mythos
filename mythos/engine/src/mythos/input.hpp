@@ -64,6 +64,7 @@ namespace myth {
             ps_create   = start,
             ps_logo     = home,
             ps_touchpad = auxiliary1,
+            ps_mic      = auxiliary2,
 
             xb_y    = symbol_up,
             xb_b    = symbol_right,
@@ -94,6 +95,9 @@ namespace myth {
         static myl::f32vec2 s_left_stick_delta;
         static myl::f32vec2 s_right_stick_delta;
         static myl::f32vec2 s_trigger_delta;
+
+        static myl::u32vec2 s_trackpad_touch1_coords;
+        static myl::u32vec2 s_trackpad_touch2_coords;
     public:
         static auto init(const input_configuration& config) -> void;
         static auto update() -> void;

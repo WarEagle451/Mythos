@@ -16,8 +16,8 @@
 # Features
 - <details><summary>Controller Support</summary>
 
-    - Dualsense
-    - Dualshock4
+    - DualSense
+    - DualShock 4
 </details>
 
 # Requirements

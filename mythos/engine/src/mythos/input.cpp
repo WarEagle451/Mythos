@@ -3,6 +3,7 @@
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/input.hpp>
 
+/// MYTEMP:
 #include <mythos/log.hpp>
 
 /// MYTODO: Split this up into seperate source files
@@ -95,6 +96,9 @@ namespace myth {
     myl::f32vec2 input::s_left_stick_delta;
     myl::f32vec2 input::s_right_stick_delta;
     myl::f32vec2 input::s_trigger_delta;
+
+    myl::u32vec2 input::s_trackpad_touch1_coords;
+    myl::u32vec2 input::s_trackpad_touch2_coords;
 
     auto input::init(const input_configuration& config) -> void {
         clear();
@@ -291,6 +295,9 @@ namespace myth {
         MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::ps_logo);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 1, button::ps_touchpad);
 
+        /// MYBUG: Does not work in bluetooth mode
+        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 2, button::ps_mic);
+
         switch (data[5 + offset] & 0xF) { // D-Pad
         using namespace button;
             case 0x0:
@@ -344,6 +351,20 @@ namespace myth {
                 if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
                 break;
         }
+
+        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
+        s_trackpad_touch1_coords = {
+            static_cast<myl::u32>(data[31 + offset]) | static_cast<myl::u32>(data[32 + offset] & 0x0F) << 8,
+            (static_cast<myl::u32>(data[33 + offset]) << 4) | ((data[32 + offset] & 0xF0) >> 4)
+        };
+
+        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
+        s_trackpad_touch2_coords = {
+            static_cast<myl::u32>(data[35 + offset]) | static_cast<myl::u32>(data[36 + offset] & 0x0F) << 8,
+            (static_cast<myl::u32>(data[39 + offset]) << 4) | ((data[36 + offset] & 0xF0) >> 4)
+        };
+
+       /// MYTHOS_ERROR("[{}, {}]", s_trackpad_touch1_coords.x, s_trackpad_touch1_coords.y);
 
         // Refer too process_mouse_buttons_down
         changed_to_down_buttons = ~(s_gamepad_button_states | ~changed_to_down_buttons);
@@ -474,12 +495,9 @@ namespace myth {
         /// Touchpad More Data fin 1 : Byte[44 - 47]   | Byte[] Bit[]
         /// Touchpad More Data fin 2 : Byte[48 - 51]   | Byte[] Bit[]
 
-        // Bluetooth is offset by +1 vs USB inputs, USB inputs byte format is 64 bytes
-        const myl::u32 offset = byte_count == 64 ? 0 : 1;
-
         myl::f32vec2 incoming_left_stick_delta{
-            static_cast<myl::f32>(static_cast<myl::u16>(data[1 + offset]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(data[2 + offset]) - 0x80) / 128.f
+            static_cast<myl::f32>(static_cast<myl::u16>(data[1]) - 0x80) / 128.f,
+            static_cast<myl::f32>(static_cast<myl::u16>(data[2]) - 0x80) / 128.f
         };
 
         if (incoming_left_stick_delta.x > s_stick_deadzones[0] ||
@@ -489,8 +507,8 @@ namespace myth {
             s_left_stick_delta = incoming_left_stick_delta;
 
         myl::f32vec2 incoming_right_stick_delta{
-            static_cast<myl::f32>(static_cast<myl::u16>(data[3 + offset]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(data[4 + offset]) - 0x80) / 128.f
+            static_cast<myl::f32>(static_cast<myl::u16>(data[3]) - 0x80) / 128.f,
+            static_cast<myl::f32>(static_cast<myl::u16>(data[4]) - 0x80) / 128.f
         };
 
         if (incoming_right_stick_delta.x > s_stick_deadzones[1] ||
@@ -499,27 +517,27 @@ namespace myth {
             incoming_right_stick_delta.y < -s_stick_deadzones[1])
             s_right_stick_delta = incoming_right_stick_delta;
 
-        s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8 + offset])) / 255.f;
-        s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9 + offset])) / 255.f;
-        
+        s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8])) / 255.f;
+        s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9])) / 255.f;
+
         button_code changed_to_up_buttons = button::none;
         button_code changed_to_down_buttons = button::none;
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 4, button::ps_square);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 5, button::ps_cross);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 6, button::ps_circle);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 7, button::ps_triangle);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 0, button::left_bumper);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 1, button::right_bumper);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 2, button::left_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 3, button::right_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 4, button::ps_share);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 5, button::options);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 6, button::left_stick);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 7, button::right_stick);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::ps_logo);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 1, button::ps_touchpad);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 4, button::ps_square);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 5, button::ps_cross);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 6, button::ps_circle);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 7, button::ps_triangle);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 0, button::left_bumper);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 1, button::right_bumper);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 2, button::left_trigger);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 3, button::right_trigger);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 4, button::ps_share);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 5, button::options);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 6, button::left_stick);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 7, button::right_stick);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(7, 0, button::ps_logo);
+        MYTHOS_IMPL_GAMEPAD_BUTTON(7, 1, button::ps_touchpad);
 
-        switch (data[5 + offset] & 0xF) { // D-Pad
+        switch (data[5] & 0xF) { // D-Pad
         using namespace button;
             case 0x0:
                 changed_to_down_buttons |= up;
@@ -572,6 +590,35 @@ namespace myth {
                 if (s_gamepad_button_states & right) changed_to_up_buttons |= right;
                 break;
         }
+
+        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
+        s_trackpad_touch1_coords = {
+            static_cast<myl::u32>(data[36]) | static_cast<myl::u32>(data[37] & 0x0F) << 8,
+            (static_cast<myl::u32>(data[38]) << 4) | ((data[37] & 0xF0) >> 4)
+        };
+
+        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
+        s_trackpad_touch2_coords = {
+            static_cast<myl::u32>(data[40]) | static_cast<myl::u32>(data[41] & 0x0F) << 8,
+            (static_cast<myl::u32>(data[42]) << 4) | ((data[41] & 0xF0) >> 4)
+        };
+
+        //MYTHOS_ERROR("[{}, {}]", s_trackpad_touch1_coords.x, s_trackpad_touch1_coords.y);
+
+        int i = 60;
+        MYTHOS_TRACE(
+            "Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b} | Byte {:3}: {:08b}",
+            i + 0, data[i + 0],
+            i + 1, data[i + 1],
+            i + 2, data[i + 2],
+            i + 3, data[i + 3],
+            i + 4, data[i + 4],
+            i + 5, data[i + 5],
+            i + 6, data[i + 6],
+            i + 7, data[i + 7],
+            i + 8, data[i + 8],
+            i + 9, data[i + 9]
+        );
 
         // Refer too process_mouse_buttons_down
         changed_to_down_buttons = ~(s_gamepad_button_states | ~changed_to_down_buttons);
