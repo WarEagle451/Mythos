@@ -17,6 +17,9 @@ namespace myth {
     
     MYL_NO_DISCARD application::application(const application_specification& specs)
         : m_info{ specs.info } {
+        if (specs.enable_trace_logging)
+            log::get()->set_level(spdlog::level::trace);
+            
         MYTHOS_TRACE("Creating application...");
         MYTHOS_INFO("Version: {} ({})", MYTHOS_VERSION_STRING, MYTHOS_VERSION);
 
@@ -27,10 +30,9 @@ namespace myth {
 
         input::init(specs.input_config);
 
-        // Window may receive bad events if callback is set first
-        m_window = window::create(specs.window_config);
         m_event_cb = MYTHOS_BIND_EVENT_FUNC(application::on_event);
         event::set_callback(m_event_cb);
+        m_window = window::create(specs.window_config);
 
         m_running = true;
         m_suspended = false;

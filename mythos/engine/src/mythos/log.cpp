@@ -21,7 +21,7 @@ namespace myth {
         sinks.back()->set_pattern("%^[%L] %n: %v%$");
 
         s_logger = std::make_shared<spdlog::logger>("Mythos", sinks.begin(), sinks.end());
-        s_logger->set_level(spdlog::level::trace);
+        s_logger->set_level(spdlog::level::debug);
         spdlog::register_logger(s_logger);
     }
 

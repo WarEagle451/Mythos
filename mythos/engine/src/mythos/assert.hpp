@@ -6,7 +6,6 @@
 
 #include <source_location>
 
-///TODO: Find a way to evaluate __VA_ARGS__, if that is possible it might be possible to implement a preprocessor if
 #define MYTHOS_MAKE_ASSERT(log_func, condition, ...) {\
     if (!(condition)) {\
         constexpr auto sl = std::source_location::current();\

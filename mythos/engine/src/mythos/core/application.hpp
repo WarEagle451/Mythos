@@ -19,6 +19,8 @@ namespace myth {
         application_information info{};
         window_configuration window_config{};
         input_configuration input_config{};
+
+        bool enable_trace_logging = false;
     };
 
     struct application_statistics {

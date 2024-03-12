@@ -32,7 +32,6 @@ namespace myth {
         myl::i32vec2 position = myl::i32vec2(-1);
         window_style style = window_style::windowed;
         window_state state = window_state::normal;
-        //myl::i32 monitor = 0;
 
         bool center_cursor = true;
     };

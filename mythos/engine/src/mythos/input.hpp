@@ -15,6 +15,8 @@
 
 /// MYTODO: Controllers should not have a linear stick input, it should be like a S
 
+/// MYTODO: Up to 4 input devices, Would need to keep track of controllers being plugged in (This would be os dependent)
+
 namespace myth {
     using button_code = myl::u32;
     namespace button {
@@ -125,6 +127,8 @@ namespace myth {
 
         static auto MYL_API set_cursor_position(const myl::i32vec2& position) -> void;
         static auto MYL_API set_cursor_visibility(bool visibility) -> void;
+        static auto MYL_API set_deadstick_zones(const myl::f32vec2& values) noexcept -> void { s_stick_deadzones = values; }
+
         static auto MYL_API confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void;
         static auto MYL_API release_cursor() -> void;
 
@@ -138,6 +142,10 @@ namespace myth {
 
         static auto process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void;
     private:
+        static auto process_controller_buttons(button_code up, button_code down) -> void;
+        static auto process_controller_sticks(const myl::f32vec2& left, const myl::f32vec2& right) -> void;
+
+        static auto process_ps_dpad(myl::u8 byte, button_code& up, button_code& down) -> void;
         static auto process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void;
         static auto process_controller_dualshock4(myl::u8* data, myl::u32 byte_count) -> void;
 

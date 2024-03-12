@@ -31,7 +31,8 @@ namespace myth {
             .window_config{
                 .title = "Mythos Testbed",
                 .center_cursor = true
-            }
+            },
+            .enable_trace_logging = true
         };
 
         auto app = std::make_unique<testbed::application>(specs);

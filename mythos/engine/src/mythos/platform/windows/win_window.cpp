@@ -126,7 +126,7 @@ namespace myth::win {
     }
 
     MYL_NO_DISCARD static auto correct_negative_position(const myl::i32vec2& position, const myl::i32vec2& dimensions) -> myl::i32vec2 {
-        return myl::i32vec2{ // Negative position values are illformed, the window will be created in the center of the monitor on that axis
+        return myl::i32vec2{ // Negative position values are special, the window will be created in the center of the monitor on that axis
             position.x < 0 ? (GetSystemMetrics(SM_CXSCREEN) - dimensions.w) / 2 : position.x,
             position.y < 0 ? (GetSystemMetrics(SM_CYSCREEN) - dimensions.h) / 2 : position.y
         };
@@ -135,33 +135,37 @@ namespace myth::win {
     MYL_NO_DISCARD window::window(const window_configuration& config)
         : myth::window(config)
         , m_fullscreen_dimension_cache{ config.dimensions } {
+        // Correct for any special values provided
         m_position = correct_negative_position(m_position, m_dimensions);
         m_fullscreen_position_cache = m_position;
 
-        constexpr const char* class_name = "mythos_window";
+        // Load app window icon
+        HICON icon = LoadIcon(m_instance, IDI_APPLICATION);
 
         // Setup and register window class
-        m_instance = GetModuleHandleA(0);
+        m_instance = GetModuleHandleA(NULL);
+        constexpr const char* class_name = "mythos_window";
         WNDCLASSA window_class{
             .style = CS_DBLCLKS,
             .lpfnWndProc = process_message,
             .cbClsExtra = 0,
             .cbWndExtra = 0,
             .hInstance = m_instance,
-            .hIcon = LoadIcon(m_instance, IDI_APPLICATION),
+            .hIcon = icon,
             .hCursor = LoadCursor(NULL, IDC_ARROW),
             .hbrBackground = NULL,
             .lpszMenuName = NULL,
             .lpszClassName = class_name
         };
-    
+
         if (!RegisterClassA(&window_class))
             MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string(GetLastError()));
-        
+
+        // Adjust window creation position and size based off configuration values
         DWORD window_style = win_window_style(m_style);
         myl::u32 window_ex_style = WS_EX_APPWINDOW;
-    
         int x{}, y{}, w{}, h{};
+
         if (m_style == window_style::fullscreen) {
             x = 0;
             y = 0;
@@ -171,32 +175,28 @@ namespace myth::win {
             m_position = { x, y };
             m_dimensions = { w, h };
         }
-        else { // Create a non fullscreen window
+        else {
             RECT window_rect = { 0, 0, 0, 0 };
             AdjustWindowRectEx(&window_rect, window_style, FALSE, window_ex_style);
             
-            // Ignore the border (negative value) for a window,
-            // the client area x axis should be the same coordinate on the screen (+ window_rect.left)
-            x = m_position.x + window_rect.left;
-            // Take into account for the toolbar (Windows does this automatically)
-            y = m_position.y;
-
-            // m_position refers to the client area of the window, adjust it to match when the window is created
-            m_position.y -= window_rect.top;
+            x = m_position.x + window_rect.left; // Ignore the border (negative value) for a window, the client area x axis should be the same coordinate on the screen (+ window_rect.left)
+            y = m_position.y;                    // Take into account for the toolbar (Windows does this automatically)
+            m_position.y -= window_rect.top;     // m_position refers to the client area of the window, adjust it to match when the window is created
     
             // Client size + the size of OS bordering
             w = m_dimensions.w + window_rect.right - window_rect.left;
             h = m_dimensions.h + window_rect.bottom - window_rect.top;
         }
-    
+
+        // Create the window
         m_handle = CreateWindowExA(window_ex_style, class_name, m_title, window_style, x, y, w, h, NULL, NULL, m_instance, NULL);
         if (!m_handle)
             MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string(GetLastError()));
-        
+
         m_state = window_state::unknown; // Ensures set_state will not immediately return
-        ///MYTODO: Can I window be initialized as minimized? Will the renderer allow this?
         set_state(config.state);
-        if (m_state == window_state::maximized) { // Messages will not be posted to this window during creation, simulate WM_MOVE and WM_SIZE
+
+        if (m_state == window_state::maximized) { // Messages will not be posted to the window during creation, simulate WM_MOVE and WM_SIZE
             RECT client{};
             GetClientRect(m_handle, &client);
             m_dimensions = { client.right, client.bottom };
@@ -206,6 +206,7 @@ namespace myth::win {
             m_position = { client.left, wind.bottom - client.bottom + wind.top };
         }
 
+        // Miscellaneous
         register_for_raw_input_devices(m_handle);
 
         if (config.center_cursor && m_state != window_state::minimized)
