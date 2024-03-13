@@ -6,15 +6,6 @@
 
 #include <array>
 
-/// MYTODO: Don't use mousecodes for input, use button_code
-/// - mouse_button_states & gamepad_button_states => button_states
-/// - mouse_buttons_up & gamepad_buttons_up => button_up
-/// - mouse_buttons_down & gamepad_buttons_down => button_down
-/// - Maybe even scrap mousecode and replace with a button_code
-/// - event::mouse_xxx could be made into button_event
-
-/// MYTODO: Controllers should not have a linear stick input, it should be like a S
-
 /// MYTODO: Up to 4 input devices, Would need to keep track of controllers being plugged in (This would be os dependent)
 
 namespace myth {
@@ -94,8 +85,8 @@ namespace myth {
         static myl::f32vec2 s_cursor_delta;
         static myl::f32vec2 s_scroll_delta;
         static myl::f32vec2 s_stick_deadzones;
-        static myl::f32vec2 s_left_stick_delta;
-        static myl::f32vec2 s_right_stick_delta;
+        static myl::f32vec2 s_left_stick;
+        static myl::f32vec2 s_right_stick;
         static myl::f32vec2 s_trigger_delta;
 
         static myl::u32vec2 s_trackpad_touch1_coords;
@@ -121,8 +112,8 @@ namespace myth {
         MYL_NO_DISCARD static MYL_API auto gamepad_buttons_up(button_code code) noexcept -> bool { return (s_gamepad_button_states & code) == code; }
         MYL_NO_DISCARD static MYL_API auto gamepad_buttons_down(button_code code) noexcept -> bool { return (s_gamepad_button_states & code) == code; } 
         MYL_NO_DISCARD static MYL_API auto stick_deadzones() noexcept -> const myl::f32vec2& { return s_stick_deadzones; }
-        MYL_NO_DISCARD static MYL_API auto left_stick_delta() noexcept -> const myl::f32vec2& { return s_left_stick_delta; }
-        MYL_NO_DISCARD static MYL_API auto right_stick_delta() noexcept -> const myl::f32vec2& { return s_right_stick_delta; }
+        MYL_NO_DISCARD static MYL_API auto left_stick() noexcept -> const myl::f32vec2& { return s_left_stick; }
+        MYL_NO_DISCARD static MYL_API auto right_stick() noexcept -> const myl::f32vec2& { return s_right_stick; }
         MYL_NO_DISCARD static MYL_API auto trigger_deltas() noexcept -> const myl::f32vec2& { return s_trigger_delta; }
 
         static auto MYL_API set_cursor_position(const myl::i32vec2& position) -> void;
@@ -142,10 +133,10 @@ namespace myth {
 
         static auto process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void;
     private:
-        static auto process_controller_buttons(button_code up, button_code down) -> void;
+        static auto process_controller_buttons(button_code down) -> void;
+        static auto process_dpad(myl::u8 byte, button_code& down) -> void;
         static auto process_controller_sticks(const myl::f32vec2& left, const myl::f32vec2& right) -> void;
 
-        static auto process_ps_dpad(myl::u8 byte, button_code& up, button_code& down) -> void;
         static auto process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void;
         static auto process_controller_dualshock4(myl::u8* data, myl::u32 byte_count) -> void;
 

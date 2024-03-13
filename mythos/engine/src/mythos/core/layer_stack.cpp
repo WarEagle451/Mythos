@@ -28,15 +28,14 @@ namespace myth {
     }
 
     auto layer_stack::pop(layer* l) -> void {
-        //auto it = std::find(m_layers.begin(), m_layers.end(), l);
-        // Must use std::find_if because std::find doesn't work with std::unique_ptr
+        // Must use std::find_if because std::find doesn't work with std::unique_ptr. std::find(m_layers.begin(), m_layers.end(), l) would be used if possible
         auto it = std::find_if(m_layers.begin(), m_layers.end(), [l](std::unique_ptr<layer>& p) -> bool { return p.get() == l; });
         if (it == m_layers.end()) {
             MYTHOS_ERROR("Layer stack doesn't contain layer/overlay '{}'", l->name());
             return;
         }
 
-        if (it < m_layers.begin() + m_layer_insert_index) // it is a layer. Popping overlays doesn't decrement m_layer_insert_index
+        if (it < m_layers.begin() + m_layer_insert_index) // Only popping a layer causes m_layer_insert_index to decrement
             --m_layer_insert_index;
         l->on_detach();
         m_layers.erase(it);

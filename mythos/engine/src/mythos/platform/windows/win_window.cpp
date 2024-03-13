@@ -208,9 +208,6 @@ namespace myth::win {
 
         // Miscellaneous
         register_for_raw_input_devices(m_handle);
-
-        if (config.center_cursor && m_state != window_state::minimized)
-            input::set_cursor_position(m_position + m_dimensions / 2);
     }
 
     window::~window() {

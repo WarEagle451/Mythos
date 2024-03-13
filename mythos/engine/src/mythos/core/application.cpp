@@ -36,15 +36,14 @@ namespace myth {
 
         m_running = true;
         m_suspended = false;
-
-        m_cursor_capturing_window = nullptr; // Window may want to be created while capturing the cursor
+        m_cursor_capturing_window = nullptr;
 
         MYTHOS_TRACE("Application created");
     }
 
     application::~application() {
         MYTHOS_TRACE("Terminating application...");
-        m_layer_stack.clear(); // Layers should be destroyed before systems are shutdown
+        m_layer_stack.clear();
 
         // Shutdown all systems
 
@@ -87,7 +86,7 @@ namespace myth {
         timer.reset();
 
         while(m_running) {
-            /// BUG: Keeping track of the time split like this is bad, if the app is paused or the os has
+            /// MYBUG: Keeping track of the time split like this is bad, if the app is paused or the os has
             /// pause it the game loop will not run and a large value will accumulate for ts, this
             /// accumulation should be ignored, "split" should occur again when the application is unsuspended
 
@@ -108,7 +107,7 @@ namespace myth {
     }
 
     auto application::quit() noexcept -> void {
-        /// TODO: This should send a request to quit event, there may be some operations that can not be interupted.
+        /// MYTODO: This should send a request to quit event, there may be some operations that can not be interupted.
         m_running = false;
     }
 
