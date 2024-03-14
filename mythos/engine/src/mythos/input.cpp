@@ -79,6 +79,8 @@ namespace myth {
 /// - Xbox Wireless Controller
 ///     - Models: 1537, 1697, 1698 "Elite", 1708, 1797 "Elite 2", 1914
 /// - Google Stadia
+///     - line 215 onwards ? https://github.com/71/stadiacontroller/blob/master/src/stadia.rs
+///     - https://github.com/helloparthshah/StadiaWireless
 /// - Luna Controller
 
 /// MYTODO: Additional Dualsense resources
@@ -98,8 +100,11 @@ namespace myth {
     myl::f32vec2 input::s_right_stick;
     myl::f32vec2 input::s_trigger_delta;
 
-    myl::u32vec2 input::s_trackpad_touch1_coords;
-    myl::u32vec2 input::s_trackpad_touch2_coords;
+    ///myl::f32quat input::s_gyroscope;
+    myl::f32vec3 input::s_accelerometer;
+
+    myl::u32vec2 input::s_touchpad_touch1_coords;
+    myl::u32vec2 input::s_touchpad_touch2_coords;
 
     auto input::init(const input_configuration& config) -> void {
         clear();
@@ -129,6 +134,12 @@ namespace myth {
         s_left_stick = { 0.f, 0.f };
         s_right_stick = { 0.f, 0.f };
         s_trigger_delta = { 0.f, 0.f };
+
+        ///s_gyroscope = myl::f32quat(0.f);
+        s_accelerometer = { 0.f, 0.f, 0.f };
+
+        s_touchpad_touch1_coords = { 0.f, 0.f };
+        s_touchpad_touch2_coords = { 0.f, 0.f };
     }
 
     auto input::process_key(keycode code, state state) -> void {
@@ -284,6 +295,19 @@ namespace myth {
         down |= button;
 
     auto input::process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void {
+        // https://github.com/nondebug/dualsense
+
+        /// MYTODO: Keep track if touch pad is touched (not pressed), Bit 0 tells that info
+        /// - 33: Touchpad - 1st input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
+        /// - 34: ? Touchpad - 1st input -
+        /// - 35: ? Touchpad - 1st input -
+        /// - 36: Touchpad - 1st input - Touch Y Axis: Top = 0, bottom = 67
+        /// - 37: Touchpad - 2nd input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
+        /// - 38: ? Touchpad - 2nd input -
+        /// - 39: ? Touchpad - 2nd input -
+        /// - 40: Touchpad - 2nd input - Touch Y Axis: Top = 0, bottom = 67
+        /// - 41: ? Something with Touchpad Regardless of input number
+
         /// MYTODO: DualSense Controller
         /// - Mute Button on Bluetooth (USB is byte 10, bit 2)
 
@@ -329,18 +353,34 @@ namespace myth {
 
 #ifdef MYTHOS_ENABLE_CONTROLLER_WIP
         /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_trackpad_touch1_coords = {
+        s_touchpad_touch1_coords = {
             static_cast<myl::u32>(data[31 + offset]) | static_cast<myl::u32>(data[32 + offset] & 0x0F) << 8,
             (static_cast<myl::u32>(data[33 + offset]) << 4) | ((data[32 + offset] & 0xF0) >> 4)
         };
 
         /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_trackpad_touch2_coords = {
+        s_touchpad_touch2_coords = {
             static_cast<myl::u32>(data[35 + offset]) | static_cast<myl::u32>(data[36 + offset] & 0x0F) << 8,
             (static_cast<myl::u32>(data[39 + offset]) << 4) | ((data[36 + offset] & 0xF0) >> 4)
         };
        /// MYTHOS_ERROR("[{}, {}]", s_trackpad_touch1_coords.x, s_trackpad_touch1_coords.y);
 #endif
+
+#ifdef MYTHOS_ENABLE_CONTROLLER_WIP
+        //s_gyroscope = myl::f32quat(
+        //    w,
+        //    static_cast<myl::f32>((static_cast<myl::u16>(data[20 + offset]) << 8) | static_cast<myl::u16>(data[21 + offset])),
+        //    static_cast<myl::f32>((static_cast<myl::u16>(data[22 + offset]) << 8) | static_cast<myl::u16>(data[23 + offset])),
+        //    static_cast<myl::f32>((static_cast<myl::u16>(data[24 + offset]) << 8) | static_cast<myl::u16>(data[25 + offset]))
+        //);
+
+        s_accelerometer = myl::f32vec3{
+            static_cast<myl::f32>((static_cast<myl::i16>(data[13 + offset]) << 8) | static_cast<myl::i16>(data[14 + offset])),
+            static_cast<myl::f32>((static_cast<myl::i16>(data[15 + offset]) << 8) | static_cast<myl::i16>(data[16 + offset])),
+            static_cast<myl::f32>((static_cast<myl::i16>(data[17 + offset]) << 8) | static_cast<myl::i16>(data[18 + offset]))
+        };
+#endif
+
         process_controller_buttons(down);
 
         /// Below can not be found in bluetooth mode so far
@@ -420,10 +460,10 @@ namespace myth {
     }
 
     auto input::process_controller_dualshock4(myl::u8* data, myl::u32 byte_count) -> void {
-        /// https://www.psdevwiki.com/ps4/DS4-BT
-        /// https://www.psdevwiki.com/ps4/DS4-USB
+        // https://www.psdevwiki.com/ps4/DS4-BT
+        // https://www.psdevwiki.com/ps4/DS4-USB
 
-        /// MYTODO: byte_count is unused
+        /// MYTODO: byte_count is unused, is bluetooth the same as usb?
 
         /// MYTODO: Additional Dualshock inputs
         ///                             USB            Bluetooth
@@ -480,13 +520,13 @@ namespace myth {
         /// - https://gamedev.stackexchange.com/questions/87106/accessing-dualshock-4-motion-sensor-in-windows-ideally-unity#:~:text=No%20motion%20sensor%20data%20when%20connected%20via%20Bluetooth
 
         /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_trackpad_touch1_coords = {
+        s_touchpad_touch1_coords = {
             static_cast<myl::u32>(data[36]) | static_cast<myl::u32>(data[37] & 0x0F) << 8,
             (static_cast<myl::u32>(data[38]) << 4) | ((data[37] & 0xF0) >> 4)
         };
 
         /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_trackpad_touch2_coords = {
+        s_touchpad_touch2_coords = {
             static_cast<myl::u32>(data[40]) | static_cast<myl::u32>(data[41] & 0x0F) << 8,
             (static_cast<myl::u32>(data[42]) << 4) | ((data[41] & 0xF0) >> 4)
         };

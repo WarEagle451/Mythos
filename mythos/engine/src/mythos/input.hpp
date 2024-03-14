@@ -3,6 +3,8 @@
 #include <mythos/core/mousecodes.hpp>
 
 #include <myl/math/vec2.hpp>
+#include <myl/math/vec3.hpp>
+///#include <myl/math/quat.hpp>
 
 #include <array>
 
@@ -89,8 +91,11 @@ namespace myth {
         static myl::f32vec2 s_right_stick;
         static myl::f32vec2 s_trigger_delta;
 
-        static myl::u32vec2 s_trackpad_touch1_coords;
-        static myl::u32vec2 s_trackpad_touch2_coords;
+        ///static myl::f32quat s_gyroscope;
+        static myl::f32vec3 s_accelerometer;
+
+        static myl::u32vec2 s_touchpad_touch1_coords;
+        static myl::u32vec2 s_touchpad_touch2_coords;
     public:
         static auto init(const input_configuration& config) -> void;
         static auto update() -> void;
@@ -115,6 +120,9 @@ namespace myth {
         MYL_NO_DISCARD static MYL_API auto left_stick() noexcept -> const myl::f32vec2& { return s_left_stick; }
         MYL_NO_DISCARD static MYL_API auto right_stick() noexcept -> const myl::f32vec2& { return s_right_stick; }
         MYL_NO_DISCARD static MYL_API auto trigger_deltas() noexcept -> const myl::f32vec2& { return s_trigger_delta; }
+        ///MYL_NO_DISCARD static MYL_API auto gyroscope() noexcept -> const myl::f32quat& { return s_gyroscope; }
+        MYL_NO_DISCARD static MYL_API auto accelerometer() noexcept -> const myl::f32vec3& { return s_accelerometer; }
+        MYL_NO_DISCARD static MYL_API auto touch_pad(myl::u32 finger = 1) noexcept -> const myl::u32vec2& { return finger == 1 ? s_touchpad_touch1_coords : s_touchpad_touch2_coords; }
 
         static auto MYL_API set_cursor_position(const myl::i32vec2& position) -> void;
         static auto MYL_API set_cursor_visibility(bool visibility) -> void;
