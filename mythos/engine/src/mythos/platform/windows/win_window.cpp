@@ -488,7 +488,7 @@ namespace myth::win {
                                     if ((mb_flags & mouse_button_up_flags) != 0)
                                         input::process_mouse_buttons_up(translate_raw_mouse_code(mb_flags));
                             }
-                            break;
+                            return 0;
                         }
                         case RIM_TYPEKEYBOARD:
                             if (GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT) { // Only handle keyboard with the window is in the foreground
@@ -505,14 +505,14 @@ namespace myth::win {
 #endif
                                 input::process_key(code, (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down);
                             }
-                            break;
+                            return 0;
                         case RIM_TYPEHID: {
                             RID_DEVICE_INFO rid_info{};
                             UINT rid_info_size = sizeof(RID_DEVICE_INFO);
                             GetRawInputDeviceInfoA(raw.as<RAWINPUT>()->header.hDevice, RIDI_DEVICEINFO, &rid_info, &rid_info_size);
 
                             input::process_hid(rid_info.hid.dwVendorId, rid_info.hid.dwProductId, data.hid.bRawData, data.hid.dwSizeHid);
-                            break;
+                            return 0;
                         }
                         default:
                             MYTHOS_ERROR("Unknown raw input message, this should not be possible!");

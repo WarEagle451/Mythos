@@ -7,17 +7,29 @@
 # Table of Contents
 1. [Features](#features)
 2. [Requirements](#requirements)
-3. [Libraries](#3rd-party-libraries)
+3. [3rd Party Libraries](#3rd-party-libraries)
 4. [Getting Started](#getting-started)
 5. [Building Mythos](#building-mythos)
 6. [Supported Tooling](#supported-tooling)
 7. [Common Issues](#common-issues)
 
 # Features
-- <details><summary>Controller Support</summary>
+- <details><summary>Native Controller Support</summary>
 
-    - DualSense
-    - DualShock 4
+    | Controller | USB | Bluetooth | Gyro | Additional Features |
+    |:-:|:-:|:-:|:-:|:--|
+    | Amazaon Luna Controller | :x: | :x: | :x: | |
+    | Dualsense | :white_check_mark: | :white_check_mark: | WIP | |
+    | Dualsense Edge | :x: | :x: | :x: | |
+    | Dualshock 3 | :x: | :x: | :x: | |
+    | Dualshock 4 | :white_check_mark: | WIP | :x: | |
+    | Joy-Con | :x: | :x: | :x: | |
+    | Nintendo Switch Pro Controller | :x: | :x: | :x: | |
+    | Sixaxis | :x: | :x: | :x: | |
+    | Stadia Controller | :x: | :x: | :x: | |
+    | Steam Controller | :x: | :x: | :x: | |
+    | Xbox 360 Controller | :x: | :x: | :x: | |
+    | Xbox Wireless Controller | :x: | :x: | :x: | |
 </details>
 
 # Requirements
@@ -48,6 +60,14 @@
 - Clang
 
 # Common Issues
+<details><summary>Incorrect Controller Inputs</summary>
+
+If you have Steam installed, it's possible Steam is hijacking the controller's data and modifying it. This can be resolved 2 ways.
+- `Steam` -> `Settings` -> `Controller` -> set `Enable Steam Input for [Xbox/Switch Pro/generic] controllers` to off, for PlayStation controllers set `PlayStation Controller Support` to `Not Enabled`.
+- End Steam as a process from task manager.
+</details>
+
+
 <details><summary>CMAKE_MT-NOTFOUND</summary>
 
 If the build failed due to `CMAKE_MT-NOTFOUND` this is because CMake could not find the manifest tool. This is likely to occur when attempting to build for Windows with Clang.

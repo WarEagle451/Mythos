@@ -292,7 +292,7 @@ namespace myth {
 
 #define MYTHOS_IMPL_GAMEPAD_BUTTON(byte, bit, button)\
     if ((data[byte] >> bit) & 1)\
-        down |= button;
+        buttons_down |= button;
 
     auto input::process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void {
         // https://github.com/nondebug/dualsense
@@ -310,6 +310,12 @@ namespace myth {
 
         /// MYTODO: DualSense Controller
         /// - Mute Button on Bluetooth (USB is byte 10, bit 2)
+
+        /// MYTODO: Additional controller things
+        /// - https://github.com/Ohjurot/DualSense-Windows
+        /// - https://www.reddit.com/r/Dualsense/comments/pl3fsb/code_to_generate_all_dualsense_trigger_effects/
+        /// - https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db
+        /// - https://patchwork.kernel.org/project/linux-input/patch/20201219062336.72568-6-roderick@gaikai.com/
 
         // USB connection is 64 bytes, bluetooth uses more
         const myl::u32 offset = byte_count == 64 ? 3 : 0;
@@ -329,7 +335,7 @@ namespace myth {
         s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8 - offset])) / 255.f;
         s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9 - offset])) / 255.f;
 
-        button_code down = button::none;
+        button_code buttons_down = button::none;
         MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 4, button::ps_square);
         MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 5, button::ps_cross);
         MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 6, button::ps_circle);
@@ -347,9 +353,10 @@ namespace myth {
 
 #ifdef MYTHOS_ENABLE_CONTROLLER_WIP
         /// MYBUG: Does not work in bluetooth mode
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 2, button::ps_mic);
+        if (offset == 3)
+            MYTHOS_IMPL_GAMEPAD_BUTTON(10, 2, button::ps_mic);
 #endif
-        process_dpad(data[5 + offset] & 0xF, down);
+        process_dpad(data[5 + offset] & 0xF, buttons_down);
 
 #ifdef MYTHOS_ENABLE_CONTROLLER_WIP
         /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
@@ -374,14 +381,15 @@ namespace myth {
         //    static_cast<myl::f32>((static_cast<myl::u16>(data[24 + offset]) << 8) | static_cast<myl::u16>(data[25 + offset]))
         //);
 
-        s_accelerometer = myl::f32vec3{
-            static_cast<myl::f32>((static_cast<myl::i16>(data[13 + offset]) << 8) | static_cast<myl::i16>(data[14 + offset])),
-            static_cast<myl::f32>((static_cast<myl::i16>(data[15 + offset]) << 8) | static_cast<myl::i16>(data[16 + offset])),
-            static_cast<myl::f32>((static_cast<myl::i16>(data[17 + offset]) << 8) | static_cast<myl::i16>(data[18 + offset]))
-        };
+        //s_accelerometer = myl::f32vec3{
+        //    static_cast<myl::f32>((static_cast<myl::i16>(data[13 + offset]) << 8) | static_cast<myl::i16>(data[14 + offset])),
+        //    static_cast<myl::f32>((static_cast<myl::i16>(data[15 + offset]) << 8) | static_cast<myl::i16>(data[16 + offset])),
+        //    static_cast<myl::f32>((static_cast<myl::i16>(data[17 + offset]) << 8) | static_cast<myl::i16>(data[18 + offset]))
+        //};
+        //MYTHOS_ERROR("Accelerometer: [{}, {}, {}]", s_accelerometer.x, s_accelerometer.y, s_accelerometer.z);
 #endif
 
-        process_controller_buttons(down);
+        process_controller_buttons(buttons_down);
 
         /// Below can not be found in bluetooth mode so far
 
@@ -497,7 +505,7 @@ namespace myth {
         s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8])) / 255.f;
         s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9])) / 255.f;
 
-        button_code down = button::none;
+        button_code buttons_down = button::none;
         MYTHOS_IMPL_GAMEPAD_BUTTON(5, 4, button::ps_square);
         MYTHOS_IMPL_GAMEPAD_BUTTON(5, 5, button::ps_cross);
         MYTHOS_IMPL_GAMEPAD_BUTTON(5, 6, button::ps_circle);
@@ -513,7 +521,7 @@ namespace myth {
         MYTHOS_IMPL_GAMEPAD_BUTTON(7, 0, button::ps_logo);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7, 1, button::ps_touchpad);
 
-        process_dpad(data[5] & 0xF, down);
+        process_dpad(data[5] & 0xF, buttons_down);
 
 #ifdef MYTHOS_ENABLE_CONTROLLER_WIP
         /// MYTODO: The following link has a possible lead on enabling motion data in bluetooth mode
@@ -532,6 +540,6 @@ namespace myth {
         };
         //MYTHOS_ERROR("[{}, {}]", s_trackpad_touch1_coords.x, s_trackpad_touch1_coords.y);
 #endif
-        process_controller_buttons(down);
+        process_controller_buttons(buttons_down);
     }
 }
