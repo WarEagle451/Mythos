@@ -18,11 +18,11 @@
 
     | Controller | USB | Bluetooth | Gyro | Additional Features |
     |:-:|:-:|:-:|:-:|:--|
-    | Amazaon Luna Controller | :x: | :x: | :x: | |
+    | Amazon Luna Controller | :x: | :x: | :x: | |
     | Dualsense | :white_check_mark: | :white_check_mark: | WIP | |
     | Dualsense Edge | :x: | :x: | :x: | |
     | Dualshock 3 | :x: | :x: | :x: | |
-    | Dualshock 4 | :white_check_mark: | WIP | :x: | |
+    | Dualshock 4 | :white_check_mark: | :white_check_mark: | :x: | |
     | Joy-Con | :x: | :x: | :x: | |
     | Nintendo Switch Pro Controller | :x: | :x: | :x: | |
     | Sixaxis | :x: | :x: | :x: | |

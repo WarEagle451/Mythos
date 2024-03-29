@@ -297,21 +297,7 @@ namespace myth {
     auto input::process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void {
         // https://github.com/nondebug/dualsense
 
-        /// MYTODO: Keep track if touch pad is touched (not pressed), Bit 0 tells that info
-        /// - 33: Touchpad - 1st input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
-        /// - 34: ? Touchpad - 1st input -
-        /// - 35: ? Touchpad - 1st input -
-        /// - 36: Touchpad - 1st input - Touch Y Axis: Top = 0, bottom = 67
-        /// - 37: Touchpad - 2nd input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
-        /// - 38: ? Touchpad - 2nd input -
-        /// - 39: ? Touchpad - 2nd input -
-        /// - 40: Touchpad - 2nd input - Touch Y Axis: Top = 0, bottom = 67
-        /// - 41: ? Something with Touchpad Regardless of input number
-
-        /// MYTODO: DualSense Controller
-        /// - Mute Button on Bluetooth (USB is byte 10, bit 2)
-
-        /// MYTODO: Additional controller things
+        /// MYTODO: Additional controller resources
         /// - https://github.com/Ohjurot/DualSense-Windows
         /// - https://www.reddit.com/r/Dualsense/comments/pl3fsb/code_to_generate_all_dualsense_trigger_effects/
         /// - https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db
@@ -319,7 +305,7 @@ namespace myth {
 
         // USB connection is 64 bytes, bluetooth uses more
         const myl::u32 offset = byte_count == 64 ? 3 : 0;
-
+        
         myl::f32vec2 left_stick{
             static_cast<myl::f32>(static_cast<myl::u16>(data[1]) - 0x80) / 128.f,
             static_cast<myl::f32>(static_cast<myl::u16>(data[2]) - 0x80) / 128.f
@@ -350,13 +336,12 @@ namespace myth {
         MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 7, button::right_stick);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::ps_logo);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 1, button::ps_touchpad);
-
-#ifdef MYTHOS_ENABLE_CONTROLLER_WIP
-        /// MYBUG: Does not work in bluetooth mode
-        if (offset == 3)
-            MYTHOS_IMPL_GAMEPAD_BUTTON(10, 2, button::ps_mic);
-#endif
         process_dpad(data[5 + offset] & 0xF, buttons_down);
+
+        if (offset == 3) // The DuelSense's mute button can only be detected in usb mode
+            MYTHOS_IMPL_GAMEPAD_BUTTON(10, 2, button::ps_mic);
+
+        process_controller_buttons(buttons_down);
 
 #ifdef MYTHOS_ENABLE_CONTROLLER_WIP
         /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
@@ -388,10 +373,6 @@ namespace myth {
         //};
         //MYTHOS_ERROR("Accelerometer: [{}, {}, {}]", s_accelerometer.x, s_accelerometer.y, s_accelerometer.z);
 #endif
-
-        process_controller_buttons(buttons_down);
-
-        /// Below can not be found in bluetooth mode so far
 
         /// Missing inputs
         /// - Microphone
@@ -435,13 +416,7 @@ namespace myth {
         /// - 31: ? Some type of counter
         /// - 32: ?
         /// - 33: Touchpad - 1st input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
-        /// - 34: ? Touchpad - 1st input -
-        /// - 35: ? Touchpad - 1st input -
-        /// - 36: Touchpad - 1st input - Touch Y Axis: Top = 0, bottom = 67
         /// - 37: Touchpad - 2nd input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
-        /// - 38: ? Touchpad - 2nd input -
-        /// - 39: ? Touchpad - 2nd input -
-        /// - 40: Touchpad - 2nd input - Touch Y Axis: Top = 0, bottom = 67
         /// - 41: ? Something with Touchpad Regardless of input number
         /// - 42: ?
         /// - 43: ?
@@ -520,8 +495,8 @@ namespace myth {
         MYTHOS_IMPL_GAMEPAD_BUTTON(6, 7, button::right_stick);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7, 0, button::ps_logo);
         MYTHOS_IMPL_GAMEPAD_BUTTON(7, 1, button::ps_touchpad);
-
         process_dpad(data[5] & 0xF, buttons_down);
+        process_controller_buttons(buttons_down);
 
 #ifdef MYTHOS_ENABLE_CONTROLLER_WIP
         /// MYTODO: The following link has a possible lead on enabling motion data in bluetooth mode
@@ -538,8 +513,7 @@ namespace myth {
             static_cast<myl::u32>(data[40]) | static_cast<myl::u32>(data[41] & 0x0F) << 8,
             (static_cast<myl::u32>(data[42]) << 4) | ((data[41] & 0xF0) >> 4)
         };
-        //MYTHOS_ERROR("[{}, {}]", s_trackpad_touch1_coords.x, s_trackpad_touch1_coords.y);
+        //MYTHOS_ERROR("[{}, {}]", s_touchpad_touch1_coords.x, s_touchpad_touch1_coords.y);
 #endif
-        process_controller_buttons(buttons_down);
     }
 }

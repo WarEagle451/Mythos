@@ -496,7 +496,7 @@ namespace myth::win {
                                 USHORT scancode = keyboard.MakeCode |
                                     ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0); // Distinguish if left or right key is pressed
 
-                                // All Windows has all keyboards convert scancodes to the PS/2 Scan Code table set 1
+                                // Windows has all keyboards convert scancodes to the PS/2 Scan Code table set 1
                                 // See Remarks: https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawkeyboard#remarks
                                 keycode code = ps2_set1_make_scancode_to_keycode(scancode);
 #ifdef MYL_DEBUG
