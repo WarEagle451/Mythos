@@ -12,7 +12,7 @@
         if constexpr (MYL_VA_EMPTY(__VA_ARGS__))\
             log_func("{} - {}: Assertion '{}' failed at {}:{}", sl.file_name(), sl.function_name(), MYL_STRINGIFY(condition), sl.line(), sl.column());\
         else\
-            log_func("{} - {}: Assertion failed at {}:{} - {}", sl.file_name(), sl.function_name(), sl.line(), sl.column(), MYL_ARG_1(__VA_ARGS__));\
+            log_func("{} - {}: Assertion failed at {}:{} - {}", sl.file_name(), sl.function_name(), sl.line(), sl.column(), MYL_ARG_1(__VA_ARGS__ ""));\
         MYL_DEBUG_BREAK;\
     }\
 }

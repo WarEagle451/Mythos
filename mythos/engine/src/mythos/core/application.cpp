@@ -34,6 +34,8 @@ namespace myth {
         event::set_callback(m_event_cb);
         m_window = window::create(specs.window_config);
 
+        renderer::init(specs.renderer_config);
+
         m_running = true;
         m_suspended = false;
         m_cursor_capturing_window = nullptr;
@@ -46,6 +48,8 @@ namespace myth {
         m_layer_stack.clear();
 
         // Shutdown all systems
+
+        renderer::shutdown();
 
         if (!m_cursor_capturing_window)
             release_cursor();

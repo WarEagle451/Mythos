@@ -3,6 +3,7 @@
 #include <mythos/event/window_event.hpp>
 #include <mythos/input.hpp>
 #include <mythos/platform/window.hpp>
+#include <mythos/render/renderer.hpp>
 
 #include <myl/definitions.hpp>
 #include <myl/memory.hpp>
@@ -19,6 +20,7 @@ namespace myth {
         application_information info{};
         window_configuration window_config{};
         input_configuration input_config{};
+        renderer_configuration renderer_config{};
 
         bool enable_trace_logging = false;
     };
