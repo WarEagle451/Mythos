@@ -34,10 +34,11 @@
 
 # Requirements
 - C++20
+- [A supported compiler](#compilers)
 - [Python 3.11](https://www.python.org/downloads)
 - [Ninja 1.11.1](https://github.com/ninja-build/ninja/releases/tag/v1.11.1)
 - [cmake 3.28.0](https://cmake.org/download/)
-- [A supported compiler](#compilers)
+- [Vulkan 1.3.211.0](https://vulkan.lunarg.com/sdk/home)
 
 # 3rd Party Libraries
 - [myl](https://github.com/WarEagle451/myl)

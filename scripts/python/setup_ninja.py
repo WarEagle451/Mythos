@@ -17,7 +17,7 @@ def get_platform_ninja_name():
 class ninja_config:
     pid = get_platform_ninja_name()
     required_version = "1.11.1"
-    zip_urls = f"https://github.com/ninja-build/ninja/releases/download/v{required_version}/ninja-{pid}.zip"
+    install_url = f"https://github.com/ninja-build/ninja/releases/download/v{required_version}/ninja-{pid}.zip"
     license_url = "https://raw.githubusercontent.com/ninja-build/ninja/master/COPYING"
     directory = f"{utility.project_root()}/vendor/ninja/bin"
 
@@ -52,10 +52,11 @@ class ninja_config:
             if reply.casefold() == "n".casefold():
                 return False
             premission_granted = (reply.casefold() == "y".casefold())
+            
         ninja_path = f"{cls.directory}/ninja-{cls.required_version}-windows.zip"
-        print("Downloading {0:s} to {1:s}".format(cls.zip_urls, ninja_path))
+        print("Downloading {0:s} to {1:s}".format(cls.install_url, ninja_path))
 
-        utility.download_file(cls.zip_urls, ninja_path)
+        utility.download_file(cls.install_url, ninja_path)
         print("Extracting", ninja_path)
         utility.unzip_file(ninja_path, overwrite=True, delete_zip_file=True)
         print(f"Ninja {cls.required_version} has been downloaded to '{cls.directory}'.")
