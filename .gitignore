@@ -20,3 +20,5 @@ vendor/ninja/**
 
 # Visual Studio Code
 /.vscode/**
+# Exception
+!/.vscode/launch.json

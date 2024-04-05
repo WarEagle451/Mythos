@@ -1,0 +1,14 @@
+{
+    // C++ Launch - LLDB - Requires codelldb extension
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C++ Launch - LLDB",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${command:cmake.launchTargetPath}",
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
