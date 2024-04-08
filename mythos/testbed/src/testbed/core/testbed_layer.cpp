@@ -9,7 +9,7 @@
 namespace testbed {
     MYL_NO_DISCARD testbed_layer::testbed_layer()
         : myth::layer("testbed") {
-            
+
     }
 
     testbed_layer::~testbed_layer() {
@@ -37,7 +37,7 @@ namespace testbed {
         d.dispatch<myth::event::gamepad_button_released>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_gamepad_button_released));
     }
 
-    auto testbed_layer::update(myth::timestep ts) -> void {
+    auto testbed_layer::update(MYL_MAYBE_UNUSED myth::timestep ts) -> void {
         auto ls = myth::input::left_stick();
         if (ls.x != 0.f || ls.y != 0.f) {
             ls += 1.f;

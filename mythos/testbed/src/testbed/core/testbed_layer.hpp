@@ -13,7 +13,7 @@ namespace testbed {
         auto on_attach() -> void override;
         auto on_detach() -> void override;
         auto on_event(myth::event::base& e) -> void override;
-        auto update(myth::timestep ts) -> void override;
+        auto update(MYL_MAYBE_UNUSED myth::timestep ts) -> void override;
         auto render() -> void override;
     private:
         auto on_key_pressed(myth::event::key_pressed& e) -> bool;
