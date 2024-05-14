@@ -20,11 +20,11 @@ namespace myth::vulkan {
         ///    - objectCount - Number of objects
         
         switch (severity) {
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: MYTHOS_TRACE("Validation Layer: {}", callback_data->pMessage); break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:    MYTHOS_INFO("Validation Layer: {}", callback_data->pMessage); break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: MYTHOS_WARN("Validation Layer: {}", callback_data->pMessage); break;
-            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:   MYTHOS_ERROR("Validation Layer: {}", callback_data->pMessage); break;
-            default:                                              MYTHOS_ERROR("Validation Layer: {}", callback_data->pMessage); break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: MYTHOS_TRACE("Validation Layer - {}", callback_data->pMessage); break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:    MYTHOS_INFO("Validation Layer - {}", callback_data->pMessage); break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: MYTHOS_WARN("Validation Layer - {}", callback_data->pMessage); break;
+            case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:   MYTHOS_ERROR("Validation Layer - {}", callback_data->pMessage); break;
+            default:                                              MYTHOS_ERROR("Validation Layer - {}", callback_data->pMessage); break;
         }
         return VK_FALSE;
     }
@@ -94,11 +94,69 @@ namespace myth::vulkan {
 #endif
     }
 
+    MYL_NO_DISCARD static auto physical_device_meets_requirements(VkPhysicalDevice device, VkPhysicalDeviceProperties* properties, VkPhysicalDeviceFeatures* features, const physical_device_requirements& requirements) -> bool {
+        vkGetPhysicalDeviceProperties(device, properties);
+        vkGetPhysicalDeviceFeatures(device, features);
+
+        if (requirements.discrete_gpu && (properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
+            return false;
+
+        return true;
+    }
+
+    MYL_NO_DISCARD static auto rate_physical_device(const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures& features) -> myl::u64 {
+        myl::u64 rating = 0;
+        if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            rating += 1000;
+
+        // Maximum possible size of textures affects graphics quality
+        rating += properties.limits.maxImageDimension2D;
+
+        return rating;
+    }
+
+    MYL_NO_DISCARD static auto select_physical_device(const physical_device_requirements& requirements, VkInstance instance) -> VkPhysicalDevice {
+        if (instance == VK_NULL_HANDLE)
+            return VK_NULL_HANDLE;
+
+        uint32_t count = 0;
+        vkEnumeratePhysicalDevices(instance, &count, VK_NULL_HANDLE);
+        if (count == 0) {
+            MYTHOS_FATAL("Failed to locate a GPU with Vulkan support");
+            return VK_NULL_HANDLE;
+        }
+        
+        std::vector<VkPhysicalDevice> canidates(count);
+        vkEnumeratePhysicalDevices(instance, &count, canidates.data());
+
+        myl::u64 best_rating = 0;
+        VkPhysicalDevice best_canidate = VK_NULL_HANDLE;
+        for (const auto& device : canidates) {
+            VkPhysicalDeviceProperties properties{};
+            VkPhysicalDeviceFeatures features{};
+
+            if (physical_device_meets_requirements(device, &properties, &features, requirements)) {
+                // If the device meets requirements its rating is 1
+                myl::u64 rating = 1 + rate_physical_device(properties, features);
+                if (rating > best_rating) {
+                    best_canidate = device;
+                    best_rating = rating;
+                }
+            }
+        }
+
+        if (best_canidate == VK_NULL_HANDLE)
+            MYTHOS_FATAL("No GPUs meet requirements");
+        return best_canidate;
+    }
+
     MYL_NO_DISCARD context::context() {
         create_instance();
+        create_device();
     }
 
     context::~context() {
+        // m_device will be destroyed upon destruction of m_instance
         destroy_instance();
     }
 
@@ -147,6 +205,19 @@ namespace myth::vulkan {
             MYTHOS_FATAL("Failed to load 'vkCreateDebugUtilsMessengerEXT'");
         MYTHOS_VULKAN_VERIFY(vkCreateDebugUtilsMessengerEXT, m_instance, &debug_messenger_create_info, VK_NULL_HANDLE, &m_debug_messenger);
 #endif
+    }
+
+    auto context::create_device() -> void {
+        /// MYTODO: Requirements should be user definable
+        physical_device_requirements requirements{
+            .compute_queue = false,
+            .graphics_queue = true,
+            .present_queue = true,
+            .transfer_queue = false,
+            .discrete_gpu = true
+        };
+
+        m_device = select_physical_device(requirements, m_instance);
     }
 
     auto context::destroy_instance() -> void {

@@ -73,10 +73,12 @@ If you have Steam installed, it's possible Steam is hijacking the controller's d
 
 If the build failed due to `CMAKE_MT-NOTFOUND` this is because CMake could not find the manifest tool. This is likely to occur when attempting to build for Windows with Clang.
 
+On Windows when compiling with Clang-CL and not using Visual Studio, this occurs because `vcvarsall.bat` has not set up the enviroment correctly, unfortunately editors like VS-Code can't set up that enviroment provided by `vcvarsall.bat`. This can be resolved by solution 3 below.
+
 On Windows this can possibly be solved by one of the following methods;
-1. Running vcvarsall.bat.
-2. Adding the parent directory of the manifest tool (mt.exe) to the `PATH` system enviromental variable.
-3. Manually setting `CMAKE_MT` in a CMakeUserPresets.json file (See below). The manifest tool should be located in `"C:/Program Files (x86)/Windows Kits/10/bin/{WINDOWS SDK VERSION}/x64"`
+1. Adding the parent directory of the manifest tool (mt.exe) to the `PATH` system enviromental variable. This should be the easiest solution.
+2. Running vcvarsall.bat and specifying the `platform_type`, eg: x64.
+3. Manually setting `CMAKE_MT` in a CMakeUserPresets.json file (See below). The manifest tool should be located in `"C:/Program Files (x86)/Windows Kits/10/bin/{WINDOWS SDK VERSION}/{PLATFORM TYPE}"`
 <details><summary>CMakeUserPresets.json Example File</summary>
 
     {

@@ -20,6 +20,13 @@ project(
 )
 message(STATUS "Build Mythos: ${MYTHOS_VERSION}")
 
+# Compile definitions for MYL
+
+add_compile_definitions(MYL_NO_EXCEPTIONS)
+add_compile_definitions(MYL_EXTEND_FORMAT)
+
+# Compile definitions for spdlog
+
 # This is a mess
 #set(SPDLOG_BUILD_WARNINGS OFF)
 set(SPDLOG_NO_EXCEPTIONS ON)

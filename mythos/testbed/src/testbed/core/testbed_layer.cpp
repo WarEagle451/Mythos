@@ -6,9 +6,27 @@
 
 #include <Windows.h>
 
+#include <myl/math/vec2.hpp>
+#include <myl/math/vec3.hpp>
+#include <myl/shaping.hpp>
+#include <myl/math/vec4.hpp>
+#include <myl/numbers.hpp>
+
 namespace testbed {
     MYL_NO_DISCARD testbed_layer::testbed_layer()
         : myth::layer("testbed") {
+        myl::f32vec2 v(2.5555f, 8.6666f);
+        TESTBED_ERROR("{}", std::format("{}", v));
+        TESTBED_ERROR("{}", std::format("x: {:x}", v));
+        TESTBED_ERROR("{}", std::format("y: {:y}", v));
+        TESTBED_ERROR("{}", std::format("xy: {:xy}", v));
+        TESTBED_ERROR("{}", std::format("yx: {:yx}", v));
+        TESTBED_ERROR("{}", std::format("yy: {:yy}", v));
+        TESTBED_ERROR("{}", std::format("{:.2f}", v));
+        TESTBED_ERROR("{}", std::format("x: {:x.3f}", v));
+        TESTBED_ERROR("{}", std::format("xy: {:x.2fy.3f}", v));
+        TESTBED_ERROR("{}", std::format("xy: {:xy.3f}", v));
+        TESTBED_ERROR("{}", std::format("xy: {:y.3fx}", v));
 
     }
 
