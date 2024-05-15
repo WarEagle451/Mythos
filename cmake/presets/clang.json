@@ -1,8 +1,8 @@
 {
-    "version": 8,
+    "version": 6,
     "cmakeMinimumRequired": {
         "major": 3,
-        "minor": 28,
+        "minor": 25,
         "patch": 0
     },
     "include": [
@@ -10,14 +10,6 @@
         "generator.json"
     ],
     "configurePresets": [
-        {
-            "name": "windows-x86-clang-cl",
-            "displayName": "Windows x86 - Clang-CL",
-            "description": "Target Windows with Clang-CL for a x86 build",
-            "inherits": [ "ninja-multi", "common" ],
-            "architecture": { "value": "x86", "strategy": "external" },
-            "toolchainFile": "${sourceDir}/cmake/toolchain/windows-x86-clang-cl.cmake"
-        },
         {
             "name": "windows-x86_64-clang-cl",
             "displayName": "Windows x86_64 - Clang-CL",
@@ -28,34 +20,6 @@
         }
     ],
     "buildPresets": [
-        {
-            "name": "windows-x86-clang-cl-debug",
-            "displayName": "Windows x86 Debug - Clang-CL",
-            "description": "Target Windows with Clang-CL for a x86 debug build",
-            "configurePreset": "windows-x86-clang-cl",
-            "configuration": "Debug"
-        },
-        {
-            "name": "windows-x86-clang-cl-release",
-            "displayName": "Windows x86 Release - Clang-CL",
-            "description": "Target Windows with Clang-CL for a x86 release build",
-            "configurePreset": "windows-x86-clang-cl",
-            "configuration": "Release"
-        },
-        {
-            "name": "windows-x86-clang-cl-dev",
-            "displayName": "Windows x86 Dev - Clang-CL",
-            "description": "Target Windows with Clang-CL for a x86 developer build",
-            "configurePreset": "windows-x86-clang-cl",
-            "configuration": "RelWithDebInfo"
-        },
-        {
-            "name": "windows-x86-clang-cl-tiny",
-            "displayName": "Windows x86 Tiny - Clang-CL",
-            "description": "Target Windows with Clang-CL for a x86 tiny build",
-            "configurePreset": "windows-x86-clang-cl",
-            "configuration": "MinSizeRel"
-        },
         {
             "name": "windows-x86_64-clang-cl-debug",
             "displayName": "Windows x86_64 Debug - Clang-CL",

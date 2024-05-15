@@ -138,8 +138,8 @@ namespace myth {
         ///s_gyroscope = myl::f32quat(0.f);
         s_accelerometer = { 0.f, 0.f, 0.f };
 
-        s_touchpad_touch1_coords = { 0.f, 0.f };
-        s_touchpad_touch2_coords = { 0.f, 0.f };
+        s_touchpad_touch1_coords = { 0, 0 };
+        s_touchpad_touch2_coords = { 0, 0 };
     }
 
     auto input::process_key(keycode code, state state) -> void {

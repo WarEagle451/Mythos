@@ -139,11 +139,12 @@ namespace myth::win {
         m_position = correct_negative_position(m_position, m_dimensions);
         m_fullscreen_position_cache = m_position;
 
+        // Setup and register window class
+        m_instance = GetModuleHandleA(NULL);
+
         // Load app window icon
         HICON icon = LoadIcon(m_instance, IDI_APPLICATION);
 
-        // Setup and register window class
-        m_instance = GetModuleHandleA(NULL);
         constexpr const char* class_name = "mythos_window";
         WNDCLASSA window_class{
             .style = CS_DBLCLKS,
