@@ -22,6 +22,17 @@ namespace myth::vulkan {
         std::vector<const char*> extensions;
     };
 
+    struct device_queue_indices {
+        enum {
+            index_max = 65536
+        };
+
+        uint32_t compute  = index_max;
+        uint32_t graphics = index_max;
+        uint32_t present  = index_max;
+        uint32_t transfer = index_max;
+    };
+
     class context {
         VkInstance m_instance;
 

@@ -5,7 +5,9 @@
 
 #include <cstring>
 
-// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Physical_devices_and_queue_families
+// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Logical_device_and_queues
+
+/// MYTODO: Expand find_queue_family
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -94,12 +96,44 @@ namespace myth::vulkan {
 #endif
     }
 
+    MYL_NO_DISCARD constexpr auto find_queue_family_indices(VkPhysicalDevice device) -> device_queue_indices {
+        myl::u32 queue_family_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, VK_NULL_HANDLE);
+        std::vector<VkQueueFamilyProperties> queue_family_properties(queue_family_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_family_properties.data());
+
+        device_queue_indices dqi;
+        for (myl::u32 i = 0; const auto& qf : queue_family_properties) {
+            if (qf.queueFlags & VK_QUEUE_COMPUTE_BIT) {
+                dqi.compute = i;
+            }
+
+            if (qf.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                dqi.graphics = i;
+            }
+
+            /// MYTODO:
+            /// if (qf.queueFlags & VK_QUEUE_TRANSFER_BIT) dqi.transfer = i; Best score needs to be obtained
+            /// Present
+
+            ++i;
+        }
+
+        return dqi;
+    }
+
     MYL_NO_DISCARD static auto physical_device_meets_requirements(VkPhysicalDevice device, VkPhysicalDeviceProperties* properties, VkPhysicalDeviceFeatures* features, const physical_device_requirements& requirements) -> bool {
         vkGetPhysicalDeviceProperties(device, properties);
         vkGetPhysicalDeviceFeatures(device, features);
 
         if (requirements.discrete_gpu && (properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
             return false;
+
+        device_queue_indices dqi = find_queue_family_indices(device);
+        if (requirements.compute_queue && (dqi.compute == device_queue_indices::index_max)) return false;
+        if (requirements.graphics_queue && (dqi.graphics == device_queue_indices::index_max)) return false;
+        if (requirements.present_queue && (dqi.present == device_queue_indices::index_max)) return false;
+        if (requirements.transfer_queue && (dqi.transfer == device_queue_indices::index_max)) return false;
 
         return true;
     }
@@ -212,7 +246,7 @@ namespace myth::vulkan {
         physical_device_requirements requirements{
             .compute_queue = false,
             .graphics_queue = true,
-            .present_queue = true,
+            .present_queue = false, /// MYTODO: Should be true
             .transfer_queue = false,
             .discrete_gpu = true
         };
