@@ -24,21 +24,27 @@ namespace myth::vulkan {
 
     struct device_queue_indices {
         enum {
-            index_max = 65536
+            not_available = 65536
         };
 
-        uint32_t compute  = index_max;
-        uint32_t graphics = index_max;
-        uint32_t present  = index_max;
-        uint32_t transfer = index_max;
+        uint32_t compute  = not_available;
+        uint32_t graphics = not_available;
+        uint32_t present  = not_available;
+        uint32_t transfer = not_available;
     };
 
     class context {
         VkInstance m_instance;
 
-        VkPhysicalDevice m_device;
+        VkPhysicalDevice m_physical_device;
+        VkDevice m_device;
+        VkQueue m_queue_compute;
+        VkQueue m_queue_graphics;
+        VkQueue m_queue_present;
+        VkQueue m_queue_transfer;
 
 #ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
+        std::vector<const char*> m_validation_layers;
         VkDebugUtilsMessengerEXT m_debug_messenger;
 #endif
     public:
@@ -48,6 +54,7 @@ namespace myth::vulkan {
         auto create_instance() -> void;
         auto create_device() -> void;
 
+        auto destroy_device() -> void;
         auto destroy_instance() -> void;
     };
 }

@@ -4,10 +4,10 @@
 #include <mythos/version.hpp>
 
 #include <cstring>
+#include <limits>
+#include <map>
 
-// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Setup/Logical_device_and_queues
-
-/// MYTODO: Expand find_queue_family
+// Continue from: https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -96,25 +96,34 @@ namespace myth::vulkan {
 #endif
     }
 
-    MYL_NO_DISCARD constexpr auto find_queue_family_indices(VkPhysicalDevice device) -> device_queue_indices {
+    /// MYTODO: Finding queue families might be more complex
+
+    MYL_NO_DISCARD constexpr auto find_queue_family_indices(VkPhysicalDevice physical_device) -> device_queue_indices {
         myl::u32 queue_family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, VK_NULL_HANDLE);
+        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, VK_NULL_HANDLE);
         std::vector<VkQueueFamilyProperties> queue_family_properties(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_family_properties.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, queue_family_properties.data());
 
         device_queue_indices dqi;
+        myl::u32 best_transfer_queue_score = std::numeric_limits<myl::u32>::max(); // The queue with the lowest index increases the chance it is a dedicated transfer queue
         for (myl::u32 i = 0; const auto& qf : queue_family_properties) {
+            myl::u32 current_transfer_queue_score = 0;
             if (qf.queueFlags & VK_QUEUE_COMPUTE_BIT) {
                 dqi.compute = i;
+                ++current_transfer_queue_score;
             }
 
             if (qf.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
                 dqi.graphics = i;
+                ++current_transfer_queue_score;
             }
 
-            /// MYTODO:
-            /// if (qf.queueFlags & VK_QUEUE_TRANSFER_BIT) dqi.transfer = i; Best score needs to be obtained
-            /// Present
+            if ((qf.queueFlags & VK_QUEUE_TRANSFER_BIT) && (current_transfer_queue_score < best_transfer_queue_score)) {
+                dqi.transfer = i;
+                best_transfer_queue_score = current_transfer_queue_score;
+            }
+
+            /// MYTODO: Present queue
 
             ++i;
         }
@@ -122,18 +131,18 @@ namespace myth::vulkan {
         return dqi;
     }
 
-    MYL_NO_DISCARD static auto physical_device_meets_requirements(VkPhysicalDevice device, VkPhysicalDeviceProperties* properties, VkPhysicalDeviceFeatures* features, const physical_device_requirements& requirements) -> bool {
-        vkGetPhysicalDeviceProperties(device, properties);
-        vkGetPhysicalDeviceFeatures(device, features);
+    MYL_NO_DISCARD static auto physical_device_meets_requirements(VkPhysicalDevice physical_device, VkPhysicalDeviceProperties* properties, VkPhysicalDeviceFeatures* features, const physical_device_requirements& requirements) -> bool {
+        vkGetPhysicalDeviceProperties(physical_device, properties);
+        vkGetPhysicalDeviceFeatures(physical_device, features);
 
         if (requirements.discrete_gpu && (properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
             return false;
 
-        device_queue_indices dqi = find_queue_family_indices(device);
-        if (requirements.compute_queue && (dqi.compute == device_queue_indices::index_max)) return false;
-        if (requirements.graphics_queue && (dqi.graphics == device_queue_indices::index_max)) return false;
-        if (requirements.present_queue && (dqi.present == device_queue_indices::index_max)) return false;
-        if (requirements.transfer_queue && (dqi.transfer == device_queue_indices::index_max)) return false;
+        const device_queue_indices dqi = find_queue_family_indices(physical_device);
+        if (requirements.compute_queue && (dqi.compute == device_queue_indices::not_available)) return false;
+        if (requirements.graphics_queue && (dqi.graphics == device_queue_indices::not_available)) return false;
+        if (requirements.present_queue && (dqi.present == device_queue_indices::not_available)) return false;
+        if (requirements.transfer_queue && (dqi.transfer == device_queue_indices::not_available)) return false;
 
         return true;
     }
@@ -165,15 +174,15 @@ namespace myth::vulkan {
 
         myl::u64 best_rating = 0;
         VkPhysicalDevice best_canidate = VK_NULL_HANDLE;
-        for (const auto& device : canidates) {
+        for (const auto& canidate : canidates) {
             VkPhysicalDeviceProperties properties{};
             VkPhysicalDeviceFeatures features{};
 
-            if (physical_device_meets_requirements(device, &properties, &features, requirements)) {
+            if (physical_device_meets_requirements(canidate, &properties, &features, requirements)) {
                 // If the device meets requirements its rating is 1
                 myl::u64 rating = 1 + rate_physical_device(properties, features);
                 if (rating > best_rating) {
-                    best_canidate = device;
+                    best_canidate = canidate;
                     best_rating = rating;
                 }
             }
@@ -190,7 +199,7 @@ namespace myth::vulkan {
     }
 
     context::~context() {
-        // m_device will be destroyed upon destruction of m_instance
+        destroy_device();
         destroy_instance();
     }
 
@@ -208,14 +217,13 @@ namespace myth::vulkan {
         std::vector<const char*> extensions;
         get_required_extensions(&extensions);
 
-        std::vector<const char*> validation_layers;
-        get_required_validation_layers(&validation_layers);
+        get_required_validation_layers(&m_validation_layers);
 
         VkInstanceCreateInfo instance_create_info{
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pApplicationInfo = &application_info,
-            .enabledLayerCount = static_cast<uint32_t>(validation_layers.size()),
-            .ppEnabledLayerNames = validation_layers.data(),
+            .enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size()),
+            .ppEnabledLayerNames = m_validation_layers.data(),
             .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
             .ppEnabledExtensionNames = extensions.data()
         };
@@ -242,6 +250,8 @@ namespace myth::vulkan {
     }
 
     auto context::create_device() -> void {
+        // Select a physical device
+
         /// MYTODO: Requirements should be user definable
         physical_device_requirements requirements{
             .compute_queue = false,
@@ -251,7 +261,65 @@ namespace myth::vulkan {
             .discrete_gpu = true
         };
 
-        m_device = select_physical_device(requirements, m_instance);
+        m_physical_device = select_physical_device(requirements, m_instance);
+        if (m_physical_device == VK_NULL_HANDLE) {
+            MYTHOS_FATAL("Failed to select a physical device");
+            return;
+        }
+
+        // Create logical device
+
+        const device_queue_indices dqi = find_queue_family_indices(m_physical_device);
+        std::map<uint32_t, uint32_t> indices{}; /// type, count /// MYTODO: Find a better way to detect shared indices
+        if (dqi.compute  != device_queue_indices::not_available) ++indices[dqi.compute];
+        if (dqi.graphics != device_queue_indices::not_available) ++indices[dqi.graphics];
+        if (dqi.present  != device_queue_indices::not_available) ++indices[dqi.present];
+        if (dqi.transfer != device_queue_indices::not_available) ++indices[dqi.transfer];
+
+        std::vector<VkDeviceQueueCreateInfo> queue_create_infos{};
+        queue_create_infos.reserve(indices.size());
+        for (const auto& qi : indices) {
+            myl::f32 queue_priority = 1.f;
+            queue_create_infos.emplace_back(VkDeviceQueueCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .queueFamilyIndex = qi.first,
+                .queueCount = qi.second,
+                .pQueuePriorities = &queue_priority
+            });
+        }
+
+        VkPhysicalDeviceFeatures physical_device_features{
+
+        };
+
+        VkDeviceCreateInfo device_create_info{
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size()),
+            .pQueueCreateInfos = queue_create_infos.data(),
+#ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
+            .enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size()),
+            .ppEnabledLayerNames = m_validation_layers.data(),
+#else
+            .enabledLayerCount = 0,
+            .ppEnabledLayerNames = VK_NULL_HANDLE,
+#endif
+            .enabledExtensionCount = 0, /// Should not always be zero
+            ///.ppEnabledExtensionNames = ,
+            .pEnabledFeatures = &physical_device_features
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateDevice, m_physical_device, &device_create_info, VK_NULL_HANDLE, &m_device);
+
+        if (dqi.compute  != device_queue_indices::not_available) { vkGetDeviceQueue(m_device, dqi.compute, 0, &m_queue_compute); MYTHOS_DEBUG("Compute queue created at index {}", dqi.compute); } // 0 because we're only creating 1 queue from this family
+        if (dqi.graphics != device_queue_indices::not_available) { vkGetDeviceQueue(m_device, dqi.graphics, 0, &m_queue_graphics); MYTHOS_DEBUG("Graphics queue created at index {}", dqi.graphics); }
+        if (dqi.present  != device_queue_indices::not_available) { vkGetDeviceQueue(m_device, dqi.present, 0, &m_queue_present); MYTHOS_DEBUG("Present queue created at index {}", dqi.present); }
+        if (dqi.transfer != device_queue_indices::not_available) { vkGetDeviceQueue(m_device, dqi.transfer, 0, &m_queue_transfer); MYTHOS_DEBUG("Transfer queue created at index {}", dqi.transfer); }
+    }
+
+    auto context::destroy_device() -> void {
+        // Queues are implicitly cleaed up when the device is destroyed
+        vkDestroyDevice(m_device, VK_NULL_HANDLE);
+        // m_physical_device will be destroyed upon destruction of m_instance
     }
 
     auto context::destroy_instance() -> void {
