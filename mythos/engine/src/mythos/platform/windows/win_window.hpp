@@ -16,6 +16,9 @@ namespace myth::win {
         MYL_NO_DISCARD window(const window_configuration& config);
         ~window();
 
+        MYL_NO_DISCARD constexpr auto instance() const -> HINSTANCE { return m_instance; }
+        MYL_NO_DISCARD constexpr auto handle() const -> HWND { return m_handle; }
+
         auto set_title(const char*) -> void override;
         auto set_style(window_style) -> void override;
         auto set_state(window_state) -> void override;

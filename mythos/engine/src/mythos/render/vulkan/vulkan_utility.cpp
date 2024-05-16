@@ -1,6 +1,8 @@
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
 #ifdef MYL_OS_WINDOWS
+#   include <mythos/platform/windows/win_window.hpp>
+
 #   include <vulkan/vulkan_win32.h>
 #endif
 
@@ -9,7 +11,20 @@
 namespace myth::vulkan {
     auto get_platform_required_extensions(std::vector<const char*>* extensions) -> void {
 #ifdef MYL_OS_WINDOWS
-        ///extensions->emplace_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME); 
+        extensions->emplace_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME); 
+#endif
+    }
+
+    auto create_surface(VkInstance instance, VkSurfaceKHR* surface, window* target) -> void {
+#ifdef MYL_OS_WINDOWS
+        win::window* w = static_cast<win::window*>(target);
+        VkWin32SurfaceCreateInfoKHR create_info{
+            .sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+            .hinstance = w->instance(),
+            .hwnd      = w->handle()
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateWin32SurfaceKHR, instance, &create_info, VK_NULL_HANDLE, surface);
 #endif
     }
 

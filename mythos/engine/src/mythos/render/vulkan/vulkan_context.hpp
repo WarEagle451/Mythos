@@ -36,6 +36,8 @@ namespace myth::vulkan {
     class context {
         VkInstance m_instance;
 
+        VkSurfaceKHR m_surface;
+
         VkPhysicalDevice m_physical_device;
         VkDevice m_device;
         VkQueue m_queue_compute;
@@ -50,10 +52,12 @@ namespace myth::vulkan {
         MYL_NO_DISCARD context();
         ~context();
     private:
-        auto create_instance(std::vector<const char*>* validation_layers, std::vector<const char*>* extensions) -> void;
-        auto create_device(const std::vector<const char*>& validation_layers, const std::vector<const char*>& extensions) -> void;
+        auto create_instance() -> void;
+        auto create_surface() -> void;
+        auto create_device() -> void;
 
         auto destroy_device() -> void;
+        auto destroy_surface() -> void;
         auto destroy_instance() -> void;
     };
 }
