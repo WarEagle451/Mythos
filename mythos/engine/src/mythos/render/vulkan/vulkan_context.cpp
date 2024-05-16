@@ -124,6 +124,13 @@ namespace myth::vulkan {
             }
 
             /// MYTODO: Present queue
+            ///if (get_physical_device_presentation_support_khr(physical_device, i) == VK_TRUE)
+            ///    dqi.present = i;
+
+            ///if (surface != VK_NULL_HANDLE) {
+            ///    VkBool32 supports_present = VK_FALSE;
+            ///    vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, i, surface, &supports_present);
+            ///}
 
             ++i;
         }
@@ -194,8 +201,10 @@ namespace myth::vulkan {
     }
 
     MYL_NO_DISCARD context::context() {
-        create_instance();
-        create_device();
+        std::vector<const char*> validation_layers;
+        std::vector<const char*> extensions;
+        create_instance(&validation_layers, &extensions);
+        create_device(validation_layers, extensions);
     }
 
     context::~context() {
@@ -203,7 +212,7 @@ namespace myth::vulkan {
         destroy_instance();
     }
 
-    auto context::create_instance() -> void {
+    auto context::create_instance(std::vector<const char*>* validation_layers, std::vector<const char*>* extensions) -> void {
         const application_information& mythos_app_info = application::get().info();
         VkApplicationInfo application_info{
             .sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
@@ -214,18 +223,16 @@ namespace myth::vulkan {
             .apiVersion = VK_API_VERSION_1_3
         };
 
-        std::vector<const char*> extensions;
-        get_required_extensions(&extensions);
-
-        get_required_validation_layers(&m_validation_layers);
+        get_required_extensions(extensions);
+        get_required_validation_layers(validation_layers);
 
         VkInstanceCreateInfo instance_create_info{
             .sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
             .pApplicationInfo = &application_info,
-            .enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size()),
-            .ppEnabledLayerNames = m_validation_layers.data(),
-            .enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
-            .ppEnabledExtensionNames = extensions.data()
+            .enabledLayerCount = static_cast<uint32_t>(validation_layers->size()),
+            .ppEnabledLayerNames = validation_layers->data(),
+            .enabledExtensionCount = static_cast<uint32_t>(extensions->size()),
+            .ppEnabledExtensionNames = extensions->data()
         };
 
 #ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
@@ -249,7 +256,7 @@ namespace myth::vulkan {
 #endif
     }
 
-    auto context::create_device() -> void {
+    auto context::create_device(const std::vector<const char*>& validation_layers, const std::vector<const char*>& extensions) -> void {
         // Select a physical device
 
         /// MYTODO: Requirements should be user definable
@@ -270,6 +277,7 @@ namespace myth::vulkan {
         // Create logical device
 
         const device_queue_indices dqi = find_queue_family_indices(m_physical_device);
+
         std::map<uint32_t, uint32_t> indices{}; /// type, count /// MYTODO: Find a better way to detect shared indices
         if (dqi.compute  != device_queue_indices::not_available) ++indices[dqi.compute];
         if (dqi.graphics != device_queue_indices::not_available) ++indices[dqi.graphics];
@@ -281,9 +289,9 @@ namespace myth::vulkan {
         for (const auto& qi : indices) {
             myl::f32 queue_priority = 1.f;
             queue_create_infos.emplace_back(VkDeviceQueueCreateInfo{
-                .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+                .sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
                 .queueFamilyIndex = qi.first,
-                .queueCount = qi.second,
+                .queueCount       = qi.second,
                 .pQueuePriorities = &queue_priority
             });
         }
@@ -292,20 +300,17 @@ namespace myth::vulkan {
 
         };
 
+        /// MYTODO: Get Vulkan extensions to be able to be passed to create device 
+
         VkDeviceCreateInfo device_create_info{
             .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
             .queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size()),
-            .pQueueCreateInfos = queue_create_infos.data(),
-#ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
-            .enabledLayerCount = static_cast<uint32_t>(m_validation_layers.size()),
-            .ppEnabledLayerNames = m_validation_layers.data(),
-#else
-            .enabledLayerCount = 0,
-            .ppEnabledLayerNames = VK_NULL_HANDLE,
-#endif
-            .enabledExtensionCount = 0, /// Should not always be zero
-            ///.ppEnabledExtensionNames = ,
-            .pEnabledFeatures = &physical_device_features
+            .pQueueCreateInfos    = queue_create_infos.data(),
+            .enabledLayerCount    = static_cast<uint32_t>(validation_layers.size()),
+            .ppEnabledLayerNames  = validation_layers.empty() ? VK_NULL_HANDLE : validation_layers.data(),
+            ///.enabledExtensionCount = static_cast<uint32_t>(extensions.size()),
+            ///.ppEnabledExtensionNames = extensions.empty() ? VK_NULL_HANDLE : extensions.data(),
+            .pEnabledFeatures     = &physical_device_features
         };
 
         MYTHOS_VULKAN_VERIFY(vkCreateDevice, m_physical_device, &device_create_info, VK_NULL_HANDLE, &m_device);

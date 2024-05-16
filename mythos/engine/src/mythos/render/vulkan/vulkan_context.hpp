@@ -44,15 +44,14 @@ namespace myth::vulkan {
         VkQueue m_queue_transfer;
 
 #ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
-        std::vector<const char*> m_validation_layers;
         VkDebugUtilsMessengerEXT m_debug_messenger;
 #endif
     public:
         MYL_NO_DISCARD context();
         ~context();
     private:
-        auto create_instance() -> void;
-        auto create_device() -> void;
+        auto create_instance(std::vector<const char*>* validation_layers, std::vector<const char*>* extensions) -> void;
+        auto create_device(const std::vector<const char*>& validation_layers, const std::vector<const char*>& extensions) -> void;
 
         auto destroy_device() -> void;
         auto destroy_instance() -> void;

@@ -8,6 +8,8 @@
 namespace myth::vulkan {
     MYL_API auto get_platform_required_extensions(std::vector<const char*>* extensions) -> void;
 
+    MYL_NO_DISCARD auto get_physical_device_presentation_support_khr(VkPhysicalDevice physical_device, uint32_t queue_family_index) -> VkBool32;
+
     MYL_NO_DISCARD constexpr MYL_API auto vkresult_string(VkResult code, bool extended_information = false) -> const char*;
 }
 
