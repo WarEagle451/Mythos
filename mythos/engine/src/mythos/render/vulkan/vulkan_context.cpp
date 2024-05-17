@@ -1,5 +1,6 @@
 #include <mythos/core/application.hpp>
 #include <mythos/render/vulkan/vulkan_context.hpp>
+#include <mythos/render/vulkan/vulkan_swapchain.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 #include <mythos/version.hpp>
 
@@ -7,7 +8,7 @@
 #include <limits>
 #include <map>
 
-// Continue from: https://vulkan-tutorial.com/Drawing_a_triangle/Presentation/Window_surface
+// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Presentation/Swap_chain
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -140,18 +141,22 @@ namespace myth::vulkan {
         return dqi;
     }
 
-    MYL_NO_DISCARD static auto physical_device_meets_requirements(VkPhysicalDevice physical_device, VkPhysicalDeviceProperties* properties, VkPhysicalDeviceFeatures* features, const physical_device_requirements& requirements) -> bool {
+    MYL_NO_DISCARD static auto physical_device_meets_requirements(VkPhysicalDevice physical_device, VkSurfaceKHR surface, VkPhysicalDeviceProperties* properties, VkPhysicalDeviceFeatures* features, const physical_device_requirements& requirements) -> bool {
         vkGetPhysicalDeviceProperties(physical_device, properties);
         vkGetPhysicalDeviceFeatures(physical_device, features);
 
         if (requirements.discrete_gpu && (properties->deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU))
             return false;
 
+        // Check queue support
+
         const device_queue_indices dqi = find_queue_family_indices(physical_device);
         if (requirements.compute_queue && (dqi.compute == device_queue_indices::not_available)) return false;
         if (requirements.graphics_queue && (dqi.graphics == device_queue_indices::not_available)) return false;
         if (requirements.present_queue && (dqi.present == device_queue_indices::not_available)) return false;
         if (requirements.transfer_queue && (dqi.transfer == device_queue_indices::not_available)) return false;
+
+        // Check if physical device supports the required extensions
 
         if (!requirements.extensions.empty()) {
             uint32_t available_extension_count = 0;
@@ -175,6 +180,13 @@ namespace myth::vulkan {
             }
         }
 
+        // Check the device can support the swapchain
+
+        swapchain_support_details ssd{};
+        swapchain::query_support(physical_device, surface, &ssd);
+        if (ssd.formats.empty() || ssd.present_modes.empty())
+            return false;
+
         return true;
     }
 
@@ -189,7 +201,7 @@ namespace myth::vulkan {
         return rating;
     }
 
-    MYL_NO_DISCARD static auto select_physical_device(const physical_device_requirements& requirements, VkInstance instance) -> VkPhysicalDevice {
+    MYL_NO_DISCARD static auto select_physical_device(const physical_device_requirements& requirements, VkSurfaceKHR surface, VkInstance instance) -> VkPhysicalDevice {
         uint32_t count = 0;
         vkEnumeratePhysicalDevices(instance, &count, VK_NULL_HANDLE);
         if (count == 0) {
@@ -206,7 +218,7 @@ namespace myth::vulkan {
             VkPhysicalDeviceProperties properties{};
             VkPhysicalDeviceFeatures features{};
 
-            if (physical_device_meets_requirements(canidate, &properties, &features, requirements)) {
+            if (physical_device_meets_requirements(canidate, surface, &properties, &features, requirements)) {
                 // If the device meets requirements its rating is 1
                 myl::u64 rating = 1 + rate_physical_device(properties, features);
                 if (rating > best_rating) {
@@ -269,7 +281,6 @@ namespace myth::vulkan {
         };
         instance_create_info.pNext = &debug_messenger_create_info;
 #endif
-
         MYTHOS_VULKAN_VERIFY(vkCreateInstance, &instance_create_info, VK_NULL_HANDLE, &m_instance);
 
 #ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
@@ -293,10 +304,11 @@ namespace myth::vulkan {
             .graphics_queue = true,
             .present_queue  = true,
             .transfer_queue = false,
-            .discrete_gpu   = true
+            .discrete_gpu   = true,
+            .extensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME }
         };
 
-        m_physical_device = select_physical_device(requirements, m_instance);
+        m_physical_device = select_physical_device(requirements, m_surface, m_instance);
         if (m_physical_device == VK_NULL_HANDLE) {
             MYTHOS_FATAL("Failed to select a physical device");
             return;
