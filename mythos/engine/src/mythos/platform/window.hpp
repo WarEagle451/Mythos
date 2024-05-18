@@ -62,6 +62,8 @@ namespace myth {
         MYL_NO_DISCARD constexpr auto position() const noexcept -> const myl::i32vec2& { return m_position; }
         MYL_NO_DISCARD constexpr auto dimensions() const noexcept -> const myl::i32vec2& { return m_dimensions; }
 
+        MYL_NO_DISCARD virtual auto framebuffer_size() const -> myl::i32vec2 = 0;
+
         virtual auto set_title(const char*) -> void = 0;
         virtual auto set_style(window_style) -> void = 0;
         virtual auto set_state(window_state) -> void = 0;

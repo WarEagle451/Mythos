@@ -1,4 +1,6 @@
 #pragma once
+#include <mythos/platform/window.hpp>
+
 #include <myl/definitions.hpp>
 
 #include <vulkan/vulkan.h>
@@ -49,11 +51,14 @@ namespace myth::vulkan {
         VkDebugUtilsMessengerEXT m_debug_messenger;
 #endif
     public:
-        MYL_NO_DISCARD context();
+        MYL_NO_DISCARD context(window& window);
         ~context();
+
+        MYL_NO_DISCARD auto physical_device() const -> VkPhysicalDevice { return m_physical_device; }
+        MYL_NO_DISCARD auto surface() const -> VkSurfaceKHR { return m_surface; }
     private:
         auto create_instance() -> void;
-        auto create_surface() -> void;
+        auto create_surface(window& window) -> void;
         auto create_device() -> void;
 
         auto destroy_device() -> void;

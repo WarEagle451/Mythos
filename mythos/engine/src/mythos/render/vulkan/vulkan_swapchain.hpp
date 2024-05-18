@@ -1,9 +1,6 @@
 #pragma once
-#include <myl/definitions.hpp>
-
-#include <vulkan/vulkan.h>
-
-#include <vector>
+#include <mythos/platform/window.hpp>
+#include <mythos/render/vulkan/vulkan_context.hpp>
 
 namespace myth::vulkan {
     struct swapchain_support_details {
@@ -13,7 +10,11 @@ namespace myth::vulkan {
     };
 
     class swapchain {
+        context& m_context;
     public:
-        MYL_NO_DISCARD static auto query_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface, swapchain_support_details* details) -> void;
+        static auto query_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface, swapchain_support_details* details) -> void;
+
+        MYL_NO_DISCARD swapchain(context& context, window& window);
+        ~swapchain();
     };
 }

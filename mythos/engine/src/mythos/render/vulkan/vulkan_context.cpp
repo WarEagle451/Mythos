@@ -2,6 +2,7 @@
 #include <mythos/render/vulkan/vulkan_context.hpp>
 #include <mythos/render/vulkan/vulkan_swapchain.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
+#include <mythos/render/vulkan/vulkan_platform.hpp>
 #include <mythos/version.hpp>
 
 #include <cstring>
@@ -233,9 +234,9 @@ namespace myth::vulkan {
         return best_canidate;
     }
 
-    MYL_NO_DISCARD context::context() {
+    MYL_NO_DISCARD context::context(window& window) {
         create_instance();
-        create_surface();
+        create_surface(window);
         create_device();
     }
 
@@ -291,8 +292,8 @@ namespace myth::vulkan {
 #endif
     }
 
-    auto context::create_surface() -> void {
-        vulkan::create_surface(m_instance, &m_surface, application::get().main_window());
+    auto context::create_surface(window& window) -> void {
+        vulkan::create_surface(m_instance, &m_surface, &window);
     }
 
     auto context::create_device() -> void {

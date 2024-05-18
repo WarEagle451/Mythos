@@ -1,5 +1,9 @@
 #include <mythos/render/vulkan/vulkan_swapchain.hpp>
 
+#include <myl/algorithm.hpp>
+
+#include <limits>
+
 namespace myth::vulkan {
     MYL_NO_DISCARD constexpr auto choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats) -> VkSurfaceFormatKHR {
         if (available_formats.empty())
@@ -22,7 +26,19 @@ namespace myth::vulkan {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    MYL_NO_DISCARD auto swapchain::query_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface, swapchain_support_details* details) -> void {
+    MYL_NO_DISCARD constexpr auto choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, window& window) -> VkExtent2D {
+        if (capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max()) {
+            auto fb_size = window.framebuffer_size();
+            return VkExtent2D{
+                .width  = myl::clamp(static_cast<uint32_t>(fb_size.w), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+                .height = myl::clamp(static_cast<uint32_t>(fb_size.h), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+            };
+        }
+        else
+            return capabilities.currentExtent;
+    }
+
+    auto swapchain::query_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface, swapchain_support_details* details) -> void {
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &details->capabilities);
 
         uint32_t format_count = 0;
@@ -34,5 +50,19 @@ namespace myth::vulkan {
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &present_mode_count, VK_NULL_HANDLE);
         details->present_modes.resize(present_mode_count);
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &present_mode_count, details->present_modes.data());
+    }
+
+    MYL_NO_DISCARD swapchain::swapchain(context& context, window& window)
+        : m_context{ context } {
+        swapchain_support_details ssd{};
+        query_support(m_context.physical_device(), m_context.surface(), &ssd);
+
+        VkSurfaceFormatKHR surface_format = choose_surface_format(ssd.formats);
+        VkPresentModeKHR present_mode = choose_present_mode(ssd.present_modes);
+        VkExtent2D extent = choose_swap_extent(ssd.capabilities, window);
+    }
+
+    swapchain::~swapchain() {
+
     }
 }
