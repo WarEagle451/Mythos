@@ -10,5 +10,7 @@ namespace myth::vulkan {
     public:
         MYL_NO_DISCARD backend(const renderer_configuration& config);
         ~backend();
+
+        auto on_window_resize(const myl::i32vec2& dimensions) -> void override;
     };
 }

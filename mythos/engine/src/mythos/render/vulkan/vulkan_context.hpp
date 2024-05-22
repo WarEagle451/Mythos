@@ -35,6 +35,8 @@ namespace myth::vulkan {
         uint32_t transfer = not_available;
     };
 
+    MYL_NO_DISCARD constexpr auto find_queue_family_indices(VkPhysicalDevice physical_device) -> device_queue_indices;
+
     class context {
         VkInstance m_instance;
 
@@ -55,6 +57,7 @@ namespace myth::vulkan {
         ~context();
 
         MYL_NO_DISCARD auto physical_device() const -> VkPhysicalDevice { return m_physical_device; }
+        MYL_NO_DISCARD auto device() const -> VkDevice { return m_device; }
         MYL_NO_DISCARD auto surface() const -> VkSurfaceKHR { return m_surface; }
     private:
         auto create_instance() -> void;

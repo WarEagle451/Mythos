@@ -9,7 +9,7 @@
 #include <limits>
 #include <map>
 
-// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Presentation/Swap_chain
+// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Introduction
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME

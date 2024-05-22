@@ -1,8 +1,11 @@
 #include <mythos/render/vulkan/vulkan_swapchain.hpp>
+#include <mythos/render/vulkan/vulkan_utility.hpp>
 
 #include <myl/algorithm.hpp>
 
 #include <limits>
+
+/// MYTODO: Maybe have a function incontext that is create_swapchain? remove need for context's member getters
 
 namespace myth::vulkan {
     MYL_NO_DISCARD constexpr auto choose_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats) -> VkSurfaceFormatKHR {
@@ -54,15 +57,110 @@ namespace myth::vulkan {
 
     MYL_NO_DISCARD swapchain::swapchain(context& context, window& window)
         : m_context{ context } {
-        swapchain_support_details ssd{};
-        query_support(m_context.physical_device(), m_context.surface(), &ssd);
-
-        VkSurfaceFormatKHR surface_format = choose_surface_format(ssd.formats);
-        VkPresentModeKHR present_mode = choose_present_mode(ssd.present_modes);
-        VkExtent2D extent = choose_swap_extent(ssd.capabilities, window);
+        create_swapchain(window);
+        create_images_and_views();
     }
 
     swapchain::~swapchain() {
+        destroy_images_views();
+        destroy_swapchain();
+    }
 
+    auto swapchain::create_swapchain(window& window) -> void {
+        swapchain_support_details ssd{};
+        query_support(m_context.physical_device(), m_context.surface(), &ssd);
+
+        m_surface_format = choose_surface_format(ssd.formats);
+        VkPresentModeKHR present_mode = choose_present_mode(ssd.present_modes);
+        m_extent = choose_swap_extent(ssd.capabilities, window);
+
+        uint32_t image_count = ssd.capabilities.minImageCount + 1; // Recommended to request one more image than the min
+        if (ssd.capabilities.maxImageCount > 0 && image_count > ssd.capabilities.maxImageCount) // Don't excced the max images (0 is a special number)
+            image_count = ssd.capabilities.maxImageCount;
+
+        device_queue_indices queue_indices = find_queue_family_indices(m_context.physical_device());
+        uint32_t queue_family_indices[] = { queue_indices.graphics, queue_indices.present };
+
+        VkSharingMode sharing_mode{};
+        uint32_t queue_family_index_count{};
+        uint32_t* pointer_queue_family_indices{};
+        if (queue_indices.graphics == queue_indices.present) {
+            sharing_mode                 = VK_SHARING_MODE_EXCLUSIVE;
+            queue_family_index_count     = 0;
+            pointer_queue_family_indices = nullptr;
+        }
+        else {
+            sharing_mode                 = VK_SHARING_MODE_CONCURRENT;
+            queue_family_index_count     = 2;
+            pointer_queue_family_indices = queue_family_indices;
+        }
+
+        VkSwapchainCreateInfoKHR swapchain_create_info{
+            .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+            ///.pNext = ,
+            ///.flags = ,
+            .surface               = m_context.surface(),
+            .minImageCount         = image_count,
+            .imageFormat           = m_surface_format.format,
+            .imageColorSpace       = m_surface_format.colorSpace,
+            .imageExtent           = m_extent,
+            .imageArrayLayers      = 1,
+            .imageUsage            = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .imageSharingMode      = sharing_mode,
+            .queueFamilyIndexCount = queue_family_index_count,
+            .pQueueFamilyIndices   = pointer_queue_family_indices,
+            .preTransform          = ssd.capabilities.currentTransform,
+            .compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+            .presentMode           = present_mode,
+            .clipped               = VK_TRUE,
+            .oldSwapchain          = VK_NULL_HANDLE 
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateSwapchainKHR, m_context.device(), &swapchain_create_info, VK_NULL_HANDLE, &m_swapchain);
+    }
+
+    auto swapchain::create_images_and_views() -> void {
+        uint32_t count{};
+        vkGetSwapchainImagesKHR(m_context.device(), m_swapchain, &count, nullptr);
+        m_images.resize(count);
+        vkGetSwapchainImagesKHR(m_context.device(), m_swapchain, &count, m_images.data());
+
+        m_views.resize(count);
+        for (myl::u32 i = 0; i != count; ++i) {
+            VkImageViewCreateInfo view_create_info{
+                .sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                ///.pNext = ,
+                ///.flags = ,
+                .image            = m_images[i],
+                .viewType         = VK_IMAGE_VIEW_TYPE_2D,
+                .format           = m_surface_format.format,
+                .components       = {
+                    .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                    .a = VK_COMPONENT_SWIZZLE_IDENTITY
+                },
+                .subresourceRange = {
+                    .aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel   = 0,
+                    .levelCount     = 1,
+                    .baseArrayLayer = 0,
+                    .layerCount     = 1
+                },
+            };
+
+            MYTHOS_VULKAN_VERIFY(vkCreateImageView, m_context.device(), &view_create_info, VK_NULL_HANDLE, &m_views[i]);
+        }
+    }
+
+    auto swapchain::destroy_images_views() -> void {
+        for (auto& view : m_views)
+            vkDestroyImageView(m_context.device(), view, VK_NULL_HANDLE);
+
+        // Images will be destroyed when the swapchain is destory and therefore do not need clean up
+    }
+
+    auto swapchain::destroy_swapchain() -> void {
+        vkDestroySwapchainKHR(m_context.device(), m_swapchain, VK_NULL_HANDLE);
     }
 }
