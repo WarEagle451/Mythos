@@ -25,6 +25,8 @@ namespace myth::vulkan {
 
         MYL_NO_DISCARD swapchain(context& context, window& window);
         ~swapchain();
+
+        MYL_NO_DISCARD constexpr auto extent() const -> const VkExtent2D& { return m_extent; }
     private:
         auto create_swapchain(window& window) -> void;
         auto create_images_and_views() -> void;

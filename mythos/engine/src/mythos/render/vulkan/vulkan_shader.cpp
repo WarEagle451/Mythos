@@ -16,7 +16,17 @@ namespace myth::vulkan {
 		}
     }
 
-    MYL_NO_DISCARD shader::shader(context& context,const std::unordered_map<shader_type, shader_binary_type>& binaries)
+    MYL_NO_DISCARD static constexpr auto shader_primitive_to_VkPrimitiveTopology(shader_primitive primitive) -> VkPrimitiveTopology {
+        switch (primitive) {
+            using enum shader_primitive;
+            case point:    return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            case line:     return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+            case triangle: return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+            default:       return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+        }
+    }
+
+    MYL_NO_DISCARD shader::shader(context& context, const swapchain& swapchain, const std::unordered_map<shader_type, shader_binary_type>& binaries, const shader_primitive primitive)
         : m_context{ context }
         , m_pipeline{ nullptr } {
 
@@ -28,7 +38,7 @@ namespace myth::vulkan {
                 .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                 //.pNext = ,
                 //.flags = ,
-                .codeSize = source.size() * sizeof(decltype(source)::value_type),
+                .codeSize = static_cast<uint32_t>(source.size() * sizeof(decltype(source)::value_type)),
                 .pCode    = reinterpret_cast<const uint32_t*>(source.data())
             };
 
@@ -50,9 +60,25 @@ namespace myth::vulkan {
                 //.pSpecializationInfo = 
             });
 
+        // Other
+
+        VkRect2D scissor{
+            .offset = { .x = 0, .y = 0 },
+            .extent = swapchain.extent()
+        };
+
+        VkViewport viewport{
+            .x        = 0.f,
+            .y        = static_cast<float>(scissor.extent.height), /// MYTODO: tutorial has this as 0.f
+            .width    = static_cast<float>(scissor.extent.width),
+            .height   = -static_cast<float>(scissor.extent.height),
+            .minDepth = 0.f,
+            .maxDepth = 1.f
+        };
+
         // Create pipeline
 
-        m_pipeline = std::make_unique<vulkan::pipeline>(m_context);
+        m_pipeline = std::make_unique<vulkan::pipeline>(m_context, viewport, scissor, shader_primitive_to_VkPrimitiveTopology(primitive));
 
         // Destroy shader stages
         // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkDestroyShaderModule.html

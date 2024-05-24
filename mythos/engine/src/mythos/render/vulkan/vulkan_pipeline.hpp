@@ -6,8 +6,9 @@ namespace myth::vulkan {
         context& m_context;
 
         VkPipeline m_pipeline;
+        VkPipelineLayout m_layout;
     public:
-        MYL_NO_DISCARD pipeline(context& context);
+        MYL_NO_DISCARD pipeline(context& context, const VkViewport& viewport, const VkRect2D& scissor, const VkPrimitiveTopology primitive);
         ~pipeline();
     };
 }

@@ -16,7 +16,7 @@ namespace myth::vulkan {
     }
 
     auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
-        return std::make_unique<vulkan::shader>(m_context, shader_binaries);
+        return std::make_unique<vulkan::shader>(m_context, m_swapchain, shader_binaries, primitive);
     }
 
     auto backend::on_window_resize(const myl::i32vec2& dimensions) -> void {
