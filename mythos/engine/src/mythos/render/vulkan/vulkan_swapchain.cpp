@@ -62,7 +62,7 @@ namespace myth::vulkan {
     }
 
     swapchain::~swapchain() {
-        destroy_images_views();
+        destroy_images_and_views();
         destroy_swapchain();
     }
 
@@ -153,7 +153,7 @@ namespace myth::vulkan {
         }
     }
 
-    auto swapchain::destroy_images_views() -> void {
+    auto swapchain::destroy_images_and_views() -> void {
         for (auto& view : m_views)
             vkDestroyImageView(m_context.device(), view, VK_NULL_HANDLE);
 

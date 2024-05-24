@@ -9,6 +9,8 @@ namespace myth {
         static auto init(const renderer_configuration& config) -> void;
         static auto shutdown() -> void;
 
+        static auto backend() noexcept -> renderer_backend* { return s_backend.get(); }
+
         MYL_NO_DISCARD static MYL_API auto api() -> render_api { return s_api; }
     };
 }

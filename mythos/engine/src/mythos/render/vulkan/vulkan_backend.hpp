@@ -11,6 +11,8 @@ namespace myth::vulkan {
         MYL_NO_DISCARD backend(const renderer_configuration& config);
         ~backend();
 
+        auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> override;
+
         auto on_window_resize(const myl::i32vec2& dimensions) -> void override;
     };
 }

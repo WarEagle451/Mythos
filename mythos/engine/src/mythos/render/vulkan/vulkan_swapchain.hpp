@@ -29,7 +29,7 @@ namespace myth::vulkan {
         auto create_swapchain(window& window) -> void;
         auto create_images_and_views() -> void;
 
-        auto destroy_images_views() -> void;
+        auto destroy_images_and_views() -> void;
         auto destroy_swapchain() -> void;
     };
 }
