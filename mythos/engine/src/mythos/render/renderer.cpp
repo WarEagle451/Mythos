@@ -12,7 +12,7 @@ namespace myth {
     };
 
     constexpr internal_shader triangle_shader{
-        .faux_path = "resources/shaders/triangle.glsl",
+        .faux_path = "resources/shaders/mythos_internal_triangle.glsl",
         .data =
             "#type vertex\r\n"
             "#version 460 core\r\n"

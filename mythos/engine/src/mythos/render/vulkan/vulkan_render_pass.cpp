@@ -4,7 +4,7 @@
 namespace myth::vulkan {
     MYL_NO_DISCARD render_pass::render_pass(context& context, VkFormat color_format)
         : m_context{ context } {
-        std::vector<VkAttachmentDescription> attactment_descriptions{
+        std::vector<VkAttachmentDescription> attachment_descriptions{
             VkAttachmentDescription { // Color attachment
                 //.flags          = ,
                 .format         = color_format,
@@ -40,8 +40,8 @@ namespace myth::vulkan {
             .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
             //.pNext           =,
             //.flags           =,
-            .attachmentCount = static_cast<uint32_t>(attactment_descriptions.size()),
-            .pAttachments    = attactment_descriptions.data(),
+            .attachmentCount = static_cast<uint32_t>(attachment_descriptions.size()),
+            .pAttachments    = attachment_descriptions.data(),
             .subpassCount    = 1,
             .pSubpasses      = &subpass_description,
             //.dependencyCount = ,
