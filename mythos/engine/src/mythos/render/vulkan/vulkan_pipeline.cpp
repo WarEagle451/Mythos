@@ -2,7 +2,13 @@
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
 namespace myth::vulkan {
-    MYL_NO_DISCARD pipeline::pipeline(context& context, const VkViewport& viewport, const VkRect2D& scissor, const VkPrimitiveTopology primitive)
+    MYL_NO_DISCARD pipeline::pipeline(
+        context& context,
+        render_pass& render_pass,
+        const VkViewport& viewport,
+        const VkRect2D& scissor,
+        const VkPrimitiveTopology primitive,
+        const std::vector<VkPipelineShaderStageCreateInfo>& shader_stage_create_infos)
         : m_context{ context } {
         std::vector<VkDynamicState> dynamic_states{
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -106,10 +112,36 @@ namespace myth::vulkan {
         };
 
         MYTHOS_VULKAN_VERIFY(vkCreatePipelineLayout, m_context.device(), &layout_create_info, VK_NULL_HANDLE, &m_layout);
+
+        VkGraphicsPipelineCreateInfo pipeline_create_info{
+            .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            //.pNext =,
+            //.flags =,
+            .stageCount          = static_cast<uint32_t>(shader_stage_create_infos.size()),
+            .pStages             = shader_stage_create_infos.data(),
+            .pVertexInputState   = &vertex_input_state_create_info,
+            .pInputAssemblyState = &input_assembly_state_create_info,
+            //.pTessellationState  = ,
+            .pViewportState      = &viewport_state_create_info,
+            .pRasterizationState = &rasterization_state_create_info,
+            .pMultisampleState   = &multisample_state_create_info,
+            .pDepthStencilState  = nullptr,
+            .pColorBlendState    = &color_blend_state_create_info,
+            .pDynamicState       = &dynamic_state_create_info,
+            .layout              = m_layout,
+            .renderPass          = render_pass.handle(),
+            .subpass             = 0,
+            .basePipelineHandle  = VK_NULL_HANDLE,
+            .basePipelineIndex   = -1
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateGraphicsPipelines, m_context.device(), VK_NULL_HANDLE, 1, &pipeline_create_info, VK_NULL_HANDLE, &m_pipeline);
     }
 
     pipeline::~pipeline() {
+        if (m_pipeline)
+            vkDestroyPipeline(m_context.device(), m_pipeline, VK_NULL_HANDLE);
         if (m_layout)
-            vkDestroyPipelineLayout(m_context.device(), m_layout, VK_NULL_HANDLE);;
+            vkDestroyPipelineLayout(m_context.device(), m_layout, VK_NULL_HANDLE);
     }
 }

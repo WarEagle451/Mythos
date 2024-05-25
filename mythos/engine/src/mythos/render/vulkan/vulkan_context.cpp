@@ -9,7 +9,9 @@
 #include <limits>
 #include <map>
 
-// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Graphics_pipeline_basics/Render_passes
+// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Framebuffers
+
+/// MYTODO: Maybe transition to the vulkan create_info style
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME

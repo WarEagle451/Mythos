@@ -15,9 +15,9 @@ namespace myth::vulkan {
         context& m_context;
 
         VkSwapchainKHR m_swapchain;
-        VkSurfaceFormatKHR m_surface_format;
         VkExtent2D m_extent;
 
+        VkSurfaceFormatKHR m_surface_format;
         std::vector<VkImage> m_images;
         std::vector<VkImageView> m_views;
     public:
@@ -27,6 +27,7 @@ namespace myth::vulkan {
         ~swapchain();
 
         MYL_NO_DISCARD constexpr auto extent() const -> const VkExtent2D& { return m_extent; }
+        MYL_NO_DISCARD constexpr auto image_format() const -> VkFormat { return m_surface_format.format; }
     private:
         auto create_swapchain(window& window) -> void;
         auto create_images_and_views() -> void;

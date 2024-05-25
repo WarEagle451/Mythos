@@ -7,7 +7,8 @@
 namespace myth::vulkan {
     MYL_NO_DISCARD backend::backend(const renderer_configuration& config)
         : m_context(*application::get().main_window())
-        , m_swapchain(m_context, *application::get().main_window()) {
+        , m_swapchain(m_context, *application::get().main_window())
+        , m_main_render_pass(m_context, m_swapchain.image_format()) {
 
     }
 
@@ -16,7 +17,7 @@ namespace myth::vulkan {
     }
 
     auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
-        return std::make_unique<vulkan::shader>(m_context, m_swapchain, shader_binaries, primitive);
+        return std::make_unique<vulkan::shader>(m_context, m_main_render_pass, m_swapchain, shader_binaries, primitive);
     }
 
     auto backend::on_window_resize(const myl::i32vec2& dimensions) -> void {

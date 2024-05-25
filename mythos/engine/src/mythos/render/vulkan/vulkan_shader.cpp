@@ -26,7 +26,7 @@ namespace myth::vulkan {
         }
     }
 
-    MYL_NO_DISCARD shader::shader(context& context, const swapchain& swapchain, const std::unordered_map<shader_type, shader_binary_type>& binaries, const shader_primitive primitive)
+    MYL_NO_DISCARD shader::shader(context& context, render_pass& render_pass, const swapchain& swapchain, const std::unordered_map<shader_type, shader_binary_type>& binaries, const shader_primitive primitive)
         : m_context{ context }
         , m_pipeline{ nullptr } {
 
@@ -78,7 +78,14 @@ namespace myth::vulkan {
 
         // Create pipeline
 
-        m_pipeline = std::make_unique<vulkan::pipeline>(m_context, viewport, scissor, shader_primitive_to_VkPrimitiveTopology(primitive));
+        m_pipeline = std::make_unique<vulkan::pipeline>(
+            m_context,
+            render_pass,
+            viewport,
+            scissor,
+            shader_primitive_to_VkPrimitiveTopology(primitive),
+            shader_stages_create_info
+        );
 
         // Destroy shader stages
         // https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/vkDestroyShaderModule.html

@@ -2,11 +2,13 @@
 #include <mythos/render/renderer_backend.hpp>
 #include <mythos/render/vulkan/vulkan_context.hpp>
 #include <mythos/render/vulkan/vulkan_swapchain.hpp>
+#include <mythos/render/vulkan/vulkan_render_pass.hpp>
 
 namespace myth::vulkan {
     class backend : public myth::renderer_backend {
         context m_context;
         swapchain m_swapchain;
+        render_pass m_main_render_pass;
     public:
         MYL_NO_DISCARD backend(const renderer_configuration& config);
         ~backend();
