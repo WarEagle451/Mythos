@@ -158,7 +158,7 @@ namespace myth::vulkan {
     auto swapchain::recreate_framebuffers(render_pass& render_pass) -> void {
         m_framebuffers.resize(m_views.size());
 
-        for (decltype(m_views.size()) i = 0; i != m_views.size(); ++i) {
+        for (decltype(m_views)::size_type i = 0; i != m_views.size(); ++i) {
             std::vector<VkImageView> attachments{ m_views[i] };
 
             VkFramebufferCreateInfo framebuffer_create_info{

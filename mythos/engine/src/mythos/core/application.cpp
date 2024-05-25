@@ -100,8 +100,13 @@ namespace myth {
             if (!m_suspended) {
                 for (auto& l : m_layer_stack)
                     l->update(ts);
-                for (auto& l : m_layer_stack)
-                    l->render();
+
+                bool good_frame = renderer::begin_frame();
+                if (good_frame) {
+                    for (auto& l : m_layer_stack)
+                        l->render();
+                    renderer::end_frame();
+                }
 
                 input::update();
             }

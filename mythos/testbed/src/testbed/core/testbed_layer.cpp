@@ -3,6 +3,7 @@
 
 #include <mythos/core/application.hpp>
 #include <mythos/input.hpp>
+#include <mythos/render/renderer.hpp>
 
 #include <Windows.h>
 
@@ -55,7 +56,8 @@ namespace testbed {
     }
 
     auto testbed_layer::render() -> void {
-        
+        /// MYTEMP: Replace with a proper draw command
+        myth::draw();
     }
 
     auto testbed_layer::on_key_pressed(myth::event::key_pressed& e) -> bool {

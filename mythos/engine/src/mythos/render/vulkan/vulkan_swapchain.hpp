@@ -18,6 +18,7 @@ namespace myth::vulkan {
         VkExtent2D m_extent;
 
         VkSurfaceFormatKHR m_surface_format;
+        uint32_t m_current_image_index = 0;
         std::vector<VkImage> m_images;
         std::vector<VkImageView> m_views;
 
@@ -29,7 +30,10 @@ namespace myth::vulkan {
         ~swapchain();
 
         MYL_NO_DISCARD constexpr auto extent() const -> const VkExtent2D& { return m_extent; }
+        MYL_NO_DISCARD constexpr auto current_image_index() const -> uint32_t { return m_current_image_index; }
+        MYL_NO_DISCARD constexpr auto images() const -> const std::vector<VkImage>& { return m_images; }
         MYL_NO_DISCARD constexpr auto image_format() const -> VkFormat { return m_surface_format.format; }
+        MYL_NO_DISCARD constexpr auto framebuffers() const -> const std::vector<VkFramebuffer>& { return m_framebuffers; }
 
         auto recreate_framebuffers(render_pass& render_pass) -> void;
         auto destroy_framebuffers() -> void;

@@ -54,4 +54,26 @@ namespace myth::vulkan {
     render_pass::~render_pass() {
         vkDestroyRenderPass(m_context.device(), m_render_pass, VK_NULL_HANDLE);
     }
+
+    auto render_pass::begin(VkCommandBuffer command_buffer, VkFramebuffer framebuffer, const VkRect2D& render_area) -> void {
+        VkClearValue clear_values = {
+            .color = m_clear_color
+        };
+
+        VkRenderPassBeginInfo render_pass_begin_info{
+            .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            //.pNext           = ,
+            .renderPass      = m_render_pass,
+            .framebuffer     = framebuffer,
+            .renderArea      = render_area,
+            .clearValueCount = 1,
+            .pClearValues    = &clear_values,
+        };
+
+        vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    }
+
+    auto render_pass::end(VkCommandBuffer command_buffer) -> void {
+        vkCmdEndRenderPass(command_buffer);
+    }
 }

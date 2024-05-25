@@ -76,5 +76,8 @@ namespace myth {
         MYL_NO_DISCARD static auto create(const std::filesystem::path& path, const shader_primitive primitive) -> std::unique_ptr<shader>;
 
         virtual ~shader() = default;
+
+        virtual auto bind() -> void = 0;
+        virtual auto unbind() -> void = 0;
     };
 }

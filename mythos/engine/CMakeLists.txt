@@ -38,7 +38,7 @@ target_link_libraries(mythos_engine
         "${VULKAN_LIB_PATH}/spirv-cross-glsl.lib"
 )
 
-# Definitions
+# Compile definitions
 target_compile_definitions(mythos_engine
     PRIVATE
         "MYL_SHARED_LIBRARY"

@@ -239,13 +239,26 @@ namespace myth::vulkan {
     MYL_NO_DISCARD context::context(window& window) {
         create_instance();
         create_surface(window);
-        create_device();
+
+        device_queue_indices dqi{};
+        create_device(&dqi);
+        create_command_pool(dqi);
     }
 
     context::~context() {
+        destroy_command_objects();
         destroy_device();
         destroy_surface();
         destroy_instance();
+    }
+
+    auto context::create_command_buffers(swapchain& swapchain) -> void {
+        m_command_buffers.clear();
+        m_command_buffers.reserve(swapchain.images().size());
+        for (decltype(m_command_buffers)::size_type i = 0; i != swapchain.images().size(); ++i) {
+            m_command_buffers.emplace_back(*this);
+            m_command_buffers.back().allocate();
+        }
     }
 
     auto context::create_instance() -> void {
@@ -298,7 +311,7 @@ namespace myth::vulkan {
         vulkan::create_surface(m_instance, &m_surface, &window);
     }
 
-    auto context::create_device() -> void {
+    auto context::create_device(device_queue_indices* dqi) -> void {
         // Select a physical device
 
         /// MYTODO: Requirements should be user definable
@@ -319,15 +332,15 @@ namespace myth::vulkan {
 
         // Create logical device
 
-        const device_queue_indices dqi = find_queue_family_indices(m_physical_device);
-        if (dqi.graphics != dqi.present) // Useful information
-            MYTHOS_WARN("Selected physical device's graphics and present queues use a different index: {} vs {}", dqi.graphics, dqi.present);
+        *dqi = find_queue_family_indices(m_physical_device);
+        if (dqi->graphics != dqi->present) // Useful information
+            MYTHOS_WARN("Selected physical device's graphics and present queues use a different index: {} vs {}", dqi->graphics, dqi->present);
 
         std::map<uint32_t, uint32_t> indices{}; /// index, count /// MYTODO: Find a better way to detect shared indices
-        if (dqi.compute  != device_queue_indices::not_available) ++indices[dqi.compute];
-        if (dqi.graphics != device_queue_indices::not_available) ++indices[dqi.graphics];
-        if (dqi.present  != device_queue_indices::not_available) ++indices[dqi.present];
-        if (dqi.transfer != device_queue_indices::not_available) ++indices[dqi.transfer];
+        if (dqi->compute  != device_queue_indices::not_available) ++indices[dqi->compute];
+        if (dqi->graphics != device_queue_indices::not_available) ++indices[dqi->graphics];
+        if (dqi->present  != device_queue_indices::not_available) ++indices[dqi->present];
+        if (dqi->transfer != device_queue_indices::not_available) ++indices[dqi->transfer];
 
         myl::u32 queue_family_props_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(m_physical_device, &queue_family_props_count, VK_NULL_HANDLE);
@@ -340,8 +353,8 @@ namespace myth::vulkan {
         bool present_must_share_graphics = false;
         for (const auto& qi : indices) {
             uint32_t queue_count = qi.second;
-            if (qi.first == dqi.present &&
-                dqi.graphics == dqi.present &&                       // Check if graphics and present queues share an index
+            if (qi.first == dqi->present &&
+                dqi->graphics == dqi->present &&                       // Check if graphics and present queues share an index
                 queue_family_properties[qi.first].queueCount <= 1) { // Device doesn't have available queues, share them
                 queue_count = 1;
                 present_must_share_graphics = true;
@@ -372,14 +385,33 @@ namespace myth::vulkan {
 
         MYTHOS_VULKAN_VERIFY(vkCreateDevice, m_physical_device, &device_create_info, VK_NULL_HANDLE, &m_device);
 
-        if (dqi.compute != device_queue_indices::not_available)
-            vkGetDeviceQueue(m_device, dqi.compute, 0, &m_queue_compute);
-        if (dqi.graphics != device_queue_indices::not_available)
-            vkGetDeviceQueue(m_device, dqi.graphics, 0, &m_queue_graphics);
-        if (dqi.present != device_queue_indices::not_available)
-            vkGetDeviceQueue(m_device, dqi.present, present_must_share_graphics || (dqi.graphics != dqi.present) ? 0 : 1, &m_queue_present);
-        if (dqi.transfer != device_queue_indices::not_available)
-            vkGetDeviceQueue(m_device, dqi.transfer, 0, &m_queue_transfer);
+        if (dqi->compute != device_queue_indices::not_available)
+            vkGetDeviceQueue(m_device, dqi->compute, 0, &m_queue_compute);
+        if (dqi->graphics != device_queue_indices::not_available)
+            vkGetDeviceQueue(m_device, dqi->graphics, 0, &m_queue_graphics);
+        if (dqi->present != device_queue_indices::not_available)
+            vkGetDeviceQueue(m_device, dqi->present, present_must_share_graphics || (dqi->graphics != dqi->present) ? 0 : 1, &m_queue_present);
+        if (dqi->transfer != device_queue_indices::not_available)
+            vkGetDeviceQueue(m_device, dqi->transfer, 0, &m_queue_transfer);
+    }
+
+    auto context::create_command_pool(const device_queue_indices& dqi) -> void {
+        VkCommandPoolCreateInfo command_pool_create_info{
+            .sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            //.pNext            = ,
+            .flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = dqi.graphics
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateCommandPool, m_device, &command_pool_create_info, VK_NULL_HANDLE, &m_command_pool);
+    }
+
+    auto context::destroy_command_objects() -> void {
+        for (command_buffer& cb : m_command_buffers)
+            cb.deallocate();
+        m_command_buffers.clear();
+
+        vkDestroyCommandPool(m_device, m_command_pool, VK_NULL_HANDLE);
     }
 
     auto context::destroy_device() -> void {

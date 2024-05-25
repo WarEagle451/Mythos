@@ -26,8 +26,9 @@ namespace myth::vulkan {
         }
     }
 
-    MYL_NO_DISCARD shader::shader(context& context, render_pass& render_pass, const swapchain& swapchain, const std::unordered_map<shader_type, shader_binary_type>& binaries, const shader_primitive primitive)
+    MYL_NO_DISCARD shader::shader(context& context, swapchain& swapchain, VkRenderPass render_pass, const std::unordered_map<shader_type, shader_binary_type>& binaries, const shader_primitive primitive)
         : m_context{ context }
+        , m_swapchain{ swapchain }
         , m_pipeline{ nullptr } {
 
         // Create shader modules
@@ -61,6 +62,8 @@ namespace myth::vulkan {
             });
 
         // Other
+
+        /// MYTODO: scissor and viewport are the exact same in the vulkan backend begin_frame, should this be a shared object?
 
         VkRect2D scissor{
             .offset = { .x = 0, .y = 0 },
@@ -98,5 +101,13 @@ namespace myth::vulkan {
 
     shader::~shader() {
         m_pipeline.reset();
+    }
+
+    auto shader::bind() -> void {
+        m_pipeline->bind(m_context.command_buffers()[m_swapchain.current_image_index()].handle());
+    }
+
+    auto shader::unbind() -> void {
+
     }
 }

@@ -9,8 +9,13 @@ namespace myth {
         static auto init(const renderer_configuration& config) -> void;
         static auto shutdown() -> void;
 
+        MYL_NO_DISCARD static MYL_API auto api() -> render_api { return s_api; }
         static auto backend() noexcept -> renderer_backend* { return s_backend.get(); }
 
-        MYL_NO_DISCARD static MYL_API auto api() -> render_api { return s_api; }
+        static auto begin_frame() -> bool;
+        static auto end_frame() -> void;
     };
+
+    /// MYTEMP: Replace with a proper draw command
+    MYL_API auto draw() -> void;
 }

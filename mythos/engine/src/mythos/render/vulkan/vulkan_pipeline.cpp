@@ -4,7 +4,7 @@
 namespace myth::vulkan {
     MYL_NO_DISCARD pipeline::pipeline(
         context& context,
-        render_pass& render_pass,
+        VkRenderPass render_pass,
         const VkViewport& viewport,
         const VkRect2D& scissor,
         const VkPrimitiveTopology primitive,
@@ -129,7 +129,7 @@ namespace myth::vulkan {
             .pColorBlendState    = &color_blend_state_create_info,
             .pDynamicState       = &dynamic_state_create_info,
             .layout              = m_layout,
-            .renderPass          = render_pass.handle(),
+            .renderPass          = render_pass,
             .subpass             = 0,
             .basePipelineHandle  = VK_NULL_HANDLE,
             .basePipelineIndex   = -1
@@ -143,5 +143,9 @@ namespace myth::vulkan {
             vkDestroyPipeline(m_context.device(), m_pipeline, VK_NULL_HANDLE);
         if (m_layout)
             vkDestroyPipelineLayout(m_context.device(), m_layout, VK_NULL_HANDLE);
+    }
+
+    auto pipeline::bind(VkCommandBuffer command_buffer) -> void {
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
     }
 }

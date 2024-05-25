@@ -1,5 +1,5 @@
 #pragma once
-#include <mythos/render/vulkan/vulkan_render_pass.hpp>
+#include <mythos/render/vulkan/vulkan_context.hpp>
 
 namespace myth::vulkan {
     class pipeline {
@@ -10,11 +10,13 @@ namespace myth::vulkan {
     public:
         MYL_NO_DISCARD pipeline(
             context& context,
-            render_pass& render_pass,
+            VkRenderPass render_pass,
             const VkViewport& viewport,
             const VkRect2D& scissor,
             const VkPrimitiveTopology primitive,
             const std::vector<VkPipelineShaderStageCreateInfo>& shader_stage_create_infos);
         ~pipeline();
+
+        auto bind(VkCommandBuffer command_buffer) -> void;
     };
 }
