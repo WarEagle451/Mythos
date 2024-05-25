@@ -4,6 +4,7 @@
 #include <mythos/core/application.hpp>
 #include <mythos/input.hpp>
 #include <mythos/render/renderer.hpp>
+#include <format>
 
 #include <Windows.h>
 
@@ -39,6 +40,9 @@ namespace testbed {
     }
 
     auto testbed_layer::update(MYL_MAYBE_UNUSED myth::timestep ts) -> void {
+        m_smooth_ts = (m_smooth_ts * (1.f - ts)) + (ts * ts); // Update timestep smoothly = (old_timestep * smoothing_factor) + (new_timestep * (1.0 - smoothing_factor))
+        myth::application::get().main_window()->set_title(std::format("FPS: {:.2f}", 1.f / m_smooth_ts).c_str());
+
         auto ls = myth::input::left_stick();
         if (ls.x != 0.f || ls.y != 0.f) {
             ls += 1.f;

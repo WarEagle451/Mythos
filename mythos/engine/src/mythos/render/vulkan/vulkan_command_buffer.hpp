@@ -14,7 +14,7 @@ namespace myth::vulkan {
         MYL_NO_DISCARD command_buffer(context& context);
         ~command_buffer();
 
-        auto handle() const -> VkCommandBuffer { return m_buffer; }
+        auto handle() -> VkCommandBuffer& { return m_buffer; }
 
         auto allocate() -> void;
         auto deallocate() -> void;

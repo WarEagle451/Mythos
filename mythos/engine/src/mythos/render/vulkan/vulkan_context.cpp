@@ -9,9 +9,9 @@
 #include <limits>
 #include <map>
 
-// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
+// Continue from: https://vulkan-tutorial.com/Drawing_a_triangle/Swap_chain_recreation
 
-/// MYTODO: Maybe transition to the vulkan create_info style
+/// MYTODO: Maybe transition to the vulkan create_info style instead of constructors
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -252,10 +252,10 @@ namespace myth::vulkan {
         destroy_instance();
     }
 
-    auto context::create_command_buffers(swapchain& swapchain) -> void {
+    auto context::create_command_buffers(uint32_t count) -> void {
         m_command_buffers.clear();
-        m_command_buffers.reserve(swapchain.images().size());
-        for (decltype(m_command_buffers)::size_type i = 0; i != swapchain.images().size(); ++i) {
+        m_command_buffers.reserve(count);
+        for (decltype(m_command_buffers)::size_type i = 0; i != count; ++i) {
             m_command_buffers.emplace_back(*this);
             m_command_buffers.back().allocate();
         }

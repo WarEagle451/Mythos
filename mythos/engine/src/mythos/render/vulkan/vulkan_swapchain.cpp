@@ -1,3 +1,4 @@
+#include <mythos/log.hpp>
 #include <mythos/render/vulkan/vulkan_swapchain.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
@@ -56,16 +57,73 @@ namespace myth::vulkan {
     }
 
     MYL_NO_DISCARD swapchain::swapchain(context& context, window& window)
-        : m_context{ context } {
+        : m_context{ context }
+        , m_current_image_index{ 0 }
+        , m_current_frame{ 0 } {
         create_swapchain(window);
         create_images_and_views();
+        create_sync_objects();
     }
 
     swapchain::~swapchain() {
+        destroy_sync_objects();
         if (!m_framebuffers.empty())
             destroy_framebuffers();
         destroy_images_and_views();
         destroy_swapchain();
+    }
+
+    MYL_NO_DISCARD auto swapchain::acquire_next_image(uint64_t timeout) -> bool {
+        const VkResult result = vkAcquireNextImageKHR(
+                m_context.device(),
+                m_swapchain,
+                timeout,
+                m_image_available_semaphores[m_current_frame],
+                VK_NULL_HANDLE,
+                &m_current_image_index);
+
+        switch (result) {
+            case VK_ERROR_OUT_OF_DATE_KHR:
+                /// MYTODO: Recreate swapchain
+                return false;
+            case VK_SUBOPTIMAL_KHR: return true;
+            case VK_SUCCESS:        return true;
+            default:
+                MYTHOS_FATAL("Failed to acquire swapchain image: {}", vkresult_string(result, true));
+                return false;
+        }
+    }
+
+    auto swapchain::advance_current_frame() -> void {
+        m_current_frame = (m_current_frame + 1) % m_max_frames_in_flight;
+    }
+
+    auto swapchain::recreate_framebuffers(render_pass& render_pass) -> void {
+        m_framebuffers.resize(m_views.size());
+
+        for (decltype(m_views)::size_type i = 0; i != m_views.size(); ++i) {
+            std::vector<VkImageView> attachments{ m_views[i] };
+
+            VkFramebufferCreateInfo framebuffer_create_info{
+                .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                //.pNext = ,
+                //.flags = ,
+                .renderPass = render_pass.handle(),
+                .attachmentCount = static_cast<uint32_t>(attachments.size()),
+                .pAttachments = attachments.data(),
+                .width = m_extent.width,
+                .height = m_extent.height,
+                .layers = 1,
+            };
+
+            MYTHOS_VULKAN_VERIFY(vkCreateFramebuffer, m_context.device(), &framebuffer_create_info, VK_NULL_HANDLE, &m_framebuffers[i]);
+        }
+    }
+
+    auto swapchain::destroy_framebuffers() -> void {
+        for (auto fb : m_framebuffers)
+            vkDestroyFramebuffer(m_context.device(), fb, VK_NULL_HANDLE);
+        m_framebuffers.clear();
     }
 
     auto swapchain::create_swapchain(window& window) -> void {
@@ -79,6 +137,8 @@ namespace myth::vulkan {
         uint32_t image_count = ssd.capabilities.minImageCount + 1; // Recommended to request one more image than the min
         if (ssd.capabilities.maxImageCount > 0 && image_count > ssd.capabilities.maxImageCount) // Don't excced the max images (0 is a special number)
             image_count = ssd.capabilities.maxImageCount;
+
+        m_max_frames_in_flight = image_count;
 
         device_queue_indices queue_indices = find_queue_family_indices(m_context.physical_device());
         uint32_t queue_family_indices[] = { queue_indices.graphics, queue_indices.present };
@@ -155,32 +215,40 @@ namespace myth::vulkan {
         }
     }
 
-    auto swapchain::recreate_framebuffers(render_pass& render_pass) -> void {
-        m_framebuffers.resize(m_views.size());
+    auto swapchain::create_sync_objects() -> void {
+        m_image_available_semaphores.resize(m_max_frames_in_flight);
+        m_render_finished_semaphores.resize(m_max_frames_in_flight);
+        m_fences_in_flight.resize(m_max_frames_in_flight);
 
-        for (decltype(m_views)::size_type i = 0; i != m_views.size(); ++i) {
-            std::vector<VkImageView> attachments{ m_views[i] };
+        VkSemaphoreCreateInfo semaphore_create_info{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+            //.pNext = ,
+            //.flags = 
+        };
 
-            VkFramebufferCreateInfo framebuffer_create_info{
-                .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
-                //.pNext = ,
-                //.flags = ,
-                .renderPass      = render_pass.handle(),
-                .attachmentCount = static_cast<uint32_t>(attachments.size()),
-                .pAttachments    = attachments.data(),
-                .width           = m_extent.width,
-                .height          = m_extent.height,
-                .layers          = 1,
-            };
+        VkFenceCreateInfo fence_create_info{
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            //.pNext = ,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT // Prevents vkWaitForFences from blocking on the first frame
+        };
 
-            MYTHOS_VULKAN_VERIFY(vkCreateFramebuffer, m_context.device(), &framebuffer_create_info, VK_NULL_HANDLE, &m_framebuffers[i]);
+        for (myl::u32 i = 0; i != m_max_frames_in_flight; ++i) {
+            MYTHOS_VULKAN_VERIFY(vkCreateSemaphore, m_context.device(), &semaphore_create_info, VK_NULL_HANDLE, &m_image_available_semaphores[i]);
+            MYTHOS_VULKAN_VERIFY(vkCreateSemaphore, m_context.device(), &semaphore_create_info, VK_NULL_HANDLE, &m_render_finished_semaphores[i]);
+            MYTHOS_VULKAN_VERIFY(vkCreateFence, m_context.device(), &fence_create_info, VK_NULL_HANDLE, &m_fences_in_flight[i]);
         }
     }
 
-    auto swapchain::destroy_framebuffers() -> void {
-        for (auto fb : m_framebuffers)
-            vkDestroyFramebuffer(m_context.device(), fb, VK_NULL_HANDLE);
-        m_framebuffers.clear();
+    auto swapchain::destroy_sync_objects() -> void {
+        for (myl::u32 i = 0; i != m_max_frames_in_flight; ++i) {
+            vkDestroySemaphore(m_context.device(), m_image_available_semaphores[i], VK_NULL_HANDLE);
+            vkDestroySemaphore(m_context.device(), m_render_finished_semaphores[i], VK_NULL_HANDLE);
+            vkDestroyFence(m_context.device(), m_fences_in_flight[i], VK_NULL_HANDLE);
+        }
+
+        m_image_available_semaphores.clear();
+        m_render_finished_semaphores.clear();
+        m_fences_in_flight.clear();
     }
 
     auto swapchain::destroy_images_and_views() -> void {

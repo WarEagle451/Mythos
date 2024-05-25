@@ -15,10 +15,12 @@ namespace myth::vulkan {
 
         auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> override;
 
-        auto begin_frame() -> bool override;
-        auto end_frame() -> void override;
+        auto prepare_shutdown() -> void override;
 
         auto draw() -> void override;
+
+        auto begin_frame() -> bool override;
+        auto end_frame() -> void override;
 
         auto on_window_resize(const myl::i32vec2& dimensions) -> void override;
     };

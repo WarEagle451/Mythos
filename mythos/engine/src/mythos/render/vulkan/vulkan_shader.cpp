@@ -72,9 +72,9 @@ namespace myth::vulkan {
 
         VkViewport viewport{
             .x        = 0.f,
-            .y        = static_cast<float>(scissor.extent.height), /// MYTODO: tutorial has this as 0.f
+            .y        = 0.f,
             .width    = static_cast<float>(scissor.extent.width),
-            .height   = -static_cast<float>(scissor.extent.height),
+            .height   = static_cast<float>(scissor.extent.height),
             .minDepth = 0.f,
             .maxDepth = 1.f
         };

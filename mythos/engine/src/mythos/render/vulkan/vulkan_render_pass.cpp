@@ -36,6 +36,16 @@ namespace myth::vulkan {
             //.pPreserveAttachments    = 
         };
 
+        VkSubpassDependency subpass_dependency{
+            .srcSubpass      = VK_SUBPASS_EXTERNAL,
+            .dstSubpass      = 0,
+            .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask   = 0,
+            .dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            //.dependencyFlags = 
+        };
+
         VkRenderPassCreateInfo render_pass_create_info{
             .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
             //.pNext           =,
@@ -44,8 +54,8 @@ namespace myth::vulkan {
             .pAttachments    = attachment_descriptions.data(),
             .subpassCount    = 1,
             .pSubpasses      = &subpass_description,
-            //.dependencyCount = ,
-            //.pDependencies   = 
+            .dependencyCount = 1,
+            .pDependencies   = &subpass_dependency
         };
 
         MYTHOS_VULKAN_VERIFY(vkCreateRenderPass, m_context.device(), &render_pass_create_info, VK_NULL_HANDLE, &m_render_pass);

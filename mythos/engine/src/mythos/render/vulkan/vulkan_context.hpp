@@ -9,8 +9,6 @@
 #endif
 
 namespace myth::vulkan {
-    class swapchain; // Forward declaration
-
     struct physical_device_requirements {
         bool compute_queue;
         bool graphics_queue;
@@ -63,7 +61,12 @@ namespace myth::vulkan {
         MYL_NO_DISCARD auto command_pool() const -> VkCommandPool { return m_command_pool; }
         MYL_NO_DISCARD auto command_buffers() -> std::vector<command_buffer>& { return m_command_buffers; }
 
-        auto create_command_buffers(swapchain& swapchain) -> void;
+        MYL_NO_DISCARD auto queue_compute() -> VkQueue { return m_queue_compute; }
+        MYL_NO_DISCARD auto queue_graphics() -> VkQueue { return m_queue_graphics; }
+        MYL_NO_DISCARD auto queue_present() -> VkQueue { return m_queue_present; }
+        MYL_NO_DISCARD auto queue_transfer() -> VkQueue { return m_queue_transfer; }
+
+        auto create_command_buffers(uint32_t count) -> void;
     private:
         auto create_instance() -> void;
         auto create_surface(window& window) -> void;

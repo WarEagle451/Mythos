@@ -87,6 +87,8 @@ namespace myth {
     }
 
     auto renderer::shutdown() -> void {
+        s_backend->prepare_shutdown();
+
         s_triangle_shader.reset();
 
         MYTHOS_TRACE("Terminating renderer...");

@@ -97,21 +97,21 @@ namespace myth {
             ts = timer.split<std::chrono::seconds, myl::f64>();
             m_stats.timestep = ts;
 
+            m_window->update();
+
             if (!m_suspended) {
-                for (auto& l : m_layer_stack)
-                    l->update(ts);
+                for (auto& layer : m_layer_stack)
+                    layer->update(ts);
 
                 bool good_frame = renderer::begin_frame();
                 if (good_frame) {
-                    for (auto& l : m_layer_stack)
-                        l->render();
+                    for (auto& layer : m_layer_stack)
+                        layer->render();
                     renderer::end_frame();
                 }
 
                 input::update();
             }
-
-            m_window->update();
         }
     }
 
