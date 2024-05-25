@@ -1,6 +1,6 @@
 #pragma once
 #include <mythos/platform/window.hpp>
-#include <mythos/render/vulkan/vulkan_context.hpp>
+#include <mythos/render/vulkan/vulkan_render_pass.hpp>
 
 #include <vector>
 
@@ -20,6 +20,8 @@ namespace myth::vulkan {
         VkSurfaceFormatKHR m_surface_format;
         std::vector<VkImage> m_images;
         std::vector<VkImageView> m_views;
+
+        std::vector<VkFramebuffer> m_framebuffers;
     public:
         static auto query_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface, swapchain_support_details* details) -> void;
 
@@ -28,6 +30,9 @@ namespace myth::vulkan {
 
         MYL_NO_DISCARD constexpr auto extent() const -> const VkExtent2D& { return m_extent; }
         MYL_NO_DISCARD constexpr auto image_format() const -> VkFormat { return m_surface_format.format; }
+
+        auto recreate_framebuffers(render_pass& render_pass) -> void;
+        auto destroy_framebuffers() -> void;
     private:
         auto create_swapchain(window& window) -> void;
         auto create_images_and_views() -> void;

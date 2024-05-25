@@ -9,7 +9,7 @@
 #include <limits>
 #include <map>
 
-// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Framebuffers
+// Continue from: https://vulkan-tutorial.com/en/Drawing_a_triangle/Drawing/Command_buffers
 
 /// MYTODO: Maybe transition to the vulkan create_info style
 

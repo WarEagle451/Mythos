@@ -62,6 +62,8 @@ namespace myth::vulkan {
     }
 
     swapchain::~swapchain() {
+        if (!m_framebuffers.empty())
+            destroy_framebuffers();
         destroy_images_and_views();
         destroy_swapchain();
     }
@@ -153,11 +155,40 @@ namespace myth::vulkan {
         }
     }
 
+    auto swapchain::recreate_framebuffers(render_pass& render_pass) -> void {
+        m_framebuffers.resize(m_views.size());
+
+        for (decltype(m_views.size()) i = 0; i != m_views.size(); ++i) {
+            std::vector<VkImageView> attachments{ m_views[i] };
+
+            VkFramebufferCreateInfo framebuffer_create_info{
+                .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                //.pNext = ,
+                //.flags = ,
+                .renderPass      = render_pass.handle(),
+                .attachmentCount = static_cast<uint32_t>(attachments.size()),
+                .pAttachments    = attachments.data(),
+                .width           = m_extent.width,
+                .height          = m_extent.height,
+                .layers          = 1,
+            };
+
+            MYTHOS_VULKAN_VERIFY(vkCreateFramebuffer, m_context.device(), &framebuffer_create_info, VK_NULL_HANDLE, &m_framebuffers[i]);
+        }
+    }
+
+    auto swapchain::destroy_framebuffers() -> void {
+        for (auto fb : m_framebuffers)
+            vkDestroyFramebuffer(m_context.device(), fb, VK_NULL_HANDLE);
+        m_framebuffers.clear();
+    }
+
     auto swapchain::destroy_images_and_views() -> void {
         for (auto& view : m_views)
             vkDestroyImageView(m_context.device(), view, VK_NULL_HANDLE);
+        m_views.clear();
 
-        // Images will be destroyed when the swapchain is destory and therefore do not need clean up
+        // Images will be destroyed when the swapchain is destroyed and therefore do not need clean up
     }
 
     auto swapchain::destroy_swapchain() -> void {

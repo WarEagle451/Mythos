@@ -9,11 +9,13 @@ namespace myth::vulkan {
         : m_context(*application::get().main_window())
         , m_swapchain(m_context, *application::get().main_window())
         , m_main_render_pass(m_context, m_swapchain.image_format()) {
-
+        m_swapchain.recreate_framebuffers(m_main_render_pass);
     }
 
     backend::~backend() {
-
+        /// Is this necessary?
+        // Framebuffers should be destroyed before the image views and render pass they are based on
+        m_swapchain.destroy_framebuffers();
     }
 
     auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
