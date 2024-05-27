@@ -4,7 +4,6 @@
 #include <mythos/input.hpp>
 
 /// MYTEMP:
-#include <mythos/log.hpp>
 #define MYTHOS_ENABLE_CONTROLLER_WIP
 
 /// MYTODO: Split this up into seperate source files

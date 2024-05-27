@@ -4,9 +4,8 @@
 #include <mythos/core/application.hpp>
 #include <mythos/input.hpp>
 #include <mythos/render/renderer.hpp>
-#include <format>
 
-#include <Windows.h>
+#include <format>
 
 namespace testbed {
     MYL_NO_DISCARD testbed_layer::testbed_layer()
@@ -29,34 +28,11 @@ namespace testbed {
     auto testbed_layer::on_event(myth::event::base& e) -> void {
         myth::event::dispatcher d(e);
         d.dispatch<myth::event::key_pressed>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_key_pressed));
-        d.dispatch<myth::event::key_released>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_key_released));
-        d.dispatch<myth::event::typed>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_typed));
-        d.dispatch<myth::event::mouse_moved>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_mouse_moved));
-        d.dispatch<myth::event::mouse_scrolled>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_mouse_scrolled));
-        d.dispatch<myth::event::mouse_pressed>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_mouse_pressed));
-        d.dispatch<myth::event::mouse_released>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_mouse_released));
-        d.dispatch<myth::event::gamepad_button_pressed>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_gamepad_button_pressed));
-        d.dispatch<myth::event::gamepad_button_released>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_gamepad_button_released));
     }
 
     auto testbed_layer::update(MYL_MAYBE_UNUSED myth::timestep ts) -> void {
-        m_smooth_ts = (m_smooth_ts * (1.f - ts)) + (ts * ts); // Update timestep smoothly = (old_timestep * smoothing_factor) + (new_timestep * (1.0 - smoothing_factor))
+        m_smooth_ts = (m_smooth_ts * 0.995f) + (ts * 0.005f); // Update timestep smoothly = (old_timestep * smoothing_factor) + (new_timestep * (1.0 - smoothing_factor))
         myth::application::get().main_window()->set_title(std::format("FPS: {:.2f}", 1.f / m_smooth_ts).c_str());
-
-        auto ls = myth::input::left_stick();
-        if (ls.x != 0.f || ls.y != 0.f) {
-            ls += 1.f;
-            ls *= .5f;
-
-            POINT p{};
-            GetCursorPos(&p);
-            /// MYTODO: Make this smoother, AKA Windows needs to be more percise than 1 int
-            /// basically a subpixel set cursor
-            
-            p.x += static_cast<LONG>(std::lerp(-10.f, 10.f, ls.x));
-            p.y += static_cast<LONG>(std::lerp(-10.f, 10.f, ls.y));
-            SetCursorPos(p.x, p.y);
-        }
     }
 
     auto testbed_layer::render() -> void {
@@ -97,71 +73,5 @@ namespace testbed {
         }
 
         return false;
-    }
-
-    auto testbed_layer::on_key_released(myth::event::key_released& e) -> bool {
-        TESTBED_TRACE("Key '{}' released", e.key());
-        return true;
-    }
-
-    auto testbed_layer::on_typed(myth::event::typed& e) -> bool {
-        TESTBED_TRACE("Typed '{}'", e.character());
-        return true;
-    }
-
-    auto testbed_layer::on_mouse_moved(myth::event::mouse_moved& e) -> bool {
-        TESTBED_TRACE("Mouse moved [{}, {}]", e.position().x, e.position().y);
-        return true;
-    }
-
-    auto testbed_layer::on_mouse_scrolled(myth::event::mouse_scrolled& e) -> bool {
-        TESTBED_TRACE("Mouse scrolled [{}, {}]", e.delta().x, e.delta().y);
-        return true;
-    }
-
-    auto testbed_layer::on_mouse_pressed(myth::event::mouse_pressed& e) -> bool {
-        TESTBED_TRACE("Mouse button(s) '{}' pressed", e.buttons());
-        return true;
-    }
-
-    auto testbed_layer::on_mouse_released(myth::event::mouse_released& e) -> bool {
-        TESTBED_TRACE("Mouse button(s) '{}' released", e.buttons());
-        return true;
-    }
-
-    auto testbed_layer::on_gamepad_button_pressed(myth::event::gamepad_button_pressed& e) -> bool {
-        MYTHOS_ERROR("Gamepad button(s): {} pressed", e.buttons());
-        if (e.buttons() & myth::button::ps_cross) {
-            constexpr int count = 2;
-            INPUT click[count]{
-                {
-                    .type = INPUT_MOUSE,
-                    .mi = {
-                        .dx = 0,
-                        .dy = 0,
-                        .mouseData = XBUTTON1,
-                        .dwFlags = MOUSEEVENTF_LEFTDOWN
-                    }
-                },
-                {
-                    .type = INPUT_MOUSE,
-                    .mi = {
-                        .dx = 0,
-                        .dy = 0,
-                        .mouseData = XBUTTON1,
-                        .dwFlags = MOUSEEVENTF_LEFTUP
-                    }
-                }
-            };
-
-            SendInput(count, click, sizeof(INPUT));
-        }
-
-        return true;
-    }
-
-    auto testbed_layer::on_gamepad_button_released(myth::event::gamepad_button_released& e) -> bool {
-        MYTHOS_ERROR("Gamepad button(s): {} released", e.buttons());
-        return true;
     }
 }

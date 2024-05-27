@@ -82,7 +82,6 @@ namespace myth {
         s_backend = renderer_backend::create(s_api, config);
         MYTHOS_TRACE("Renderer initialized");
 
-        /// MYTEMP:
         s_triangle_shader = shader::create(triangle_shader.faux_path, triangle_shader.data, shader_primitive::triangle);
     }
 
@@ -99,7 +98,6 @@ namespace myth {
     auto renderer::begin_frame() -> bool {
         bool frame_good = s_backend->begin_frame();
 
-        /// MYTEMP:
         s_triangle_shader->bind();
 
         return frame_good;

@@ -8,7 +8,7 @@
 
 #include <cctype>
 
-/// MYTodo:
+/// MYTodo: Shader
 /// - Cache shader_layout and shader types to prevent loading in all the shader code, These are things that will have to be checked if it exists or is up to date
 /// - Warn on if more than 1 type of shader stage is present in a file
 

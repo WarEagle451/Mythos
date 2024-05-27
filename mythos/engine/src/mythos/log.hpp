@@ -25,6 +25,7 @@ namespace myth {
 #else
 #   define MYTHOS_DEBUG(...)
 #endif
+
 #define MYTHOS_TRACE(...) ::myth::log::get()->trace(__VA_ARGS__)
 #define MYTHOS_INFO(...) ::myth::log::get()->info(__VA_ARGS__)
 #define MYTHOS_WARN(...) ::myth::log::get()->warn(__VA_ARGS__)

@@ -4,7 +4,7 @@
 
 #include <vector>
 
-#ifdef MYL_DEBUG /// MYTEMP: MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS should be passed on the command line 
+#ifdef MYL_DEBUG /// MYTEMP: MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS should be passed on the command line
 #   define MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
 #endif
 

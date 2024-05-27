@@ -18,13 +18,5 @@ namespace testbed {
         auto render() -> void override;
     private:
         auto on_key_pressed(myth::event::key_pressed& e) -> bool;
-        auto on_key_released(myth::event::key_released& e) -> bool;
-        auto on_typed(myth::event::typed& e) -> bool;
-        auto on_mouse_moved(myth::event::mouse_moved& e) -> bool;
-        auto on_mouse_scrolled(myth::event::mouse_scrolled& e) -> bool;
-        auto on_mouse_pressed(myth::event::mouse_pressed& e) -> bool;
-        auto on_mouse_released(myth::event::mouse_released& e) -> bool;
-        auto on_gamepad_button_pressed(myth::event::gamepad_button_pressed& e) -> bool;
-        auto on_gamepad_button_released(myth::event::gamepad_button_released& e) -> bool;
     };
 }

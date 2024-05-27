@@ -6,6 +6,7 @@ namespace testbed {
         static std::shared_ptr<spdlog::logger> s_logger;
     public:
         static auto init() -> void;
+
         static auto get() noexcept -> std::shared_ptr<spdlog::logger>;
     };
 }
