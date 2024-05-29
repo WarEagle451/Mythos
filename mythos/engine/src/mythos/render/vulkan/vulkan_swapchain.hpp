@@ -1,5 +1,4 @@
 #pragma once
-#include <mythos/platform/window.hpp>
 #include <mythos/render/vulkan/vulkan_render_pass.hpp>
 
 #include <vector>
@@ -13,6 +12,7 @@ namespace myth::vulkan {
 
     class swapchain {
         context& m_context;
+        render_pass* m_render_pass_ptr;
 
         VkSwapchainKHR m_swapchain;
         VkExtent2D m_extent;
@@ -32,7 +32,7 @@ namespace myth::vulkan {
     public:
         static auto query_support(VkPhysicalDevice physical_device, VkSurfaceKHR surface, swapchain_support_details* details) -> void;
 
-        MYL_NO_DISCARD swapchain(context& context, window& window);
+        MYL_NO_DISCARD swapchain(context& context, const VkExtent2D& extent);
         ~swapchain();
 
         MYL_NO_DISCARD constexpr auto handle() -> VkSwapchainKHR { return m_swapchain; }
@@ -47,18 +47,20 @@ namespace myth::vulkan {
         MYL_NO_DISCARD constexpr auto render_finished_semaphores() -> const std::vector<VkSemaphore>& { return m_render_finished_semaphores; }
         MYL_NO_DISCARD constexpr auto fences_in_flight() -> const std::vector<VkFence>& { return m_fences_in_flight; }
 
-        MYL_NO_DISCARD auto acquire_next_image(uint64_t timeout = UINT64_MAX) -> bool;
+        MYL_NO_DISCARD auto acquire_next_image() -> VkResult;
         auto advance_current_frame() -> void;
+
+        auto recreate(render_pass& render_pass, const VkExtent2D& extent) -> void;
 
         auto recreate_framebuffers(render_pass& render_pass) -> void;
         auto destroy_framebuffers() -> void;
     private:
-        auto create_swapchain(window& window) -> void;
-        auto create_images_and_views() -> void;
+        auto create_swapchain(const VkExtent2D& extent, VkSwapchainKHR old_swapchain = VK_NULL_HANDLE) -> void;
+        auto create_image_views() -> void;
         auto create_sync_objects() -> void;
 
         auto destroy_sync_objects() -> void;
-        auto destroy_images_and_views() -> void;
+        auto destroy_image_views() -> void;
         auto destroy_swapchain() -> void;
     };
 }

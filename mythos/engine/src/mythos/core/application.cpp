@@ -103,7 +103,7 @@ namespace myth {
                 for (auto& layer : m_layer_stack)
                     layer->update(ts);
 
-                bool good_frame = renderer::begin_frame();
+                const bool good_frame = renderer::begin_frame();
                 if (good_frame) {
                     for (auto& layer : m_layer_stack)
                         layer->render();
@@ -130,6 +130,9 @@ namespace myth {
     }
 
     auto application::on_window_resize(event::window_resize& e) -> bool {
+        const auto& dimensions = e.dim();
+        renderer::backend()->on_window_resize(dimensions);
+
         // Window's values should already be updated
         if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
             update_cursor_capture();

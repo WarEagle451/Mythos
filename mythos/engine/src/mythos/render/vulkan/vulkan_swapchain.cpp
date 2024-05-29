@@ -30,14 +30,19 @@ namespace myth::vulkan {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    MYL_NO_DISCARD constexpr auto choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, window& window) -> VkExtent2D {
-        if (capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max()) {
-            auto fb_size = window.framebuffer_size();
+    MYL_NO_DISCARD auto choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& requested)-> VkExtent2D {
+        /// MYTODO: turney
+
+        MYTHOS_ERROR("swapchain [{}, {}]",
+            myl::clamp(requested.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+            myl::clamp(requested.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+        );
+        
+        if (capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max())
             return VkExtent2D{
-                .width  = myl::clamp(static_cast<uint32_t>(fb_size.w), capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
-                .height = myl::clamp(static_cast<uint32_t>(fb_size.h), capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
+                .width  = myl::clamp(requested.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width),
+                .height = myl::clamp(requested.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height)
             };
-        }
         else
             return capabilities.currentExtent;
     }
@@ -56,49 +61,37 @@ namespace myth::vulkan {
         vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device, surface, &present_mode_count, details->present_modes.data());
     }
 
-    MYL_NO_DISCARD swapchain::swapchain(context& context, window& window)
+    MYL_NO_DISCARD swapchain::swapchain(context& context, const VkExtent2D& extent)
         : m_context{ context }
+        , m_render_pass_ptr{ nullptr }
         , m_current_image_index{ 0 }
         , m_current_frame{ 0 } {
-        create_swapchain(window);
-        create_images_and_views();
+
+        // This function will set m_extent
+        create_swapchain(extent, VK_NULL_HANDLE);
+        create_image_views();
         create_sync_objects();
     }
 
     swapchain::~swapchain() {
         destroy_sync_objects();
-        if (!m_framebuffers.empty())
-            destroy_framebuffers();
-        destroy_images_and_views();
+        destroy_framebuffers();
+        destroy_image_views();
         destroy_swapchain();
     }
 
-    MYL_NO_DISCARD auto swapchain::acquire_next_image(uint64_t timeout) -> bool {
-        const VkResult result = vkAcquireNextImageKHR(
+    MYL_NO_DISCARD auto swapchain::acquire_next_image() -> VkResult {
+        return vkAcquireNextImageKHR(
                 m_context.device(),
                 m_swapchain,
-                timeout,
+                UINT64_MAX,
                 m_image_available_semaphores[m_current_frame],
                 VK_NULL_HANDLE,
                 &m_current_image_index);
-
-        switch (result) {
-            case VK_ERROR_OUT_OF_DATE_KHR:
-                /// MYTODO: Recreate swapchain
-                return false;
-            case VK_SUBOPTIMAL_KHR: return true;
-            case VK_SUCCESS:        return true;
-            default:
-                MYTHOS_FATAL("Failed to acquire swapchain image: {}", vkresult_string(result, true));
-                return false;
-        }
-    }
-
-    auto swapchain::advance_current_frame() -> void {
-        m_current_frame = (m_current_frame + 1) % m_max_frames_in_flight;
     }
 
     auto swapchain::recreate_framebuffers(render_pass& render_pass) -> void {
+        m_render_pass_ptr = &render_pass;
         m_framebuffers.resize(m_views.size());
 
         for (decltype(m_views)::size_type i = 0; i != m_views.size(); ++i) {
@@ -120,19 +113,44 @@ namespace myth::vulkan {
         }
     }
 
+    auto swapchain::advance_current_frame() -> void {
+        m_current_frame = (m_current_frame + 1) % m_max_frames_in_flight;
+    }
+
+    auto swapchain::recreate(render_pass& render_pass, const VkExtent2D& extent) -> void {
+        // Don't recreate if the extent is the same
+        if (extent.width == m_extent.width && extent.height == m_extent.height)
+            return;
+
+        // Can't recreate a swapchain with 0 width or height
+        if (extent.width == 0 || extent.height == 0)
+            return;
+
+        vkDeviceWaitIdle(m_context.device());
+
+        destroy_framebuffers();
+        destroy_image_views();
+        destroy_swapchain();
+
+        // m_extent is set in this function
+        create_swapchain(extent, VK_NULL_HANDLE);
+        create_image_views();
+        recreate_framebuffers(render_pass);
+    }
+
     auto swapchain::destroy_framebuffers() -> void {
-        for (auto fb : m_framebuffers)
+        for (auto& fb : m_framebuffers)
             vkDestroyFramebuffer(m_context.device(), fb, VK_NULL_HANDLE);
         m_framebuffers.clear();
     }
 
-    auto swapchain::create_swapchain(window& window) -> void {
+    auto swapchain::create_swapchain(const VkExtent2D& extent, VkSwapchainKHR old_swapchain) -> void {
         swapchain_support_details ssd{};
         query_support(m_context.physical_device(), m_context.surface(), &ssd);
 
         m_surface_format = choose_surface_format(ssd.formats);
         VkPresentModeKHR present_mode = choose_present_mode(ssd.present_modes);
-        m_extent = choose_swap_extent(ssd.capabilities, window);
+        m_extent = choose_swap_extent(ssd.capabilities, extent);
 
         uint32_t image_count = ssd.capabilities.minImageCount + 1; // Recommended to request one more image than the min
         if (ssd.capabilities.maxImageCount > 0 && image_count > ssd.capabilities.maxImageCount) // Don't excced the max images (0 is a special number)
@@ -175,20 +193,21 @@ namespace myth::vulkan {
             .compositeAlpha        = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
             .presentMode           = present_mode,
             .clipped               = VK_TRUE,
-            .oldSwapchain          = VK_NULL_HANDLE 
+            .oldSwapchain          = old_swapchain
         };
 
         MYTHOS_VULKAN_VERIFY(vkCreateSwapchainKHR, m_context.device(), &swapchain_create_info, VK_NULL_HANDLE, &m_swapchain);
-    }
 
-    auto swapchain::create_images_and_views() -> void {
         uint32_t count{};
         vkGetSwapchainImagesKHR(m_context.device(), m_swapchain, &count, nullptr);
         m_images.resize(count);
         vkGetSwapchainImagesKHR(m_context.device(), m_swapchain, &count, m_images.data());
+    }
 
+    auto swapchain::create_image_views() -> void {
+        const uint32_t count = static_cast<uint32_t>(m_images.size());
         m_views.resize(count);
-        for (myl::u32 i = 0; i != count; ++i) {
+        for (uint32_t i = 0; i != count; ++i) {
             VkImageViewCreateInfo view_create_info{
                 .sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
                 ///.pNext = ,
@@ -251,12 +270,10 @@ namespace myth::vulkan {
         m_fences_in_flight.clear();
     }
 
-    auto swapchain::destroy_images_and_views() -> void {
+    auto swapchain::destroy_image_views() -> void {
         for (auto& view : m_views)
             vkDestroyImageView(m_context.device(), view, VK_NULL_HANDLE);
         m_views.clear();
-
-        // Images will be destroyed when the swapchain is destroyed and therefore do not need clean up
     }
 
     auto swapchain::destroy_swapchain() -> void {

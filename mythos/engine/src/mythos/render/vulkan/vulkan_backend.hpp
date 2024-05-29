@@ -6,9 +6,13 @@
 
 namespace myth::vulkan {
     class backend : public myth::renderer_backend {
+        VkExtent2D m_cached_framebuffer_size;
+
         context m_context;
         swapchain m_swapchain;
         render_pass m_main_render_pass;
+
+        bool m_framebuffer_resized;
     public:
         MYL_NO_DISCARD backend(const renderer_configuration& config);
         ~backend();

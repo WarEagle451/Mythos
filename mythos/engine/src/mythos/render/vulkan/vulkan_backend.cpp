@@ -7,9 +7,11 @@
 
 namespace myth::vulkan {
     MYL_NO_DISCARD backend::backend(const renderer_configuration& config)
-        : m_context(*application::get().main_window())
-        , m_swapchain(m_context, *application::get().main_window())
-        , m_main_render_pass(m_context, m_swapchain.image_format()) {
+        : m_cached_framebuffer_size{ static_cast<uint32_t>(application::get().main_window()->framebuffer_size().w), static_cast<uint32_t>(application::get().main_window()->framebuffer_size().h) }
+        , m_context(*application::get().main_window())
+        , m_swapchain(m_context, m_cached_framebuffer_size)
+        , m_main_render_pass(m_context, m_swapchain.image_format())
+        , m_framebuffer_resized{ false } {
         m_main_render_pass.set_clear_color(VkClearColorValue{ config.clear_color.r, config.clear_color.g, config.clear_color.b, 1.f });
 
         m_swapchain.recreate_framebuffers(m_main_render_pass);
@@ -43,15 +45,27 @@ namespace myth::vulkan {
     auto backend::begin_frame() -> bool {
         uint32_t current_frame = m_swapchain.current_frame();
 
-        { // Wait for the previous frame to stop rendering
-            VkFence current_fence = m_swapchain.fences_in_flight()[current_frame];
-            vkWaitForFences(m_context.device(), 1, &current_fence, VK_TRUE, UINT64_MAX);
-            vkResetFences(m_context.device(), 1, &current_fence);
+        // Wait for the previous frame to stop rendering
+        VkFence current_fence = m_swapchain.fences_in_flight()[current_frame];
+        vkWaitForFences(m_context.device(), 1, &current_fence, VK_TRUE, UINT64_MAX);
+
+        // Acquire the next image
+
+        /// MABYE THE BUG IS IN acquire_next_image and it's the m_image index, THIS HAS TO BE THE PROBLEM
+        /// THIS THING NEVER RETURNS FALSE
+        const VkResult acquire_next_image_result = m_swapchain.acquire_next_image();
+        switch (acquire_next_image_result) {
+            case VK_SUCCESS:        break;
+            case VK_SUBOPTIMAL_KHR: break;
+            case VK_ERROR_OUT_OF_DATE_KHR:
+                m_swapchain.recreate(m_main_render_pass, m_cached_framebuffer_size);
+                return false;
+            default:
+                MYTHOS_FATAL("Failed to acquire swapchain image: {}", vkresult_string(acquire_next_image_result, true));
+                return false;
         }
 
-        const bool swapchain_good = m_swapchain.acquire_next_image();
-        if (!swapchain_good)
-            return false;
+        vkResetFences(m_context.device(), 1, &current_fence);
 
         /// MYTODO: scissor and viewport are the exact same in the vulkan shader constructor, should this be a shared object?
 
@@ -137,13 +151,17 @@ namespace myth::vulkan {
         VkResult present_result = vkQueuePresentKHR(m_context.queue_present(), &present_info);
         m_swapchain.advance_current_frame();
 
-        if (present_result == VK_ERROR_OUT_OF_DATE_KHR || present_result == VK_SUBOPTIMAL_KHR)
-            ; /// MYTODO: recreate the swapchain
+        if (present_result == VK_ERROR_OUT_OF_DATE_KHR || present_result == VK_SUBOPTIMAL_KHR || m_framebuffer_resized) {
+            m_swapchain.recreate(m_main_render_pass, m_cached_framebuffer_size);
+            m_framebuffer_resized = false;
+        }
         else if (present_result != VK_SUCCESS)
             MYTHOS_FATAL("Failed to present swapchain image: {}", vkresult_string(present_result, true));
     }
 
     auto backend::on_window_resize(const myl::i32vec2& dimensions) -> void {
-        ///m_swapchain.recreate(dimensions);
+        m_cached_framebuffer_size = { static_cast<uint32_t>(dimensions.w), static_cast<uint32_t>(dimensions.h) };
+        m_framebuffer_resized = true;
+        MYTHOS_ERROR("[{}, {}]", dimensions.x, dimensions.y);
     }
 }
