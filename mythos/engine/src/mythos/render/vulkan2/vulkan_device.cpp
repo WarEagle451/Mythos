@@ -142,7 +142,7 @@ namespace myth::vulkan2 {
         return best_canidate;
     }
 
-    auto device::create(device* h, const create_info& ci) -> void {
+    auto device::create(device* h, const create_info& ci, VkAllocationCallbacks* allocator) -> void {
         // Select physical device
 
         h->m_physical_device = ci.physical_device == VK_NULL_HANDLE ? select_physical_device(ci.instance, ci.surface, ci.physical_device_requirements) : ci.physical_device;
@@ -226,7 +226,7 @@ namespace myth::vulkan2 {
             /// MYTODO: Enable device features .pEnabledFeatures        = &h->m_enabled_features
         };
 
-        MYTHOS_VULKAN_VERIFY(vkCreateDevice, h->m_physical_device, &device_create_info, VK_NULL_HANDLE, &h->m_device);
+        MYTHOS_VULKAN_VERIFY(vkCreateDevice, h->m_physical_device, &device_create_info, allocator, &h->m_device);
 
         // Create queues
 
@@ -240,11 +240,11 @@ namespace myth::vulkan2 {
             vkGetDeviceQueue(h->m_device, qfi.transfer, queue_indices.transfer, &h->m_queue_transfer);
     }
 
-    auto device::destroy(device* h) noexcept -> void {
+    auto device::destroy(device* h, VkAllocationCallbacks* allocator) noexcept -> void {
         // Queues are implicitly cleaned up when m_device is destroyed
 
         if (h->m_device)
-            vkDestroyDevice(h->m_device, VK_NULL_HANDLE);
+            vkDestroyDevice(h->m_device, allocator);
 
         // m_physical_device will be destroyed upon destruction of the vulkan instance
     }

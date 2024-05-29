@@ -47,8 +47,8 @@ namespace myth::vulkan2 {
             VkPhysicalDevice             physical_device = VK_NULL_HANDLE;
         };
 
-        static auto create(device* handle, const create_info& create_info) -> void;
-        static auto destroy(device* handle) noexcept -> void;
+        static auto create(device* handle, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
+        static auto destroy(device* handle, VkAllocationCallbacks* allocator) noexcept -> void;
 
         MYL_NO_DISCARD constexpr device() = default;
         constexpr ~device() = default;

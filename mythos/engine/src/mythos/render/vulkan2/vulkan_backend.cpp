@@ -108,11 +108,27 @@ namespace myth::vulkan2 {
             }
         };
 
-        device::create(&m_device, device_create_info);
+        device::create(&m_device, device_create_info, VK_NULL_HANDLE);
+
+        ///swapchain::create_info swapchain_create_info{
+        ///
+        ///};
+        ///
+        ///swapchain::create(&m_swapchain, swapchain_create_info, VK_NULL_HANDLE);
+        
+        ///render_pass::create_info render_pass_create_info{
+        ///
+        ///};
+        ///
+        ///render_pass::create(&m_render_pass, render_pass_create_info, VK_NULL_HANDLE);
     }
 
     backend::~backend() {
-        device::destroy(&m_device);
+        vkDeviceWaitIdle(m_device.logical());
+
+        ///render_pass::destroy(&m_swapchain, VK_NULL_HANDLE);
+        ///swapchain::destroy(&m_swapchain, VK_NULL_HANDLE);
+        device::destroy(&m_device, VK_NULL_HANDLE);
 
         vkDestroySurfaceKHR(m_instance, m_surface, VK_NULL_HANDLE);
 

@@ -17,8 +17,8 @@ namespace myth::vulkan2 {
         ///    const VkExtent2D& extent;
         ///};
         ///
-        ///static auto create(swapchain* handle, const create_info& create_info) -> void;
-        ///static auto destroy(swapchain* handle) noexcept -> void;
+        ///static auto create(swapchain* handle, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
+        ///static auto destroy(swapchain* handle, VkAllocationCallbacks* allocator) noexcept -> void;
 
         static auto query_support(swapchain_support_details* details, VkPhysicalDevice physical_device, VkSurfaceKHR surface) -> void;
     };
