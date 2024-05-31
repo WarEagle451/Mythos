@@ -34,11 +34,14 @@ namespace myth::vulkan2 {
         VkPhysicalDeviceProperties m_properties{};
         VkPhysicalDeviceFeatures m_available_features{};
         VkPhysicalDeviceFeatures m_enabled_features{ VK_FALSE };
+        device_queue_indices m_qfi{};
 
         VkQueue m_queue_compute = VK_NULL_HANDLE;
         VkQueue m_queue_graphics = VK_NULL_HANDLE;
         VkQueue m_queue_present = VK_NULL_HANDLE;
         VkQueue m_queue_transfer = VK_NULL_HANDLE;
+
+        VkCommandPool m_command_pool = VK_NULL_HANDLE;
     public:
         struct create_info {
             VkInstance                   instance;
@@ -60,9 +63,12 @@ namespace myth::vulkan2 {
         MYL_NO_DISCARD constexpr auto features_available() const noexcept -> const VkPhysicalDeviceFeatures& { return m_available_features; }
         MYL_NO_DISCARD constexpr auto features_enabled() const noexcept -> const VkPhysicalDeviceFeatures& { return m_enabled_features; }
 
+        MYL_NO_DISCARD constexpr auto queue_family_indices() const noexcept -> const device_queue_indices& { return m_qfi; }
         MYL_NO_DISCARD constexpr auto compute_queue() const noexcept -> VkQueue { return m_queue_compute; }
         MYL_NO_DISCARD constexpr auto graphics_queue() const noexcept -> VkQueue { return m_queue_graphics; }
         MYL_NO_DISCARD constexpr auto present_queue() const noexcept -> VkQueue { return m_queue_present; }
         MYL_NO_DISCARD constexpr auto transfer_queue() const noexcept -> VkQueue { return m_queue_transfer; }
+
+        MYL_NO_DISCARD constexpr auto command_pool() const noexcept -> VkCommandPool { return m_command_pool; }
     };
 }

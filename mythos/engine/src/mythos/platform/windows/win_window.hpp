@@ -19,7 +19,7 @@ namespace myth::win {
         MYL_NO_DISCARD constexpr auto instance() const -> HINSTANCE { return m_instance; }
         MYL_NO_DISCARD constexpr auto handle() const -> HWND { return m_handle; }
 
-        MYL_NO_DISCARD auto framebuffer_size() const -> myl::i32vec2 { return m_dimensions; }
+        MYL_NO_DISCARD auto framebuffer_size() const -> myl::i32vec2 override { return m_dimensions; }
 
         auto set_title(const char*) -> void override;
         auto set_style(window_style) -> void override;

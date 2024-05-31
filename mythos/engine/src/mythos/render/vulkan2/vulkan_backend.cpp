@@ -1,6 +1,7 @@
 #include <mythos/core/application.hpp>
 #include <mythos/render/vulkan2/vulkan_backend.hpp>
 #include <mythos/render/vulkan2/vulkan_platform.hpp>
+#include <mythos/render/vulkan2/vulkan_shader.hpp>>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 #include <mythos/version.hpp>
 
@@ -92,17 +93,19 @@ namespace myth::vulkan2 {
     }
 
     MYL_NO_DISCARD backend::backend(const renderer_configuration& config) {
+        myth::window* window = application::get().main_window();
+
         create_instance();
-        create_surface(&m_surface, m_instance, application::get().main_window(), VK_NULL_HANDLE);
+        create_surface(&m_surface, m_instance, window, VK_NULL_HANDLE);
 
         device::create_info device_create_info{
             .instance                     = m_instance,
             .surface                      = m_surface,
             .physical_device_requirements = { /// MYTEMP: physical_device_requirements should be user dependent
-                .discrete_gpu = true,
-                .queue_compute = false,
+                .discrete_gpu   = true,
+                .queue_compute  = false,
                 .queue_graphics = true,
-                .queue_present = true,
+                .queue_present  = true,
                 .queue_transfer = false,
                 .extensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME }
             }
@@ -110,29 +113,60 @@ namespace myth::vulkan2 {
 
         device::create(&m_device, device_create_info, VK_NULL_HANDLE);
 
-        ///swapchain::create_info swapchain_create_info{
-        ///
-        ///};
-        ///
-        ///swapchain::create(&m_swapchain, swapchain_create_info, VK_NULL_HANDLE);
+        const auto& window_extent = window->framebuffer_size();
+        swapchain::create_info swapchain_create_info{
+            .surface = m_surface,
+            .extent  = VkExtent2D{
+                .width  = static_cast<uint32_t>(window_extent.w),
+                .height = static_cast<uint32_t>(window_extent.h)
+            }
+        };
         
-        ///render_pass::create_info render_pass_create_info{
-        ///
-        ///};
-        ///
-        ///render_pass::create(&m_render_pass, render_pass_create_info, VK_NULL_HANDLE);
+        swapchain::create(&m_swapchain, m_device, swapchain_create_info, VK_NULL_HANDLE);
+        
+        render_pass::create_info render_pass_create_info{
+            .color_format = m_swapchain.image_format().format,
+            .clear_color  = VkClearColorValue{
+                .float32{
+                    config.clear_color.r,
+                    config.clear_color.g,
+                    config.clear_color.b,
+                    1.f
+                }
+            }
+        };
+        
+        render_pass::create(&m_main_render_pass, m_device, render_pass_create_info, VK_NULL_HANDLE);
     }
 
     backend::~backend() {
         vkDeviceWaitIdle(m_device.logical());
 
-        ///render_pass::destroy(&m_swapchain, VK_NULL_HANDLE);
-        ///swapchain::destroy(&m_swapchain, VK_NULL_HANDLE);
+        render_pass::destroy(&m_main_render_pass, m_device, VK_NULL_HANDLE);
+        swapchain::destroy(&m_swapchain, m_device, VK_NULL_HANDLE);
         device::destroy(&m_device, VK_NULL_HANDLE);
 
         vkDestroySurfaceKHR(m_instance, m_surface, VK_NULL_HANDLE);
 
         destroy_instance();
+    }
+
+    MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
+        vulkan2::shader::create_info shader_create_info{
+            .swapchain_extent = m_swapchain.image_extent(),
+            .render_pass      = m_main_render_pass.handle(),
+            .binaries         = shader_binaries,
+            .primitive        = primitive
+        };
+
+        std::unique_ptr<vulkan2::shader> shader = std::make_unique<vulkan2::shader>();
+        vulkan2::shader::create(shader.get(), m_device, shader_create_info, VK_NULL_HANDLE);
+        return shader;
+    }
+
+    auto backend::destroy_shader(myth::shader* shader) -> void {
+        vulkan2::shader* vks = static_cast<vulkan2::shader*>(shader);
+        vulkan2::shader::destroy(vks, m_device, VK_NULL_HANDLE);
     }
 
     auto backend::create_instance() -> void {

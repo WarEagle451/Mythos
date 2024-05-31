@@ -41,7 +41,8 @@ namespace myth {
 
         virtual ~renderer_backend() = default;
 
-        virtual auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<shader> = 0;
+        MYL_NO_DISCARD virtual auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<shader> = 0;
+        virtual auto destroy_shader(shader* shader) -> void = 0;
 
         virtual auto prepare_shutdown() -> void = 0;
 

@@ -296,4 +296,9 @@ namespace myth {
             compile_shader_sources(&binaries, uncompiled, path);
         return renderer::backend()->create_shader(binaries, primitive);
     }
+
+    auto shader::destroy(std::unique_ptr<shader>& shader) -> void {
+        renderer::backend()->destroy_shader(shader.get());
+        shader.reset();
+    }
 }

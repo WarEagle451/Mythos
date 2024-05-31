@@ -93,7 +93,7 @@ namespace myth::vulkan2 {
 
         swapchain_support_details ssd{};
         swapchain::query_support(&ssd, physical_device, surface);
-        if (ssd.formats.empty() || ssd.present_modes.empty())
+        if (ssd.available_surface_formats.empty() || ssd.available_present_modes.empty())
             return false;
 
         return true;
@@ -158,16 +158,17 @@ namespace myth::vulkan2 {
 
         // Create logical device
 
-        const device_queue_indices qfi = get_queue_family_indices(h->m_physical_device);
-        MYTHOS_INFO("Queue family indices - compute: {}, graphics: {}, present: {}, transfer: {}", qfi.compute, qfi.graphics, qfi.present, qfi.transfer);
-        if (qfi.graphics != qfi.present)
-            MYTHOS_WARN("Selected graphics and present queue fmailies use different indices; {} vs {}", qfi.graphics, qfi.present);
+
+        h->m_qfi = get_queue_family_indices(h->m_physical_device);
+        MYTHOS_INFO("Queue family indices - compute: {}, graphics: {}, present: {}, transfer: {}", h->m_qfi.compute, h->m_qfi.graphics, h->m_qfi.present, h->m_qfi.transfer);
+        if (h->m_qfi.graphics != h->m_qfi.present)
+            MYTHOS_WARN("Selected graphics and present queue fmailies use different indices; {} vs {}", h->m_qfi.graphics, h->m_qfi.present);
 
         std::unordered_map<uint32_t, uint32_t> unique_queue_families{}; // Unique queue index, queue fmaily count
-        if (qfi.compute  != device_queue_indices::not_available) ++unique_queue_families[qfi.compute];
-        if (qfi.graphics != device_queue_indices::not_available) ++unique_queue_families[qfi.graphics];
-        if (qfi.present  != device_queue_indices::not_available) ++unique_queue_families[qfi.present];
-        if (qfi.transfer != device_queue_indices::not_available) ++unique_queue_families[qfi.transfer];
+        if (h->m_qfi.compute  != device_queue_indices::not_available) ++unique_queue_families[h->m_qfi.compute];
+        if (h->m_qfi.graphics != device_queue_indices::not_available) ++unique_queue_families[h->m_qfi.graphics];
+        if (h->m_qfi.present  != device_queue_indices::not_available) ++unique_queue_families[h->m_qfi.present];
+        if (h->m_qfi.transfer != device_queue_indices::not_available) ++unique_queue_families[h->m_qfi.transfer];
 
         uint32_t queue_family_properties_count{};
         vkGetPhysicalDeviceQueueFamilyProperties(h->m_physical_device, &queue_family_properties_count, VK_NULL_HANDLE);
@@ -184,15 +185,15 @@ namespace myth::vulkan2 {
             uint32_t remaining_queue_count = queue_count;
 
             for (uint32_t i = 0; i != 4; ++i)
-                if (q.first == qfi.values[i]) { // Unique queue family index == queue family type index
+                if (q.first == h->m_qfi.values[i]) { // Unique queue family index == queue family type index
                     if (queue_priorities.empty()) {
-                        if (qfi.values[i] == qfi.compute && qfi.compute != device_queue_indices::not_available)
+                        if (h->m_qfi.values[i] == h->m_qfi.compute && h->m_qfi.compute != device_queue_indices::not_available)
                             queue_priorities.emplace_back(.7f);
-                        if (qfi.values[i] == qfi.graphics && qfi.graphics != device_queue_indices::not_available)
+                        if (h->m_qfi.values[i] == h->m_qfi.graphics && h->m_qfi.graphics != device_queue_indices::not_available)
                             queue_priorities.emplace_back(.9f);
-                        if (qfi.values[i] == qfi.present && qfi.present != device_queue_indices::not_available)
+                        if (h->m_qfi.values[i] == h->m_qfi.present && h->m_qfi.present != device_queue_indices::not_available)
                             queue_priorities.emplace_back(1.f);
-                        if (qfi.values[i] == qfi.transfer && qfi.transfer != device_queue_indices::not_available)
+                        if (h->m_qfi.values[i] == h->m_qfi.transfer && h->m_qfi.transfer != device_queue_indices::not_available)
                             queue_priorities.emplace_back(.8f);
                     }
 
@@ -230,17 +231,31 @@ namespace myth::vulkan2 {
 
         // Create queues
 
-        if (qfi.compute != device_queue_indices::not_available)
-            vkGetDeviceQueue(h->m_device, qfi.compute, queue_indices.compute, &h->m_queue_compute);
-        if (qfi.graphics != device_queue_indices::not_available)
-            vkGetDeviceQueue(h->m_device, qfi.graphics, queue_indices.graphics, &h->m_queue_graphics);
-        if (qfi.present != device_queue_indices::not_available)
-            vkGetDeviceQueue(h->m_device, qfi.present, queue_indices.present, &h->m_queue_present);
-        if (qfi.transfer != device_queue_indices::not_available)
-            vkGetDeviceQueue(h->m_device, qfi.transfer, queue_indices.transfer, &h->m_queue_transfer);
+        if (h->m_qfi.compute != device_queue_indices::not_available)
+            vkGetDeviceQueue(h->m_device, h->m_qfi.compute, queue_indices.compute, &h->m_queue_compute);
+        if (h->m_qfi.graphics != device_queue_indices::not_available)
+            vkGetDeviceQueue(h->m_device, h->m_qfi.graphics, queue_indices.graphics, &h->m_queue_graphics);
+        if (h->m_qfi.present != device_queue_indices::not_available)
+            vkGetDeviceQueue(h->m_device, h->m_qfi.present, queue_indices.present, &h->m_queue_present);
+        if (h->m_qfi.transfer != device_queue_indices::not_available)
+            vkGetDeviceQueue(h->m_device, h->m_qfi.transfer, queue_indices.transfer, &h->m_queue_transfer);
+
+        // Create command pool
+
+        VkCommandPoolCreateInfo command_pool_create_info{
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            //.pNext            = ,
+            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = h->m_qfi.graphics
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateCommandPool, h->m_device, &command_pool_create_info, allocator, &h->m_command_pool);
     }
 
     auto device::destroy(device* h, VkAllocationCallbacks* allocator) noexcept -> void {
+        if (h->m_command_pool)
+            vkDestroyCommandPool(h->m_device, h->m_command_pool, allocator);
+
         // Queues are implicitly cleaned up when m_device is destroyed
 
         if (h->m_device)
