@@ -137,17 +137,29 @@ namespace myth::vulkan2 {
         };
         
         render_pass::create(&m_main_render_pass, m_device, render_pass_create_info, VK_NULL_HANDLE);
+
+        command_pool::create_info command_pool_create_info{
+            .queue_family_index = m_device.queue_family_indices().graphics
+        };
+
+        command_pool::create(&m_command_pool, m_device, command_pool_create_info, VK_NULL_HANDLE);
+
+        m_swapchain.recreate_framebuffers(m_device, m_main_render_pass.handle(), VK_NULL_HANDLE);
+        m_command_buffers.resize(m_swapchain.images().size()); /// MYTODO: should be max_frames_in_flight
+        m_command_pool.allocate_command_buffers(m_device, m_command_buffers.begin(), m_command_buffers.end());
     }
 
     backend::~backend() {
         vkDeviceWaitIdle(m_device.logical());
 
+        m_command_pool.deallocate_command_buffers(m_device, m_command_buffers.begin(), m_command_buffers.end());
+        m_swapchain.destroy_framebuffers(m_device, VK_NULL_HANDLE);
+
+        command_pool::destroy(&m_command_pool, m_device, VK_NULL_HANDLE);
         render_pass::destroy(&m_main_render_pass, m_device, VK_NULL_HANDLE);
         swapchain::destroy(&m_swapchain, m_device, VK_NULL_HANDLE);
         device::destroy(&m_device, VK_NULL_HANDLE);
-
         vkDestroySurfaceKHR(m_instance, m_surface, VK_NULL_HANDLE);
-
         destroy_instance();
     }
 
@@ -167,6 +179,14 @@ namespace myth::vulkan2 {
     auto backend::destroy_shader(myth::shader* shader) -> void {
         vulkan2::shader* vks = static_cast<vulkan2::shader*>(shader);
         vulkan2::shader::destroy(vks, m_device, VK_NULL_HANDLE);
+    }
+
+    auto backend::begin_frame() -> bool {
+        return true;
+    }
+
+    auto backend::end_frame() -> void {
+
     }
 
     auto backend::create_instance() -> void {

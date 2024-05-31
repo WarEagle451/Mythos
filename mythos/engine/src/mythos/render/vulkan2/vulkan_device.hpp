@@ -40,8 +40,6 @@ namespace myth::vulkan2 {
         VkQueue m_queue_graphics = VK_NULL_HANDLE;
         VkQueue m_queue_present = VK_NULL_HANDLE;
         VkQueue m_queue_transfer = VK_NULL_HANDLE;
-
-        VkCommandPool m_command_pool = VK_NULL_HANDLE;
     public:
         struct create_info {
             VkInstance                   instance;
@@ -68,7 +66,5 @@ namespace myth::vulkan2 {
         MYL_NO_DISCARD constexpr auto graphics_queue() const noexcept -> VkQueue { return m_queue_graphics; }
         MYL_NO_DISCARD constexpr auto present_queue() const noexcept -> VkQueue { return m_queue_present; }
         MYL_NO_DISCARD constexpr auto transfer_queue() const noexcept -> VkQueue { return m_queue_transfer; }
-
-        MYL_NO_DISCARD constexpr auto command_pool() const noexcept -> VkCommandPool { return m_command_pool; }
     };
 }

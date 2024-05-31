@@ -44,13 +44,13 @@ namespace myth {
         MYL_NO_DISCARD virtual auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<shader> = 0;
         virtual auto destroy_shader(shader* shader) -> void = 0;
 
-        virtual auto prepare_shutdown() -> void = 0;
-
-        virtual auto draw() -> void = 0;
-
         virtual auto begin_frame() -> bool = 0;
         virtual auto end_frame() -> void = 0;
 
+
+
+        virtual auto prepare_shutdown() -> void = 0;
+        virtual auto draw() -> void = 0;
         virtual auto on_window_resize(const myl::i32vec2& dimensions) -> void = 0;
     };
 }

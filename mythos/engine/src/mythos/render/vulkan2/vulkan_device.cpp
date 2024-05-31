@@ -240,22 +240,9 @@ namespace myth::vulkan2 {
         if (h->m_qfi.transfer != device_queue_indices::not_available)
             vkGetDeviceQueue(h->m_device, h->m_qfi.transfer, queue_indices.transfer, &h->m_queue_transfer);
 
-        // Create command pool
-
-        VkCommandPoolCreateInfo command_pool_create_info{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-            //.pNext            = ,
-            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-            .queueFamilyIndex = h->m_qfi.graphics
-        };
-
-        MYTHOS_VULKAN_VERIFY(vkCreateCommandPool, h->m_device, &command_pool_create_info, allocator, &h->m_command_pool);
-    }
+     }
 
     auto device::destroy(device* h, VkAllocationCallbacks* allocator) noexcept -> void {
-        if (h->m_command_pool)
-            vkDestroyCommandPool(h->m_device, h->m_command_pool, allocator);
-
         // Queues are implicitly cleaned up when m_device is destroyed
 
         if (h->m_device)

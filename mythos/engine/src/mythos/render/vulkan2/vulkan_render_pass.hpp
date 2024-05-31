@@ -3,8 +3,8 @@
 
 namespace myth::vulkan2 {
     class render_pass {
-        VkRenderPass m_render_pass;
-        VkClearColorValue m_clear_color;
+        VkRenderPass m_render_pass = VK_NULL_HANDLE;
+        VkClearColorValue m_clear_color{};
     public:
         struct create_info {
             VkFormat          color_format;

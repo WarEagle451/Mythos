@@ -69,7 +69,7 @@ namespace myth::vulkan2 {
         uint32_t image_count = ssd.capabilities.minImageCount + 1;                              // Recommended to request one more image than the min
         if (ssd.capabilities.maxImageCount > 0 && image_count > ssd.capabilities.maxImageCount) // Don't excced the max images (0 is a special number)
             image_count = ssd.capabilities.maxImageCount;
-        ///h->m_max_frames_in_flight = image_count; /// Changes later
+        h->m_max_frames_in_flight = image_count;
 
         const device_queue_indices& qfi = device.queue_family_indices();
         uint32_t queue_family_indices[] = {
@@ -152,6 +152,10 @@ namespace myth::vulkan2 {
 
     auto swapchain::destroy(swapchain* h, device& device, VkAllocationCallbacks* allocator) noexcept -> void {
         // Destroy sync objects
+        
+        // Destroy framebuffers
+
+        h->destroy_framebuffers(device, allocator);
 
         // Destroy image views
 
@@ -165,5 +169,33 @@ namespace myth::vulkan2 {
 
         if (h->m_swapchain)
             vkDestroySwapchainKHR(device.logical(), h->m_swapchain, allocator);
+    }
+
+    auto swapchain::recreate_framebuffers(device& device, VkRenderPass render_pass, VkAllocationCallbacks* allocator) -> void {
+        m_framebuffers.resize(m_views.size());
+
+        for (decltype(m_views)::size_type i = 0; i != m_views.size(); ++i) {
+            std::vector<VkImageView> attachments{ m_views[i] };
+
+            VkFramebufferCreateInfo framebuffer_create_info{
+                .sType           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+                //.pNext = ,
+                //.flags = ,
+                .renderPass      = render_pass,
+                .attachmentCount = static_cast<uint32_t>(attachments.size()),
+                .pAttachments    = attachments.data(),
+                .width           = m_extent.width,
+                .height          = m_extent.height,
+                .layers          = 1
+            };
+
+            MYTHOS_VULKAN_VERIFY(vkCreateFramebuffer, device.logical(), &framebuffer_create_info, allocator, &m_framebuffers[i]);
+        }
+    }
+
+    auto swapchain::destroy_framebuffers(device& device, VkAllocationCallbacks* allocator) -> void {
+        for (auto& fb : m_framebuffers)
+            vkDestroyFramebuffer(device.logical(), fb, allocator);
+        m_framebuffers.clear();
     }
 }

@@ -3,8 +3,8 @@
 
 namespace myth::vulkan2 {
     class pipeline {
-        VkPipeline m_pipeline;
-        VkPipelineLayout m_layout;
+        VkPipeline m_pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout m_layout = VK_NULL_HANDLE;
     public:
         struct create_info {
             const VkPrimitiveTopology                          primitive;

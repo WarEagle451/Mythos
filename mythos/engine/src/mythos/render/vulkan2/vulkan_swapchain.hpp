@@ -13,8 +13,11 @@ namespace myth::vulkan2 {
         VkExtent2D m_extent{ 0, 0 };
         VkSurfaceFormatKHR m_image_format{};
 
+        uint32_t m_max_frames_in_flight{ 0 }; /// MYTODO: Should this be kept?
+
         std::vector<VkImage> m_images{};
         std::vector<VkImageView> m_views{};
+        std::vector<VkFramebuffer> m_framebuffers;
     public:
         struct create_info {
             VkSurfaceKHR      surface;
@@ -28,7 +31,9 @@ namespace myth::vulkan2 {
 
         MYL_NO_DISCARD constexpr auto image_extent() const -> const VkExtent2D& { return m_extent; }
         MYL_NO_DISCARD constexpr auto image_format() const -> const VkSurfaceFormatKHR& { return m_image_format; }
+        MYL_NO_DISCARD constexpr auto images() const -> const std::vector<VkImage>& { return m_images; }
 
-        ///auto recreate(swapchain* handle, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
+        auto recreate_framebuffers(device& device, VkRenderPass render_pass, VkAllocationCallbacks* allocator) -> void;
+        auto destroy_framebuffers(device& device, VkAllocationCallbacks* allocator) -> void;
     };
 }
