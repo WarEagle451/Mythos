@@ -1,19 +1,20 @@
 #pragma once
-#include <mythos/render/vulkan/vulkan_context.hpp>
+#include <mythos/render/vulkan/vulkan_device.hpp>
 
 namespace myth::vulkan {
     class render_pass {
-        context& m_context;
-
-        VkRenderPass m_render_pass;
-        VkClearColorValue m_clear_color;
+        VkRenderPass m_render_pass = VK_NULL_HANDLE;
+        VkClearColorValue m_clear_color{};
     public:
-        MYL_NO_DISCARD render_pass(context& context, VkFormat color_format);
-        ~render_pass();
+        struct create_info {
+            VkFormat          color_format;
+            VkClearColorValue clear_color;
+        };
 
-        MYL_NO_DISCARD constexpr auto handle() const -> VkRenderPass { return m_render_pass; }
+        static auto create(render_pass* handle, device& device, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
+        static auto destroy(render_pass* handle, device& device, VkAllocationCallbacks* allocator) noexcept -> void;
 
-        auto set_clear_color(const VkClearColorValue& color) -> void { m_clear_color = color; }
+        MYL_NO_DISCARD constexpr auto handle() -> const VkRenderPass& { return m_render_pass; }
 
         auto begin(VkCommandBuffer command_buffer, VkFramebuffer framebuffer, const VkRect2D& render_area) -> void;
         auto end(VkCommandBuffer command_buffer) -> void;

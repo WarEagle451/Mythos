@@ -14,16 +14,18 @@ namespace myth::vulkan {
 #endif
     }
 
-    auto create_surface(VkInstance instance, VkSurfaceKHR* surface, window* target) -> void {
+    auto create_surface(VkSurfaceKHR* surface, VkInstance instance, myth::window* target, VkAllocationCallbacks* allocator) -> void {
 #ifdef MYL_OS_WINDOWS
         win::window* w = static_cast<win::window*>(target);
         VkWin32SurfaceCreateInfoKHR create_info{
-            .sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+            .sType     = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+            //.pNext = ,
+            //.flags = ,
             .hinstance = w->instance(),
-            .hwnd = w->handle()
+            .hwnd      = w->handle()
         };
 
-        MYTHOS_VULKAN_VERIFY(vkCreateWin32SurfaceKHR, instance, &create_info, VK_NULL_HANDLE, surface);
+        MYTHOS_VULKAN_VERIFY(vkCreateWin32SurfaceKHR, instance, &create_info, allocator, surface);
 #endif
     }
 

@@ -2,14 +2,7 @@
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
 namespace myth::vulkan {
-    MYL_NO_DISCARD pipeline::pipeline(
-        context& context,
-        VkRenderPass render_pass,
-        const VkViewport& viewport,
-        const VkRect2D& scissor,
-        const VkPrimitiveTopology primitive,
-        const std::vector<VkPipelineShaderStageCreateInfo>& shader_stage_create_infos)
-        : m_context{ context } {
+    auto pipeline::create(pipeline* h, device& device, const create_info& ci, VkAllocationCallbacks* allocator) -> void {
         std::vector<VkDynamicState> dynamic_states{
             VK_DYNAMIC_STATE_VIEWPORT,
             VK_DYNAMIC_STATE_SCISSOR
@@ -28,9 +21,9 @@ namespace myth::vulkan {
             //.pNext =,
             //.flags =,
             .viewportCount = 1,
-            .pViewports    = &viewport,
+            .pViewports    = &ci.viewport,
             .scissorCount  = 1,
-            .pScissors     = &scissor
+            .pScissors     = &ci.scissor
         };
 
         VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info{
@@ -47,7 +40,7 @@ namespace myth::vulkan {
             .sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
             //.pNext = ,
             //.flags = ,
-            .topology               = primitive,
+            .topology               = ci.primitive,
             .primitiveRestartEnable = VK_FALSE
         };
 
@@ -111,14 +104,14 @@ namespace myth::vulkan {
             .pPushConstantRanges    = nullptr
         };
 
-        MYTHOS_VULKAN_VERIFY(vkCreatePipelineLayout, m_context.device(), &layout_create_info, VK_NULL_HANDLE, &m_layout);
+        MYTHOS_VULKAN_VERIFY(vkCreatePipelineLayout, device.logical(), &layout_create_info, allocator, &h->m_layout);
 
         VkGraphicsPipelineCreateInfo pipeline_create_info{
             .sType               = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
             //.pNext =,
             //.flags =,
-            .stageCount          = static_cast<uint32_t>(shader_stage_create_infos.size()),
-            .pStages             = shader_stage_create_infos.data(),
+            .stageCount          = static_cast<uint32_t>(ci.shader_stage_create_infos.size()),
+            .pStages             = ci.shader_stage_create_infos.data(),
             .pVertexInputState   = &vertex_input_state_create_info,
             .pInputAssemblyState = &input_assembly_state_create_info,
             //.pTessellationState  = ,
@@ -128,21 +121,21 @@ namespace myth::vulkan {
             .pDepthStencilState  = nullptr,
             .pColorBlendState    = &color_blend_state_create_info,
             .pDynamicState       = &dynamic_state_create_info,
-            .layout              = m_layout,
-            .renderPass          = render_pass,
+            .layout              = h->m_layout,
+            .renderPass          = ci.render_pass,
             .subpass             = 0,
             .basePipelineHandle  = VK_NULL_HANDLE,
             .basePipelineIndex   = -1
         };
 
-        MYTHOS_VULKAN_VERIFY(vkCreateGraphicsPipelines, m_context.device(), VK_NULL_HANDLE, 1, &pipeline_create_info, VK_NULL_HANDLE, &m_pipeline);
+        MYTHOS_VULKAN_VERIFY(vkCreateGraphicsPipelines, device.logical(), VK_NULL_HANDLE, 1, &pipeline_create_info, allocator, &h->m_pipeline);
     }
 
-    pipeline::~pipeline() {
-        if (m_pipeline)
-            vkDestroyPipeline(m_context.device(), m_pipeline, VK_NULL_HANDLE);
-        if (m_layout)
-            vkDestroyPipelineLayout(m_context.device(), m_layout, VK_NULL_HANDLE);
+    auto pipeline::destroy(pipeline* h, device& device, VkAllocationCallbacks* allocator) noexcept -> void {
+        if (h->m_pipeline)
+            vkDestroyPipeline(device.logical(), h->m_pipeline, allocator);
+        if (h->m_layout)
+            vkDestroyPipelineLayout(device.logical(), h->m_layout, allocator);
     }
 
     auto pipeline::bind(VkCommandBuffer command_buffer) -> void {

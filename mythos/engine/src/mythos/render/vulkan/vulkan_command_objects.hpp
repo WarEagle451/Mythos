@@ -1,7 +1,7 @@
 #pragma once
-#include <mythos/render/vulkan2/vulkan_device.hpp>
+#include <mythos/render/vulkan/vulkan_device.hpp>
 
-namespace myth::vulkan2 {
+namespace myth::vulkan {
     class command_pool; // Forward declaration
 
     class command_buffer {

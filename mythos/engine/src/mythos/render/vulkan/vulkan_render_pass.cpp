@@ -2,12 +2,11 @@
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
 namespace myth::vulkan {
-    MYL_NO_DISCARD render_pass::render_pass(context& context, VkFormat color_format)
-        : m_context{ context } {
+    auto render_pass::create(render_pass* h, device& device, const create_info& ci, VkAllocationCallbacks* allocator) -> void {
         std::vector<VkAttachmentDescription> attachment_descriptions{
             VkAttachmentDescription { // Color attachment
                 //.flags          = ,
-                .format         = color_format,
+                .format         = ci.color_format,
                 .samples        = VK_SAMPLE_COUNT_1_BIT,
                 .loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
                 .storeOp        = VK_ATTACHMENT_STORE_OP_STORE,
@@ -58,11 +57,14 @@ namespace myth::vulkan {
             .pDependencies   = &subpass_dependency
         };
 
-        MYTHOS_VULKAN_VERIFY(vkCreateRenderPass, m_context.device(), &render_pass_create_info, VK_NULL_HANDLE, &m_render_pass);
+        MYTHOS_VULKAN_VERIFY(vkCreateRenderPass, device.logical(), &render_pass_create_info, allocator, &h->m_render_pass);
+
+        h->m_clear_color = ci.clear_color;
     }
 
-    render_pass::~render_pass() {
-        vkDestroyRenderPass(m_context.device(), m_render_pass, VK_NULL_HANDLE);
+    auto render_pass::destroy(render_pass* h, device& device, VkAllocationCallbacks* allocator) noexcept -> void {
+        if (h->m_render_pass)
+            vkDestroyRenderPass(device.logical(), h->m_render_pass, allocator);
     }
 
     auto render_pass::begin(VkCommandBuffer command_buffer, VkFramebuffer framebuffer, const VkRect2D& render_area) -> void {

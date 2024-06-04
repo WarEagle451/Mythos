@@ -1,11 +1,11 @@
-#include <mythos/render/vulkan2/vulkan_device.hpp>
-#include <mythos/render/vulkan2/vulkan_platform.hpp>
-#include <mythos/render/vulkan2/vulkan_swapchain.hpp>
+#include <mythos/render/vulkan/vulkan_device.hpp>
+#include <mythos/render/vulkan/vulkan_platform.hpp>
+#include <mythos/render/vulkan/vulkan_swapchain.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
 #include <unordered_map>
 
-namespace myth::vulkan2 {
+namespace myth::vulkan {
     MYL_NO_DISCARD static auto get_queue_family_indices(VkPhysicalDevice physical_device) -> device_queue_indices {
         uint32_t queue_family_count{};
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, VK_NULL_HANDLE);

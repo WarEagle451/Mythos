@@ -6,7 +6,7 @@
 #include <limits>
 #include <vector>
 
-namespace myth::vulkan2 {
+namespace myth::vulkan {
     struct device_queue_indices {
         enum : uint32_t { not_available = std::numeric_limits<uint32_t>::max() };
 

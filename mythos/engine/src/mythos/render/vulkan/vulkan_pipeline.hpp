@@ -1,21 +1,21 @@
 #pragma once
-#include <mythos/render/vulkan/vulkan_context.hpp>
+#include <mythos/render/vulkan/vulkan_device.hpp>
 
 namespace myth::vulkan {
     class pipeline {
-        context& m_context;
-
-        VkPipeline m_pipeline;
-        VkPipelineLayout m_layout;
+        VkPipeline m_pipeline = VK_NULL_HANDLE;
+        VkPipelineLayout m_layout = VK_NULL_HANDLE;
     public:
-        MYL_NO_DISCARD pipeline(
-            context& context,
-            VkRenderPass render_pass,
-            const VkViewport& viewport,
-            const VkRect2D& scissor,
-            const VkPrimitiveTopology primitive,
-            const std::vector<VkPipelineShaderStageCreateInfo>& shader_stage_create_infos);
-        ~pipeline();
+        struct create_info {
+            const VkPrimitiveTopology                          primitive;
+            const VkRect2D&                                    scissor;
+            const VkViewport&                                  viewport;
+            const std::vector<VkPipelineShaderStageCreateInfo> shader_stage_create_infos;
+            VkRenderPass                                       render_pass;
+        };
+
+        static auto create(pipeline* handle, device& device, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
+        static auto destroy(pipeline* handle, device& device, VkAllocationCallbacks* allocator) noexcept -> void;
 
         auto bind(VkCommandBuffer command_buffer) -> void;
     };
