@@ -100,12 +100,6 @@ namespace myth::vulkan {
         , m_framebuffer_resized{ false } {
         myth::window* window = application::get().main_window();
 
-        const auto& fb_size = window->framebuffer_size();
-        m_cached_framebuffer_extent = VkExtent2D{
-            .width  = static_cast<uint32_t>(fb_size.w),
-            .height = static_cast<uint32_t>(fb_size.h)
-        };
-
         create_instance();
         create_surface(&m_surface, m_instance, window, VK_NULL_HANDLE);
 
@@ -134,6 +128,7 @@ namespace myth::vulkan {
         };
         
         swapchain::create(&m_swapchain, m_device, swapchain_create_info, VK_NULL_HANDLE);
+        m_cached_framebuffer_extent = m_swapchain.image_extent();
         
         render_pass::create_info render_pass_create_info{
             .color_format = m_swapchain.image_format().format,
@@ -215,6 +210,7 @@ namespace myth::vulkan {
                 };
 
                 swapchain::recreate(&m_swapchain, m_device, m_main_render_pass.handle(), swapchain_create_info, VK_NULL_HANDLE);
+                m_framebuffer_resized = false;
                 return false;
             }
             default:
@@ -317,6 +313,12 @@ namespace myth::vulkan {
     }
 
     auto backend::on_window_resize(const myl::i32vec2& dimensions) -> void {
+        if (dimensions.w == 0 || dimensions.h == 0)
+            if (application::get().main_window()->state() == window_state::minimized) // Some platforms may send a window_resize event upon window minimization, the swapchain should not resize
+                return;
+            else
+                MYTHOS_FATAL("Cannot resize framebuffers to have 0 width and or height: [{}, {}]", dimensions.w, dimensions.h);
+
         m_framebuffer_resized = true;
         m_cached_framebuffer_extent = VkExtent2D{
             .width  = static_cast<uint32_t>(dimensions.w),

@@ -31,8 +31,10 @@ namespace testbed {
     }
 
     auto testbed_layer::update(MYL_MAYBE_UNUSED myth::timestep ts) -> void {
-        m_smooth_ts = (m_smooth_ts * 0.995f) + (ts * 0.005f); // Update timestep smoothly = (old_timestep * smoothing_factor) + (new_timestep * (1.0 - smoothing_factor))
-        myth::application::get().main_window()->set_title(std::format("FPS: {:.2f}", 1.f / m_smooth_ts).c_str());
+        if (myth::application::get().main_window()->state() != myth::window_state::minimized) {
+            m_smooth_ts = (m_smooth_ts * 0.995f) + (ts * 0.005f); // Update timestep smoothly = (old_timestep * smoothing_factor) + (new_timestep * (1.0 - smoothing_factor))
+            myth::application::get().main_window()->set_title(std::format("FPS: {:.2f}", 1.f / m_smooth_ts).c_str());
+        }
     }
 
     auto testbed_layer::render() -> void {

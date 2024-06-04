@@ -103,14 +103,16 @@ namespace myth {
                 for (auto& layer : m_layer_stack)
                     layer->update(ts);
 
-                const bool good_frame = renderer::begin_frame();
-                if (good_frame) {
-                    for (auto& layer : m_layer_stack)
-                        layer->render();
-                    renderer::end_frame();
-                }
+                if (m_window->state() != window_state::minimized) {
+                    const bool good_frame = renderer::begin_frame();
+                    if (good_frame) {
+                        for (auto& layer : m_layer_stack)
+                            layer->render();
+                        renderer::end_frame();
+                    }
 
-                input::update();
+                    input::update();
+                }
             }
         }
     }
