@@ -5,6 +5,9 @@
 #include <mythos/render/vulkan2/vulkan_render_pass.hpp>
 #include <mythos/render/vulkan2/vulkan_swapchain.hpp>
 
+/// MYTODO: Maybe take all the sync objects out of swapchain and command buffers out of backend and put them into a class called frame.
+/// Take m_current_frame_index out of swapchain and put into backend
+
 #ifdef MYL_DEBUG /// MYTEMP: MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS should be passed on the command line
 #   define MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
 #endif
@@ -21,6 +24,8 @@ namespace myth::vulkan2 {
 
         std::vector<command_buffer> m_command_buffers;
 
+        uint32_t m_current_frame_index;
+
 #ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
         VkDebugUtilsMessengerEXT m_debug_messenger;
 #endif
@@ -34,12 +39,13 @@ namespace myth::vulkan2 {
         auto begin_frame() -> bool override;
         auto end_frame() -> void override;
 
+        auto draw(myth::shader& shader) -> void override;
+
+        auto prepare_shutdown() -> void override;
+
+        auto on_window_resize(const myl::i32vec2& dimensions) -> void override;
     private:
         auto create_instance() -> void;
         auto destroy_instance() -> void;
-    public: /// MYTODO: Remove below
-        auto prepare_shutdown() -> void override {}
-        auto draw() -> void override {}
-        auto on_window_resize(const myl::i32vec2& dimensions) -> void override {}
     };
 }

@@ -47,10 +47,10 @@ namespace myth {
         virtual auto begin_frame() -> bool = 0;
         virtual auto end_frame() -> void = 0;
 
-
+        virtual auto draw(myth::shader& shader) -> void = 0;
 
         virtual auto prepare_shutdown() -> void = 0;
-        virtual auto draw() -> void = 0;
+
         virtual auto on_window_resize(const myl::i32vec2& dimensions) -> void = 0;
     };
 }

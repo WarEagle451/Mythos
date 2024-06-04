@@ -34,7 +34,7 @@ namespace myth::vulkan {
         vkDeviceWaitIdle(m_context.device());
     }
 
-    auto backend::draw() -> void {
+    auto backend::draw(myth::shader& shader) -> void {
         uint32_t current_frame = m_swapchain.current_frame();
         command_buffer& current_command_buffer = m_context.command_buffers()[current_frame];
 

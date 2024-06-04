@@ -148,11 +148,43 @@ namespace myth::vulkan2 {
         }
 
         // Create sync objects
+
+        h->m_image_available_semaphores.resize(h->m_max_frames_in_flight);
+        h->m_render_finished_semaphores.resize(h->m_max_frames_in_flight);
+        h->m_in_flight_fences.resize(h->m_max_frames_in_flight);
+
+        VkSemaphoreCreateInfo semaphore_create_info{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+            //.pNext = ,
+            //.flags = 
+        };
+
+        VkFenceCreateInfo fence_create_info{
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            //.pNext = ,
+            .flags = VK_FENCE_CREATE_SIGNALED_BIT // Prevents vkWaitForFences from blocking on the first frame
+        };
+
+        for (uint32_t i = 0; i != h->m_max_frames_in_flight; ++i) {
+            MYTHOS_VULKAN_VERIFY(vkCreateSemaphore, device.logical(), &semaphore_create_info, allocator, &h->m_image_available_semaphores[i]);
+            MYTHOS_VULKAN_VERIFY(vkCreateSemaphore, device.logical(), &semaphore_create_info, allocator, &h->m_render_finished_semaphores[i]);
+            MYTHOS_VULKAN_VERIFY(vkCreateFence, device.logical(), &fence_create_info, allocator, &h->m_in_flight_fences[i]);
+        }
     }
 
     auto swapchain::destroy(swapchain* h, device& device, VkAllocationCallbacks* allocator) noexcept -> void {
         // Destroy sync objects
         
+        for (uint32_t i = 0; i != h->m_max_frames_in_flight; ++i) {
+            vkDestroySemaphore(device.logical(), h->m_image_available_semaphores[i], allocator);
+            vkDestroySemaphore(device.logical(), h->m_render_finished_semaphores[i], allocator);
+            vkDestroyFence(device.logical(), h->m_in_flight_fences[i], allocator);
+        }
+
+        h->m_image_available_semaphores.clear();
+        h->m_render_finished_semaphores.clear();
+        h->m_in_flight_fences.clear();
+
         // Destroy framebuffers
 
         h->destroy_framebuffers(device, allocator);
@@ -169,6 +201,35 @@ namespace myth::vulkan2 {
 
         if (h->m_swapchain)
             vkDestroySwapchainKHR(device.logical(), h->m_swapchain, allocator);
+    }
+
+    auto swapchain::acquire_next_image(device& device, VkSemaphore semaphore) -> VkResult {
+        return vkAcquireNextImageKHR(
+            device.logical(),
+            m_swapchain,
+            UINT64_MAX,
+            semaphore,
+            VK_NULL_HANDLE,
+            &m_current_image_index);
+    }
+
+    MYL_NO_DISCARD auto swapchain::present(VkQueue queue, const VkSemaphore* signal_semaphores) -> VkResult {
+        VkSwapchainKHR swapchains[] = {
+            m_swapchain
+        };
+
+        VkPresentInfoKHR present_info{
+            .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            //.pNext              = ,
+            .waitSemaphoreCount = 1,
+            .pWaitSemaphores    = signal_semaphores,
+            .swapchainCount     = 1,
+            .pSwapchains        = swapchains,
+            .pImageIndices      = &m_current_image_index,
+            .pResults           = nullptr
+        };
+
+        return vkQueuePresentKHR(queue, &present_info);
     }
 
     auto swapchain::recreate_framebuffers(device& device, VkRenderPass render_pass, VkAllocationCallbacks* allocator) -> void {

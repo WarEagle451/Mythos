@@ -102,11 +102,7 @@ namespace myth::vulkan2 {
         pipeline::destroy(&h->m_pipeline, device, allocator);
     }
 
-    auto shader::bind() -> void {
-
-    }
-
-    auto shader::unbind() -> void {
-
+    auto shader::bind(VkCommandBuffer command_buffer) -> void {
+        m_pipeline.bind(command_buffer);
     }
 }

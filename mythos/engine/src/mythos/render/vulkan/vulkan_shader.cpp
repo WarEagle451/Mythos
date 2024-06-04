@@ -103,11 +103,11 @@ namespace myth::vulkan {
         m_pipeline.reset();
     }
 
-    auto shader::bind() -> void {
-        m_pipeline->bind(m_context.command_buffers()[m_swapchain.current_image_index()].handle());
-    }
-
-    auto shader::unbind() -> void {
-
-    }
+    ///auto shader::bind() -> void {
+    ///    m_pipeline->bind(m_context.command_buffers()[m_swapchain.current_image_index()].handle());
+    ///}
+    ///
+    ///auto shader::unbind() -> void {
+    ///
+    ///}
 }

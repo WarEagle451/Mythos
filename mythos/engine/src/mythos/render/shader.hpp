@@ -77,8 +77,5 @@ namespace myth {
         static auto destroy(std::unique_ptr<shader>& shader) -> void;
 
         virtual ~shader() = default;
-
-        virtual auto bind() -> void = 0;
-        virtual auto unbind() -> void = 0;
     };
 }

@@ -17,7 +17,6 @@ namespace myth::vulkan2 {
         static auto create(shader* handle, device& device, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
         static auto destroy(shader* handle, device& device, VkAllocationCallbacks* allocator) noexcept -> void;
 
-        auto bind() -> void override;
-        auto unbind() -> void override;
+        auto bind(VkCommandBuffer command_buffer) -> void;
     };
 }

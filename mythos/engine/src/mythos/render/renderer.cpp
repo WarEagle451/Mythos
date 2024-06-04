@@ -67,7 +67,7 @@ namespace myth {
     }
 
     /// MYTEMP:
-    ///std::unique_ptr<shader> s_triangle_shader = nullptr;
+    std::unique_ptr<shader> s_triangle_shader = nullptr;
     /// MYTEMP:
 
     std::unique_ptr<renderer_backend> renderer::s_backend = nullptr;
@@ -82,13 +82,13 @@ namespace myth {
         s_backend = renderer_backend::create(s_api, config);
         MYTHOS_TRACE("Renderer initialized");
 
-        ///s_triangle_shader = shader::create(triangle_shader.faux_path, triangle_shader.data, shader_primitive::triangle);
+        s_triangle_shader = shader::create(triangle_shader.faux_path, triangle_shader.data, shader_primitive::triangle);
     }
 
     auto renderer::shutdown() -> void {
         s_backend->prepare_shutdown();
 
-        ///shader::destroy(s_triangle_shader);
+        shader::destroy(s_triangle_shader);
 
         MYTHOS_TRACE("Terminating renderer...");
         s_backend.reset();
@@ -106,6 +106,6 @@ namespace myth {
     auto draw() -> void {
         ///s_triangle_shader->bind();
 
-        ///renderer::backend()->draw();
+        renderer::backend()->draw(*s_triangle_shader.get());
     }
 }

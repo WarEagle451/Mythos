@@ -9,7 +9,7 @@ namespace myth::vulkan2 {
 
         VkCommandBuffer m_command_buffer = VK_NULL_HANDLE;
     public:
-        MYL_NO_DISCARD constexpr auto handle() const -> VkCommandBuffer { return m_command_buffer; }
+        MYL_NO_DISCARD constexpr auto handle() -> const VkCommandBuffer& { return m_command_buffer; }
 
         auto begin(VkCommandBufferUsageFlags flags = 0) -> void;
         auto end() -> void;

@@ -14,7 +14,7 @@ namespace myth::vulkan2 {
         static auto create(render_pass* handle, device& device, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
         static auto destroy(render_pass* handle, device& device, VkAllocationCallbacks* allocator) noexcept -> void;
 
-        MYL_NO_DISCARD constexpr auto handle() const -> VkRenderPass { return m_render_pass; }
+        MYL_NO_DISCARD constexpr auto handle() -> const VkRenderPass& { return m_render_pass; }
 
         auto begin(VkCommandBuffer command_buffer, VkFramebuffer framebuffer, const VkRect2D& render_area) -> void;
         auto end(VkCommandBuffer command_buffer) -> void;

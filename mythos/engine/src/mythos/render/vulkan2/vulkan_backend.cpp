@@ -92,7 +92,8 @@ namespace myth::vulkan2 {
 #endif
     }
 
-    MYL_NO_DISCARD backend::backend(const renderer_configuration& config) {
+    MYL_NO_DISCARD backend::backend(const renderer_configuration& config)
+        : m_current_frame_index{ 0 } {
         myth::window* window = application::get().main_window();
 
         create_instance();
@@ -128,9 +129,9 @@ namespace myth::vulkan2 {
             .color_format = m_swapchain.image_format().format,
             .clear_color  = VkClearColorValue{
                 .float32{
-                    config.clear_color.r,
-                    config.clear_color.g,
-                    config.clear_color.b,
+                    static_cast<float>(config.clear_color.r),
+                    static_cast<float>(config.clear_color.g),
+                    static_cast<float>(config.clear_color.b),
                     1.f
                 }
             }
@@ -145,7 +146,7 @@ namespace myth::vulkan2 {
         command_pool::create(&m_command_pool, m_device, command_pool_create_info, VK_NULL_HANDLE);
 
         m_swapchain.recreate_framebuffers(m_device, m_main_render_pass.handle(), VK_NULL_HANDLE);
-        m_command_buffers.resize(m_swapchain.images().size()); /// MYTODO: should be max_frames_in_flight
+        m_command_buffers.resize(m_swapchain.max_frames_in_flight());
         m_command_pool.allocate_command_buffers(m_device, m_command_buffers.begin(), m_command_buffers.end());
     }
 
@@ -153,6 +154,8 @@ namespace myth::vulkan2 {
         vkDeviceWaitIdle(m_device.logical());
 
         m_command_pool.deallocate_command_buffers(m_device, m_command_buffers.begin(), m_command_buffers.end());
+        m_command_buffers.clear();
+
         m_swapchain.destroy_framebuffers(m_device, VK_NULL_HANDLE);
 
         command_pool::destroy(&m_command_pool, m_device, VK_NULL_HANDLE);
@@ -165,10 +168,10 @@ namespace myth::vulkan2 {
 
     MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
         vulkan2::shader::create_info shader_create_info{
-            .swapchain_extent = m_swapchain.image_extent(),
-            .render_pass      = m_main_render_pass.handle(),
-            .binaries         = shader_binaries,
-            .primitive        = primitive
+            .swapchain_extent           = m_swapchain.image_extent(),
+            .render_pass                = m_main_render_pass.handle(),
+            .binaries                   = shader_binaries,
+            .primitive                  = primitive
         };
 
         std::unique_ptr<vulkan2::shader> shader = std::make_unique<vulkan2::shader>();
@@ -182,10 +185,113 @@ namespace myth::vulkan2 {
     }
 
     auto backend::begin_frame() -> bool {
+        // Wait for previous frame to stop rendering
+
+        VkFence& current_frame_fence = m_swapchain.in_flight_fences()[m_current_frame_index];
+        vkWaitForFences(m_device.logical(), 1, &current_frame_fence, VK_TRUE, UINT64_MAX);
+        vkResetFences(m_device.logical(), 1, &current_frame_fence);
+
+        // Acquire next image
+
+        VkResult acquire_image_result = m_swapchain.acquire_next_image(m_device, m_swapchain.image_available_semaphores()[m_current_frame_index]);
+        switch (acquire_image_result) {
+
+        }
+
+        VkRect2D scissor{
+            .offset = { .x = 0, .y = 0 },
+            .extent = m_swapchain.image_extent()
+        };
+        
+        VkViewport viewport{
+            .x        = 0.f,
+            .y        = 0.f,
+            .width    = static_cast<float>(scissor.extent.width),
+            .height   = static_cast<float>(scissor.extent.height),
+            .minDepth = 0.f,
+            .maxDepth = 1.f
+        };
+        
+        /// imageIndex looks to be wrong rn, shouldn't even be there
+        
+        command_buffer& current_command_buffer = m_command_buffers[m_current_frame_index];
+        current_command_buffer.reset();
+        current_command_buffer.begin();
+        m_main_render_pass.begin(current_command_buffer.handle(), m_swapchain.framebuffers()[m_swapchain.current_image_index()], scissor);
+        
+        // Record commands
+
+        vkCmdSetViewport(current_command_buffer.handle(), 0, 1, &viewport);
+        vkCmdSetScissor(current_command_buffer.handle(), 0, 1, &scissor);
+
         return true;
     }
 
     auto backend::end_frame() -> void {
+        command_buffer& current_command_buffer = m_command_buffers[m_current_frame_index];
+        
+        m_main_render_pass.end(current_command_buffer.handle());
+        current_command_buffer.end();
+
+        VkSemaphore wait_semaphores[] = {
+            m_swapchain.image_available_semaphores()[m_current_frame_index]
+        };
+
+        VkPipelineStageFlags wait_stages[] = {
+            VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+        };
+
+        VkSemaphore signal_semaphores[] = {
+            m_swapchain.render_finished_semaphores()[m_current_frame_index]
+        };
+
+        // Submit commands
+
+        VkSubmitInfo submit_info{
+            .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            //.pNext                =,
+            .waitSemaphoreCount   = 1,
+            .pWaitSemaphores      = wait_semaphores,
+            .pWaitDstStageMask    = wait_stages,
+            .commandBufferCount   = 1,
+            .pCommandBuffers      = &current_command_buffer.handle(),
+            .signalSemaphoreCount = 1,
+            .pSignalSemaphores    = signal_semaphores
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkQueueSubmit, m_device.graphics_queue(), 1, &submit_info, m_swapchain.in_flight_fences()[m_current_frame_index]);
+
+        // Presentation
+
+        const VkResult present_result = m_swapchain.present(m_device.present_queue(), signal_semaphores);
+        switch (present_result) {
+            case VK_SUCCESS:
+                break;
+            case VK_ERROR_OUT_OF_DATE_KHR: MYL_FALLTHROUGH;
+            case VK_SUBOPTIMAL_KHR:
+                break;
+            default:
+                MYTHOS_FATAL("Failed to present swapchain image: {}", vulkan::vkresult_string(present_result, true));
+                break;
+        }
+
+        m_current_frame_index = (m_current_frame_index + 1) % m_swapchain.max_frames_in_flight();
+    }
+
+    auto backend::draw(myth::shader& shader) -> void {
+        command_buffer& current_command_buffer = m_command_buffers[m_current_frame_index];
+        
+        vulkan2::shader& vk_shader = static_cast<vulkan2::shader&>(shader);
+        vk_shader.bind(current_command_buffer.handle());
+
+        vkCmdDraw(current_command_buffer.handle(), 3, 1, 0, 0);
+    }
+
+    auto backend::prepare_shutdown() -> void {
+        vkDeviceWaitIdle(m_device.logical());
+    }
+
+    auto backend::on_window_resize(const myl::i32vec2& dimensions) -> void {
 
     }
 

@@ -16,7 +16,7 @@ namespace myth::vulkan {
         MYL_NO_DISCARD shader(context& context, swapchain& swapchain, VkRenderPass render_pass, const std::unordered_map<shader_type, shader_binary_type>& binaries, const shader_primitive primitive);
         ~shader();
 
-        auto bind() -> void override;
-        auto unbind() -> void override;
+        ///auto bind() -> void override;
+        ///auto unbind() -> void override;
     };
 }

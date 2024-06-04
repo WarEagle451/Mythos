@@ -21,7 +21,7 @@ namespace myth::vulkan {
 
         auto prepare_shutdown() -> void override;
 
-        auto draw() -> void override;
+        auto draw(myth::shader& shader) -> void override;
 
         auto begin_frame() -> bool override;
         auto end_frame() -> void override;
