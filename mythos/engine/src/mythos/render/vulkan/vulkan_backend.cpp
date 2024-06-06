@@ -315,8 +315,8 @@ namespace myth::vulkan {
     auto backend::on_window_resize(const myl::i32vec2& dimensions) -> void {
         if (dimensions.w == 0 || dimensions.h == 0)
             if (application::get().main_window()->state() == window_state::minimized) // Some platforms may send a window_resize event upon window minimization, the swapchain should not resize
-                return;
-            else
+                return; /// MYTODO: Currently the Vulkan renderer ignores window resizing when it is minimized, how should this be handled?
+            else /// MYBUG: This gets hit when window is sized down to zero, handle this
                 MYTHOS_FATAL("Cannot resize framebuffers to have 0 width and or height: [{}, {}]", dimensions.w, dimensions.h);
 
         m_framebuffer_resized = true;

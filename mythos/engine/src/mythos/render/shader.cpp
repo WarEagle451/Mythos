@@ -148,14 +148,14 @@ namespace myth {
         std::unordered_map<shader_type, std::string> sources{};
         std::size_t pos = source.find(token, 0); // Start of first shader type declaration line
         while (pos != std::string::npos) {
-            std::size_t eol = source.find("\r\n", pos); // End of shader type declaration line
+            const std::size_t eol = source.find("\r\n", pos); // End of shader type declaration line
             MYTHOS_ASSERT(eol != std::string::npos, "Syntax error");
 
-            std::size_t begin = pos + token_length + 1; // Start of shader type name (after "#type " keyword)
-            shader_type type = detect_shader_type(source.substr(begin, eol - begin)); // Getting type string and detecting the type
+            const std::size_t begin = pos + token_length + 1; // Start of shader type name (after "#type " keyword)
+            const shader_type type = detect_shader_type(source.substr(begin, eol - begin)); // Getting type string and detecting the type
             MYTHOS_ASSERT(type != shader_type::unknown, "Invalid shader type specified");
 
-            std::size_t next_line_pos = source.find_first_not_of("\r\n", eol); // Beginning of shader code after type declaration
+            const std::size_t next_line_pos = source.find_first_not_of("\r\n", eol); // Beginning of shader code after type declaration
             MYTHOS_ASSERT(next_line_pos != std::string::npos, "Syntax error");
             pos = source.find(token, next_line_pos); // Beginning of next shader type declaration line
 
@@ -242,7 +242,7 @@ namespace myth {
             const std::filesystem::path cache_path = make_shader_binary_path(path, type);
 
             MYTHOS_TRACE("Compiling Shader '{}'...", cache_path.filename().string());
-            auto result = compiler.CompileGlslToSpv(src.data(), shader_type_to_shaderc_shader_kind(type), path.string().c_str(), options);
+            const auto result = compiler.CompileGlslToSpv(src.data(), shader_type_to_shaderc_shader_kind(type), path.string().c_str(), options);
             if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
                 MYTHOS_FATAL("Stage: {} - {}", shader_type_file_extension(type), result.GetErrorMessage());
                 MYTHOS_VERIFY(result.GetCompilationStatus() == shaderc_compilation_status_success, "Failed to compile shader!");
@@ -258,7 +258,7 @@ namespace myth {
     }
 
     MYL_NO_DISCARD auto shader::create(const std::filesystem::path& faux_path, std::string_view source, const shader_primitive primitive) -> std::unique_ptr<shader> {
-        std::unordered_map<shader_type, std::string> sources = process_shader_source(source);
+        const std::unordered_map<shader_type, std::string> sources = process_shader_source(source);
         ///shader_layout layout(jkjk); /// MYTodo: Currently all shaders must have a vertex module. Therefore this will not fail
 
         std::unordered_map<shader_type, shader_binary_type> binaries;
@@ -277,7 +277,7 @@ namespace myth {
     }
 
     MYL_NO_DISCARD auto shader::create(const std::filesystem::path& path, const shader_primitive primitive) -> std::unique_ptr<shader> {
-        std::unordered_map<shader_type, std::string> sources = process_shader_source(myl::load_into_memory(path));
+        const std::unordered_map<shader_type, std::string> sources = process_shader_source(myl::load_into_memory(path));
         ///shader_layout layout(jkjk); /// MYTodo: Currently all shaders must have a vertex module. Therefore this will not fail
 
         std::unordered_map<shader_type, shader_binary_type> binaries;

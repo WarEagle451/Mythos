@@ -174,7 +174,7 @@ namespace myth {
     auto input::process_mouse_buttons_up(mousecode code) -> void {
         // new = 0110; old = 1010
         // old & new = 0010. Therefore bit 2 has changed state to up
-        mousecode changed_buttons = s_mouse_button_states & code;
+        const mousecode changed_buttons = s_mouse_button_states & code;
         if (changed_buttons != 0) {
             s_mouse_button_states &= ~changed_buttons; // Clear bits
             event::mouse_released e(changed_buttons);
@@ -185,7 +185,7 @@ namespace myth {
     auto input::process_mouse_buttons_down(mousecode code) -> void {
         // new = 0110; old = 1010
         // ~(old | ~new) = 0100. Therefore bit 3 has changed state to down
-        mousecode changed_buttons = ~(s_mouse_button_states | ~code);
+        const mousecode changed_buttons = ~(s_mouse_button_states | ~code);
         if (changed_buttons != 0) {
             s_mouse_button_states |= changed_buttons; // Set bits
             event::mouse_pressed e(changed_buttons);
@@ -252,7 +252,7 @@ namespace myth {
 
     auto input::process_controller_buttons(button_code down) -> void {
         // Refer to process_mouse_buttons_down for explanation
-        button_code changed_to_down = ~(s_gamepad_button_states | ~down);
+        const button_code changed_to_down = ~(s_gamepad_button_states | ~down);
         if (changed_to_down != button::none) {
             s_gamepad_button_states |= changed_to_down;
             event::gamepad_button_pressed e(changed_to_down);
@@ -260,7 +260,7 @@ namespace myth {
         }
 
         // Refer to process_mouse_buttons_up for explanation
-        button_code changed_to_up = s_gamepad_button_states & ~down; // ~down == up buttons set to 1
+        const button_code changed_to_up = s_gamepad_button_states & ~down; // ~down == up buttons set to 1
         if (changed_to_up != button::none) {
             s_gamepad_button_states &= ~changed_to_up;
             event::gamepad_button_released e(changed_to_up);
@@ -305,12 +305,12 @@ namespace myth {
         // USB connection is 64 bytes, bluetooth uses more
         const myl::u32 offset = byte_count == 64 ? 3 : 0;
         
-        myl::f32vec2 left_stick{
+        const myl::f32vec2 left_stick{
             static_cast<myl::f32>(static_cast<myl::u16>(data[1]) - 0x80) / 128.f,
             static_cast<myl::f32>(static_cast<myl::u16>(data[2]) - 0x80) / 128.f
         };
 
-        myl::f32vec2 right_stick{
+        const myl::f32vec2 right_stick{
             static_cast<myl::f32>(static_cast<myl::u16>(data[3]) - 0x80) / 128.f,
             static_cast<myl::f32>(static_cast<myl::u16>(data[4]) - 0x80) / 128.f
         };
@@ -464,12 +464,12 @@ namespace myth {
         /// Touchpad More Data fin 1 : Byte[44 - 47]   | Byte[] Bit[]
         /// Touchpad More Data fin 2 : Byte[48 - 51]   | Byte[] Bit[]
 
-        myl::f32vec2 left_stick{
+        const myl::f32vec2 left_stick{
             static_cast<myl::f32>(static_cast<myl::u16>(data[1]) - 0x80) / 128.f,
             static_cast<myl::f32>(static_cast<myl::u16>(data[2]) - 0x80) / 128.f
         };
 
-        myl::f32vec2 right_stick{
+        const myl::f32vec2 right_stick{
             static_cast<myl::f32>(static_cast<myl::u16>(data[3]) - 0x80) / 128.f,
             static_cast<myl::f32>(static_cast<myl::u16>(data[4]) - 0x80) / 128.f
         };

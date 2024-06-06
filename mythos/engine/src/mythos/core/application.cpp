@@ -187,7 +187,7 @@ namespace myth {
         d.dispatch<event::window_close>(MYTHOS_BIND_EVENT_FUNC(application::on_window_close));
         d.dispatch<event::window_focus_gain>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_gain));
         d.dispatch<event::window_focus_lost>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_lost));
-
+        
         if (!e.handled)
             for (auto& l : m_layer_stack) {
                 if (e.handled)

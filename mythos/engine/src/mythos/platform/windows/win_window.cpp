@@ -21,7 +21,7 @@
 namespace myth::win {
     MYL_NO_DISCARD static constexpr auto translate_raw_mouse_code(USHORT buttons) noexcept -> mousecode {
         using namespace mouse_button;
-        mousecode code = none;
+        mousecode code{ none };
         if ((buttons & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_LEFT_BUTTON_DOWN)) != 0)     code |= left;
         if ((buttons & (RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_DOWN)) != 0)   code |= right;
         if ((buttons & (RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_DOWN)) != 0) code |= middle;
@@ -88,27 +88,27 @@ namespace myth::win {
         RAWINPUTDEVICE devices[device_type_count]{
             { // Mouse
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
-                .usUsage = HID_USAGE_GENERIC_MOUSE,
-                .dwFlags = RIDEV_REMOVE,
-                .hwndTarget = NULL
+                .usUsage     = HID_USAGE_GENERIC_MOUSE,
+                .dwFlags     = RIDEV_REMOVE,
+                .hwndTarget  = NULL
             },
             { // Joystick
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
-                .usUsage = HID_USAGE_GENERIC_JOYSTICK,
-                .dwFlags = RIDEV_REMOVE,
-                .hwndTarget = NULL
+                .usUsage     = HID_USAGE_GENERIC_JOYSTICK,
+                .dwFlags     = RIDEV_REMOVE,
+                .hwndTarget  = NULL
             },
             { // Gamepad
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
-                .usUsage = HID_USAGE_GENERIC_GAMEPAD,
-                .dwFlags = RIDEV_REMOVE,
-                .hwndTarget = NULL
+                .usUsage     = HID_USAGE_GENERIC_GAMEPAD,
+                .dwFlags     = RIDEV_REMOVE,
+                .hwndTarget  = NULL
             },
             { // Keyboard
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
-                .usUsage = HID_USAGE_GENERIC_KEYBOARD,
-                .dwFlags = RIDEV_REMOVE,
-                .hwndTarget = NULL
+                .usUsage     = HID_USAGE_GENERIC_KEYBOARD,
+                .dwFlags     = RIDEV_REMOVE,
+                .hwndTarget  = NULL
             }
         };
 
@@ -401,11 +401,11 @@ namespace myth::win {
                             MYTHOS_WARN("Unhandled WM_SIZE WPARAM: {}", w_param);
                             return DefWindowProcA(hwnd, msg, w_param, l_param);
                     }
+
                     target->m_dimensions = { static_cast<myl::i32>(LOWORD(l_param)), static_cast<myl::i32>(HIWORD(l_param)) };
-                
                     event::window_resize e(*target, target->m_dimensions);
                     event::fire(e);
-                    break;
+                    return 0;
                 }
                 case WM_SETFOCUS: {
                     ///MYTODO: wParam contains: A handle to the window that has lost the keyboard focus. This parameter can be NULL.

@@ -1,0 +1,1 @@
+- Get the window to update the framebuffer while the window is being resized, although this may be due to the renderer not currently having a camera
