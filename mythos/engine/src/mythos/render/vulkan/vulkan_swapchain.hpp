@@ -26,6 +26,7 @@ namespace myth::vulkan {
         struct create_info {
             VkSurfaceKHR      surface;
             const VkExtent2D& extent;
+            bool              vsync;
         };
         
         static auto query_support(swapchain_support_details* details, VkPhysicalDevice physical_device, VkSurfaceKHR surface) -> void;

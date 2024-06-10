@@ -32,7 +32,7 @@ namespace myth {
 
     struct renderer_configuration {
         myl::f32vec3 clear_color = myl::f32vec3(0.f);
-        /// bool vsync = true
+        bool vsync = true; /// MYTODO: PUT THIS INTO TEST BED
     };
 
     class renderer_backend {
@@ -43,6 +43,9 @@ namespace myth {
 
         MYL_NO_DISCARD virtual auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<shader> = 0;
         virtual auto destroy_shader(shader* shader) -> void = 0;
+
+        virtual auto set_clear_color(const myl::f32vec3& color) -> void = 0;
+        virtual auto set_vsync(bool value) -> void = 0;
 
         virtual auto begin_frame() -> bool = 0;
         virtual auto end_frame() -> void = 0;

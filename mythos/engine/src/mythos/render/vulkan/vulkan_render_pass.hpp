@@ -16,6 +16,8 @@ namespace myth::vulkan {
 
         MYL_NO_DISCARD constexpr auto handle() -> const VkRenderPass& { return m_render_pass; }
 
+        auto set_clear_color(const VkClearColorValue& color) -> void;
+
         auto begin(VkCommandBuffer command_buffer, VkFramebuffer framebuffer, const VkRect2D& render_area) -> void;
         auto end(VkCommandBuffer command_buffer) -> void;
     };

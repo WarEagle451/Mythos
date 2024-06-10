@@ -29,6 +29,9 @@ namespace myth::vulkan {
         bool m_framebuffer_resized;
         VkExtent2D m_cached_framebuffer_extent;
 
+        bool m_cached_vsync;
+        bool m_vsync;
+
 #ifdef MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
         VkDebugUtilsMessengerEXT m_debug_messenger;
 #endif
@@ -38,6 +41,9 @@ namespace myth::vulkan {
 
         MYL_NO_DISCARD auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> override;
         auto destroy_shader(myth::shader* shader) -> void override;
+
+        auto set_clear_color(const myl::f32vec3& color) -> void override;
+        auto set_vsync(bool value) -> void override;
 
         auto begin_frame() -> bool override;
         auto end_frame() -> void override;

@@ -12,6 +12,9 @@ namespace myth {
         MYL_NO_DISCARD static MYL_API auto api() -> render_api { return s_api; }
         static auto backend() noexcept -> renderer_backend* { return s_backend.get(); }
 
+        static auto set_clear_color(const myl::f32vec3& color) -> void;
+        static auto set_vsync(bool value) -> void;
+
         static auto begin_frame() -> bool;
         static auto end_frame() -> void;
     };

@@ -31,7 +31,10 @@ namespace myth::vulkan {
         return available_formats[0];
     }
 
-    MYL_NO_DISCARD constexpr auto select_present_mode(const std::vector<VkPresentModeKHR>& available_modes) -> VkPresentModeKHR {
+    MYL_NO_DISCARD constexpr auto select_present_mode(const std::vector<VkPresentModeKHR>& available_modes, bool vsync) -> VkPresentModeKHR {
+        if (vsync) // VK_PRESENT_MODE_FIFO_KHR is always available
+            return VK_PRESENT_MODE_FIFO_KHR;
+        
         for (const auto& mode : available_modes)
             if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
                 return mode;
@@ -64,7 +67,7 @@ namespace myth::vulkan {
 
         h->m_extent = select_image_extent(ssd.capabilities, ci.extent);
         h->m_image_format = select_surface_format(ssd.available_surface_formats);
-        const VkPresentModeKHR present_mode = select_present_mode(ssd.available_present_modes);
+        const VkPresentModeKHR present_mode = select_present_mode(ssd.available_present_modes, ci.vsync);
                 
         uint32_t image_count = ssd.capabilities.minImageCount + 1;                              // Recommended to request one more image than the min
         if (ssd.capabilities.maxImageCount > 0 && image_count > ssd.capabilities.maxImageCount) // Don't excced the max images (0 is a special number)

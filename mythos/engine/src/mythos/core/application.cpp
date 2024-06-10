@@ -103,7 +103,7 @@ namespace myth {
                 for (auto& layer : m_layer_stack)
                     layer->update(ts);
 
-                if (m_window->state() != window_state::minimized) {
+                if (m_window->state() != window_state::minimized) { /// MYTODO: SHOULD THIS BE HANDLED BY THE RENDERER BACKEND???
                     const bool good_frame = renderer::begin_frame();
                     if (good_frame) {
                         for (auto& layer : m_layer_stack)

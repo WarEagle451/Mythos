@@ -245,7 +245,7 @@ namespace myth {
             const auto result = compiler.CompileGlslToSpv(src.data(), shader_type_to_shaderc_shader_kind(type), path.string().c_str(), options);
             if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
                 MYTHOS_FATAL("Stage: {} - {}", shader_type_file_extension(type), result.GetErrorMessage());
-                MYTHOS_VERIFY(result.GetCompilationStatus() == shaderc_compilation_status_success, "Failed to compile shader!");
+                MYTHOS_VERIFY(result.GetCompilationStatus() == shaderc_compilation_status_success, "Failed to compile shader!"); /// MYTODO: Change this to MYTHOS_FAIL_VERIFY
             }
             
             (*binaries)[type] = shader_binary_type(result.begin(), result.end());

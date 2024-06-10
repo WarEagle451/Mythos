@@ -95,6 +95,14 @@ namespace myth {
         MYTHOS_TRACE("Renderer terminated");
     }
 
+    auto renderer::set_clear_color(const myl::f32vec3& color) -> void {
+        s_backend->set_clear_color(color);
+    }
+
+    auto renderer::set_vsync(bool value) -> void {
+        s_backend->set_vsync(value);
+    }
+
     auto renderer::begin_frame() -> bool {
         return s_backend->begin_frame();
     }

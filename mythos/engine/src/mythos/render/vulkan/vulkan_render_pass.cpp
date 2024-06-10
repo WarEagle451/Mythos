@@ -67,6 +67,10 @@ namespace myth::vulkan {
             vkDestroyRenderPass(device.logical(), h->m_render_pass, allocator);
     }
 
+    auto render_pass::set_clear_color(const VkClearColorValue& color) -> void {
+        m_clear_color = color;
+    }
+
     auto render_pass::begin(VkCommandBuffer command_buffer, VkFramebuffer framebuffer, const VkRect2D& render_area) -> void {
         VkClearValue clear_values = {
             .color = m_clear_color

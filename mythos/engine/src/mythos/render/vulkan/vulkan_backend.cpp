@@ -97,7 +97,8 @@ namespace myth::vulkan {
 
     MYL_NO_DISCARD backend::backend(const renderer_configuration& config)
         : m_current_frame_index{ 0 }
-        , m_framebuffer_resized{ false } {
+        , m_framebuffer_resized{ false }
+        , m_vsync{ config.vsync } {
         myth::window* window = application::get().main_window();
 
         create_instance();
@@ -118,13 +119,16 @@ namespace myth::vulkan {
 
         device::create(&m_device, device_create_info, VK_NULL_HANDLE);
 
+        m_vsync = config.vsync; /// MYTODO: Improve this
+        m_cached_vsync = m_vsync;
         const auto& window_extent = window->framebuffer_size();
         swapchain::create_info swapchain_create_info{
             .surface = m_surface,
             .extent  = VkExtent2D{
                 .width  = static_cast<uint32_t>(window_extent.w),
                 .height = static_cast<uint32_t>(window_extent.h)
-            }
+            },
+            .vsync   = m_vsync
         };
         
         swapchain::create(&m_swapchain, m_device, swapchain_create_info, VK_NULL_HANDLE);
@@ -189,7 +193,42 @@ namespace myth::vulkan {
         vulkan::shader::destroy(vks, m_device, VK_NULL_HANDLE);
     }
 
+    auto backend::set_clear_color(const myl::f32vec3& color) -> void {
+        m_main_render_pass.set_clear_color(VkClearColorValue{
+            .float32{
+                static_cast<float>(color.r),
+                static_cast<float>(color.g),
+                static_cast<float>(color.b),
+                1.f
+            }
+        });
+    }
+
+    auto backend::set_vsync(bool value) -> void {
+        m_cached_vsync = value;
+    }
+
     auto backend::begin_frame() -> bool {
+        // Conditions for a bad frame
+
+        // Zero sized framebuffers are illegal in Vulkan
+        if (m_cached_framebuffer_extent.width == 0 ||
+            m_cached_framebuffer_extent.height == 0 ||
+            m_cached_vsync != m_vsync) {
+            swapchain::create_info swapchain_create_info{
+                .surface = m_surface,
+                .extent  = m_cached_framebuffer_extent,
+                .vsync   = m_cached_vsync
+            };
+
+            m_swapchain.recreate(&m_swapchain, m_device, m_main_render_pass.handle(), swapchain_create_info, VK_NULL_HANDLE);
+            m_vsync = m_cached_vsync;
+            return false;
+        }
+
+
+        /// MYTODO: if skip by minimization is needed then is should be done here
+
         // Wait for previous frame to stop rendering
 
         VkFence& current_frame_fence = m_swapchain.in_flight_fences()[m_current_frame_index];
@@ -287,7 +326,8 @@ namespace myth::vulkan {
         if (present_result == VK_ERROR_OUT_OF_DATE_KHR || present_result == VK_SUBOPTIMAL_KHR || m_framebuffer_resized) {
             swapchain::create_info swapchain_create_info{
                 .surface = m_surface,
-                .extent = m_cached_framebuffer_extent
+                .extent = m_cached_framebuffer_extent,
+                .vsync = m_cached_vsync
             };
 
             swapchain::recreate(&m_swapchain, m_device, m_main_render_pass.handle(), swapchain_create_info, VK_NULL_HANDLE);
@@ -313,11 +353,11 @@ namespace myth::vulkan {
     }
 
     auto backend::on_window_resize(const myl::i32vec2& dimensions) -> void {
-        if (dimensions.w == 0 || dimensions.h == 0)
-            if (application::get().main_window()->state() == window_state::minimized) // Some platforms may send a window_resize event upon window minimization, the swapchain should not resize
-                return; /// MYTODO: Currently the Vulkan renderer ignores window resizing when it is minimized, how should this be handled?
-            else /// MYBUG: This gets hit when window is sized down to zero, handle this
-                MYTHOS_FATAL("Cannot resize framebuffers to have 0 width and or height: [{}, {}]", dimensions.w, dimensions.h);
+        /// MYTODO: Vulkan is still rendering the window when minimized, this should not occur
+        if (application::get().main_window()->state() == window_state::minimized) // Some platforms may send a window_resize event upon window minimization, don't warn on that
+            return;
+
+        // Begin frame handles if width or height == 0
 
         m_framebuffer_resized = true;
         m_cached_framebuffer_extent = VkExtent2D{

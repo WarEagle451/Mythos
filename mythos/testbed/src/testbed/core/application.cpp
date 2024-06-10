@@ -32,6 +32,10 @@ namespace myth {
                 .title = "Mythos Testbed",
                 .center_cursor = true
             },
+            .renderer_config{
+                .clear_color{ .2f, .2f, .2f },
+                .vsync = true
+            },
             .enable_trace_logging = true
         };
 
