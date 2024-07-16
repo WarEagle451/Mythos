@@ -47,7 +47,7 @@ namespace testbed {
 
     auto testbed_layer::render() -> void {
         /// MYTEMP: Replace with a proper draw command
-        myth::draw();
+        myth::renderer::draw();
     }
 
     auto testbed_layer::on_key_pressed(myth::event::key_pressed& e) -> bool {

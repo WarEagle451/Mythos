@@ -33,7 +33,7 @@ namespace myth {
                 .center_cursor = true
             },
             .renderer_config{
-                .clear_color{ .2f, .2f, .2f },
+                .clear_color{ .0f, .0f, .0f },
                 .vsync = true
             },
             .enable_trace_logging = true

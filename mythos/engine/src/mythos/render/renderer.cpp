@@ -56,7 +56,7 @@ namespace myth {
             "}"
     };
 
-    MYL_NO_DISCARD static constexpr auto select_render_api() noexcept -> render_api {
+    MYL_NO_DISCARD consteval auto select_render_api() noexcept -> render_api {
         using enum render_api;
 #ifdef MYL_OS_WINDOWS
         return vulkan;
@@ -111,9 +111,7 @@ namespace myth {
         s_backend->end_frame();
     }
 
-    auto draw() -> void {
-        ///s_triangle_shader->bind();
-
+    auto renderer::draw() -> void {
         renderer::backend()->draw(*s_triangle_shader.get());
     }
 }

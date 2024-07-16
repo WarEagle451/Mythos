@@ -17,8 +17,7 @@ namespace myth {
 
         static auto begin_frame() -> bool;
         static auto end_frame() -> void;
-    };
 
-    /// MYTEMP: Replace with a proper draw command
-    MYL_API auto draw() -> void;
+        static auto draw() -> void; /// MYTEMP: Replace with a proper draw command
+    };
 }

@@ -50,7 +50,7 @@ namespace myth {
         virtual auto begin_frame() -> bool = 0;
         virtual auto end_frame() -> void = 0;
 
-        virtual auto draw(myth::shader& shader) -> void = 0;
+        virtual auto draw(myth::shader& shader) -> void = 0; /// MYTEMP: REMOVE THIS
 
         virtual auto prepare_shutdown() -> void = 0;
 
