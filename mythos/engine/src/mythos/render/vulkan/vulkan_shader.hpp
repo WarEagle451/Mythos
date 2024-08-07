@@ -1,5 +1,4 @@
 #pragma once
-#include <mythos/render/shader.hpp>
 #include <mythos/render/vulkan/vulkan_pipeline.hpp>
 #include <mythos/render/vulkan/vulkan_swapchain.hpp>
 
@@ -11,6 +10,7 @@ namespace myth::vulkan {
             const VkExtent2D&                                          swapchain_extent;
             VkRenderPass                                               render_pass;
             const std::unordered_map<shader_type, shader_binary_type>& binaries;
+            const shader_layout&                                       layout;
             const shader_primitive                                     primitive;
         };
 

@@ -1,7 +1,62 @@
+#include <mythos/log.hpp>
 #include <mythos/render/vulkan/vulkan_pipeline.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
 namespace myth::vulkan {
+    MYL_NO_DISCARD static constexpr auto shader_data_type_to_VkFormat(shader_data_type type) -> VkFormat {
+        switch (type) {
+            using enum shader_data_type;
+            case none:
+                MYTHOS_FATAL("shader data type has no type!");
+                return VK_FORMAT_UNDEFINED;
+            case boolean: return VK_FORMAT_R32_SINT;
+            case int1:    return VK_FORMAT_R32_SINT;
+            case int2:    return VK_FORMAT_R32G32_SINT;
+            case int3:    return VK_FORMAT_R32G32B32_SINT;
+            case int4:    return VK_FORMAT_R32G32B32A32_SINT;
+            case float1:  return VK_FORMAT_R32_SFLOAT;
+            case float2:  return VK_FORMAT_R32G32_SFLOAT;
+            case float3:  return VK_FORMAT_R32G32B32_SFLOAT;
+            case float4:  return VK_FORMAT_R32G32B32A32_SFLOAT;
+            case mat3:
+                MYTHOS_FATAL("Vulkan can't bind martices (3x3). Pass as individual columns");
+                return VK_FORMAT_UNDEFINED;
+            case mat4:
+                MYTHOS_FATAL("Vulkan can't bind martices (4x4). Pass as individual columns");
+                return VK_FORMAT_UNDEFINED;
+            default:
+                MYTHOS_FATAL("Unknown shader data type!");
+                return VK_FORMAT_UNDEFINED;
+        }
+    }
+
+    MYL_NO_DISCARD static constexpr auto shader_layout_to_VkVertexInputBindingDescriptions(const shader_layout& layout) -> std::vector<VkVertexInputBindingDescription> {
+        return std::vector<VkVertexInputBindingDescription>{
+            VkVertexInputBindingDescription{ /// MYTODO: Instanced rendering
+                .binding   = 0,
+                .stride    = layout.stride(),
+                .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+            }
+        };
+    }
+
+    MYL_NO_DISCARD static constexpr auto shader_layout_to_VkVertexInputAttributeDescriptions(const shader_layout& layout) -> std::vector<VkVertexInputAttributeDescription> {
+        std::vector<VkVertexInputAttributeDescription> out{};
+        out.reserve(layout.elements().size());
+
+        for (myl::u32 i = 0; i != layout.elements().size(); ++i) {
+            const auto& e = layout.elements()[i];
+            out.emplace_back(VkVertexInputAttributeDescription{
+                .location = i,
+                .binding  = 0,
+                .format   = shader_data_type_to_VkFormat(e.type),
+                .offset   = e.offset
+            });
+        }
+
+        return out;
+    }
+
     auto pipeline::create(pipeline* h, device& device, const create_info& ci, VkAllocationCallbacks* allocator) -> void {
         std::vector<VkDynamicState> dynamic_states{
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -26,14 +81,17 @@ namespace myth::vulkan {
             .pScissors     = &ci.scissor
         };
 
+        auto bindings = shader_layout_to_VkVertexInputBindingDescriptions(ci.layout);
+        auto attributes = shader_layout_to_VkVertexInputAttributeDescriptions(ci.layout);
+
         VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info{
             .sType                           = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             //.pNext = ,
             //.flags = ,
-            .vertexBindingDescriptionCount   = 0,
-            .pVertexBindingDescriptions      = nullptr,
-            .vertexAttributeDescriptionCount = 0,
-            .pVertexAttributeDescriptions    = nullptr
+            .vertexBindingDescriptionCount   = static_cast<uint32_t>(bindings.size()),
+            .pVertexBindingDescriptions      = bindings.data(),
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size()),
+            .pVertexAttributeDescriptions    = attributes.data()
         };
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info{

@@ -1,4 +1,5 @@
 #pragma once
+#include <mythos/render/shader.hpp>
 #include <mythos/render/vulkan/vulkan_device.hpp>
 
 namespace myth::vulkan {
@@ -7,10 +8,11 @@ namespace myth::vulkan {
         VkPipelineLayout m_layout = VK_NULL_HANDLE;
     public:
         struct create_info {
+            const shader_layout&                               layout;
             const VkPrimitiveTopology                          primitive;
             const VkRect2D&                                    scissor;
             const VkViewport&                                  viewport;
-            const std::vector<VkPipelineShaderStageCreateInfo> shader_stage_create_infos;
+            const std::vector<VkPipelineShaderStageCreateInfo> shader_stage_create_infos;           
             VkRenderPass                                       render_pass;
         };
 

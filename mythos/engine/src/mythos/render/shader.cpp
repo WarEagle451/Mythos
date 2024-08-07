@@ -203,7 +203,7 @@ namespace myth {
                 if (word == token) {
                     ++i; // Move past the last delimiter
                     std::string type{};
-                    while (i != source.size() && !(static_cast<bool>(std::isspace(source[i]) || source[i] == ';'))) {
+                    while (i != source.size() && !(static_cast<bool>(std::isspace(source[i])) || source[i] == ';')) {
                         type += source[i];
                         ++i;
                     }
@@ -212,7 +212,7 @@ namespace myth {
 
                     ++i; // Move past the last delimiter
                     std::string name{};
-                    while (i != source.size() && !(static_cast<bool>(std::isspace(source[i]) || source[i] == ';'))) {
+                    while (i != source.size() && !(static_cast<bool>(std::isspace(source[i])) || source[i] == ';')) {
                         name += source[i];
                         ++i;
                     }
@@ -259,7 +259,7 @@ namespace myth {
 
     MYL_NO_DISCARD auto shader::create(const std::filesystem::path& faux_path, std::string_view source, const shader_primitive primitive) -> std::unique_ptr<shader> {
         const std::unordered_map<shader_type, std::string> sources = process_shader_source(source);
-        ///shader_layout layout(jkjk); /// MYTodo: Currently all shaders must have a vertex module. Therefore this will not fail
+        shader_layout layout(sources.at(shader_type::vertex)); /// MYTodo: Currently all shaders must have a vertex module. Therefore this will not fail
 
         std::unordered_map<shader_type, shader_binary_type> binaries;
         std::unordered_map<shader_type, std::string> uncompiled;
@@ -273,12 +273,12 @@ namespace myth {
 
         if (!uncompiled.empty())
             compile_shader_sources(&binaries, uncompiled, faux_path);
-        return renderer::backend()->create_shader(binaries, primitive);
+        return renderer::backend()->create_shader(binaries, layout, primitive);
     }
 
     MYL_NO_DISCARD auto shader::create(const std::filesystem::path& path, const shader_primitive primitive) -> std::unique_ptr<shader> {
         const std::unordered_map<shader_type, std::string> sources = process_shader_source(myl::load_into_memory(path));
-        ///shader_layout layout(jkjk); /// MYTodo: Currently all shaders must have a vertex module. Therefore this will not fail
+        shader_layout layout(sources.at(shader_type::vertex)); /// MYTodo: Currently all shaders must have a vertex module. Therefore this will not fail
 
         std::unordered_map<shader_type, shader_binary_type> binaries;
         std::unordered_map<shader_type, std::string> uncompiled;
@@ -294,7 +294,7 @@ namespace myth {
 
         if (!uncompiled.empty())
             compile_shader_sources(&binaries, uncompiled, path);
-        return renderer::backend()->create_shader(binaries, primitive);
+        return renderer::backend()->create_shader(binaries, layout, primitive);
     }
 
     auto shader::destroy(std::unique_ptr<shader>& shader) -> void {

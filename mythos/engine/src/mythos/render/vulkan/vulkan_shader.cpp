@@ -29,7 +29,7 @@ namespace myth::vulkan {
     }
 
     auto shader::create(shader* h, device& device, const create_info& ci, VkAllocationCallbacks* allocator) -> void {
-        // Create shader modules
+        // Create shader modules        
 
         std::unordered_map<shader_type, VkShaderModule> modules;
         for (const auto& [type, source] : ci.binaries) {
@@ -80,6 +80,7 @@ namespace myth::vulkan {
         // Create pipeline
 
         pipeline::create_info pipeline_create_info{
+            .layout                    = ci.layout,
             .primitive                 = shader_primitive_to_VkPrimitiveTopology(ci.primitive),
             .scissor                   = scissor,
             .viewport                  = viewport,

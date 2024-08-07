@@ -7,6 +7,7 @@
 
 /// MYTODO: Continue Vulkan tutorial from;
 /// - https://vulkan-tutorial.com/en/Vertex_buffers/Vertex_input_description
+/// - https://vulkan-tutorial.com/en/Vertex_buffers/Vertex_buffer_creation
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -175,11 +176,12 @@ namespace myth::vulkan {
         destroy_instance();
     }
 
-    MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
+    MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
         vulkan::shader::create_info shader_create_info{
             .swapchain_extent           = m_swapchain.image_extent(),
             .render_pass                = m_main_render_pass.handle(),
             .binaries                   = shader_binaries,
+            .layout                     = layout,
             .primitive                  = primitive
         };
 

@@ -8,6 +8,9 @@
 /// MYTODO: Maybe take all the sync objects out of swapchain and command buffers out of backend and put them into a class called frame.
 /// Take m_current_frame_index out of swapchain and put into backend
 
+/// MYTODO: THIS MAY BE RELEVENT TO PREVENT DRAW CALLS FROM OVERWRITING EACHOTHER
+/// - https://vulkan-tutorial.com/Vertex_buffers/Vertex_input_description#comment-4656925945
+
 #ifdef MYL_DEBUG /// MYTEMP: MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS should be passed on the command line
 #   define MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
 #endif
@@ -39,7 +42,7 @@ namespace myth::vulkan {
         MYL_NO_DISCARD backend(const renderer_configuration& config);
         ~backend();
 
-        MYL_NO_DISCARD auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, shader_primitive primitive) -> std::unique_ptr<myth::shader> override;
+        MYL_NO_DISCARD auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<myth::shader> override;
         auto destroy_shader(myth::shader* shader) -> void override;
 
         auto set_clear_color(const myl::f32vec3& color) -> void override;

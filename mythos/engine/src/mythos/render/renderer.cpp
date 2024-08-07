@@ -1,17 +1,27 @@
 #include <mythos/assert.hpp>
 #include <mythos/render/renderer.hpp>
-
-#include <myl/platform.hpp>
-
 #include <mythos/render/shader.hpp>
 
+#include <myl/platform.hpp>
+#include <myl/math/vec4.hpp>
+
 namespace myth {
+    struct triangle_vertex {
+        myl::f32vec2 position;
+        myl::f32vec4 color;
+    };
+
+    struct renderer_data {
+        std::unique_ptr<shader> triangle_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
+        render_buffer           triangle_vbo{};
+    };
+
     struct internal_shader {
         const char* faux_path;
         const char* data;
     };
 
-    constexpr internal_shader triangle_shader{
+    constexpr internal_shader triangle_shader_info{
         .faux_path = "resources/shaders/mythos_internal_triangle.glsl",
         .data =
             "#type vertex\r\n"
@@ -20,24 +30,15 @@ namespace myth {
             "struct vertex_output {\r\n"
             "    vec4 color;\r\n"
             "};\r\n"
-            
+                        
+            "layout(location = 0) in vec2 i_position;\r\n"
+            "layout(location = 1) in vec4 i_color;\r\n"
+
             "layout(location = 0) out vertex_output o_output;\r\n"
             
-            "vec2 positions[3] = vec2[](\r\n"
-            "   vec2(0.0, -0.5),\r\n"
-            "   vec2(0.5, 0.5),\r\n"
-            "   vec2(-0.5, 0.5)\r\n"
-            ");\r\n"
-            
-            "vec4 colors[3] = vec4[](\r\n"
-            "   vec4(1.0, 0.0, 0.0, 1.0),\r\n"
-            "   vec4(0.0, 1.0, 0.0, 1.0),\r\n"
-            "   vec4(0.0, 0.0, 1.0, 1.0)\r\n"
-            ");\r\n"
-            
             "void main() {\r\n"
-            "    o_output.color = colors[gl_VertexIndex];\r\n"
-            "    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);\r\n"
+            "    o_output.color = i_color;\r\n"
+            "    gl_Position = vec4(i_position, 0.0, 1.0);\r\n"
             "}\r\n"
             
             "#type fragment\r\n"
@@ -66,12 +67,10 @@ namespace myth {
 #endif
     }
 
-    /// MYTEMP:
-    std::unique_ptr<shader> s_triangle_shader = nullptr;
-    /// MYTEMP:
-
     std::unique_ptr<renderer_backend> renderer::s_backend = nullptr;
     render_api renderer::s_api = render_api::none;
+
+    renderer_data g_rd{};
 
     auto renderer::init(const renderer_configuration& config) -> void {
         MYTHOS_TRACE("Initializing renderer...");
@@ -82,13 +81,23 @@ namespace myth {
         s_backend = renderer_backend::create(s_api, config);
         MYTHOS_TRACE("Renderer initialized");
 
-        s_triangle_shader = shader::create(triangle_shader.faux_path, triangle_shader.data, shader_primitive::triangle);
+        g_rd = renderer_data{};
+
+        const std::vector<triangle_vertex> triangle_vertices = { /// ????
+            {{ 0.f, -.5f }, { 1.f, 0.f, 0.f, 1.f }},
+            {{ .5f, .5f },  { 0.f, 1.f, 0.f, 1.f }},
+            {{ -.5f, .5f }, { 0.f, 0.f, 1.f, 1.f }}
+        };
+
+        g_rd.triangle_shader = shader::create(triangle_shader_info.faux_path, triangle_shader_info.data, shader_primitive::triangle);
+        g_rd.triangle_vbo = s_backend->create_buffer(render_buffer_usage::vertex, g_rd.max_triangle_vertices * sizeof(triangle_vertex));
     }
 
     auto renderer::shutdown() -> void {
         s_backend->prepare_shutdown();
 
-        shader::destroy(s_triangle_shader);
+        s_backend->destroy_buffer(g_rd.triangle_vbo);
+        shader::destroy(g_rd.triangle_shader);
 
         MYTHOS_TRACE("Terminating renderer...");
         s_backend.reset();
@@ -112,6 +121,6 @@ namespace myth {
     }
 
     auto renderer::draw() -> void {
-        renderer::backend()->draw(*s_triangle_shader.get());
+        renderer::backend()->draw(*g_rd.triangle_shader.get());
     }
 }
