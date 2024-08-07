@@ -45,13 +45,16 @@ namespace myth::vulkan {
         MYL_NO_DISCARD auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<myth::shader> override;
         auto destroy_shader(myth::shader* shader) -> void override;
 
+        MYL_NO_DISCARD auto create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<myth::render_buffer> override;
+        auto destroy_render_buffer(myth::render_buffer* buffer) -> void override;
+
         auto set_clear_color(const myl::f32vec3& color) -> void override;
         auto set_vsync(bool value) -> void override;
 
         auto begin_frame() -> bool override;
         auto end_frame() -> void override;
 
-        auto draw(myth::shader& shader) -> void override;
+        auto draw(draw_data& draw_data) -> void override;
 
         auto prepare_shutdown() -> void override;
 

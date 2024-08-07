@@ -250,4 +250,17 @@ namespace myth::vulkan {
 
         // m_physical_device will be destroyed upon destruction of the vulkan instance
     }
+
+    MYL_NO_DISCARD auto device::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties) const -> uint32_t {
+        VkPhysicalDeviceMemoryProperties device_memory_properties{};
+        vkGetPhysicalDeviceMemoryProperties(m_physical_device, &device_memory_properties); /// MYTODO: Should probably store this
+        
+        // Check for suitable memory types and their properties
+        for (uint32_t i = 0; i != device_memory_properties.memoryTypeCount; ++i)
+            if ((type_filter & (1 << i)) && (device_memory_properties.memoryTypes[i].propertyFlags & properties) == properties)
+                return i;
+
+        MYTHOS_ERROR("Vulkan - Unable to find suitable memory type");
+        return device_queue_indices::not_available;
+    }
 }

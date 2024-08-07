@@ -1,4 +1,5 @@
 #pragma once
+#include <mythos/render/render_buffer.hpp>
 #include <mythos/render/shader.hpp>
 
 #include <myl/math/vec2.hpp>
@@ -35,6 +36,12 @@ namespace myth {
         bool vsync = true; /// MYTODO: PUT THIS INTO TEST BED
     };
 
+    struct draw_data {
+        shader&        shader;
+        render_buffer& vertex_buffer;
+        myl::u32       vertex_count = 0;
+    };
+
     class renderer_backend {
     public:
         MYL_NO_DISCARD static auto create(render_api api, const renderer_configuration& config) -> std::unique_ptr<renderer_backend>;
@@ -44,13 +51,16 @@ namespace myth {
         MYL_NO_DISCARD virtual auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<shader> = 0;
         virtual auto destroy_shader(shader* shader) -> void = 0;
 
+        MYL_NO_DISCARD virtual auto create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<render_buffer> = 0;
+        virtual auto destroy_render_buffer(render_buffer* buffer) -> void = 0;
+
         virtual auto set_clear_color(const myl::f32vec3& color) -> void = 0;
         virtual auto set_vsync(bool value) -> void = 0;
 
         virtual auto begin_frame() -> bool = 0;
         virtual auto end_frame() -> void = 0;
 
-        virtual auto draw(myth::shader& shader) -> void = 0; /// MYTEMP: REMOVE THIS
+        virtual auto draw(draw_data& draw_data) -> void = 0; /// MYTEMP: REMOVE THIS
 
         virtual auto prepare_shutdown() -> void = 0;
 

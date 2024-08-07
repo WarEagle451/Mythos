@@ -42,7 +42,7 @@ namespace testbed {
         hsv_clear_color[0] += 100.f * ts;
         if (hsv_clear_color[0] >= 360.f)
             hsv_clear_color[0] -= 360.f;
-        myth::renderer::set_clear_color(myl::color::hsv_to_rgb(hsv_clear_color));
+        myth::renderer::set_clear_color(myl::hsv_to_rgb(hsv_clear_color));
     }
 
     auto testbed_layer::render() -> void {

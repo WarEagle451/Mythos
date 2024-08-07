@@ -1,13 +1,13 @@
 #include <mythos/core/application.hpp>
 #include <mythos/render/vulkan/vulkan_backend.hpp>
 #include <mythos/render/vulkan/vulkan_platform.hpp>
+#include <mythos/render/vulkan/vulkan_render_buffer.hpp>
 #include <mythos/render/vulkan/vulkan_shader.hpp>>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 #include <mythos/version.hpp>
 
 /// MYTODO: Continue Vulkan tutorial from;
-/// - https://vulkan-tutorial.com/en/Vertex_buffers/Vertex_input_description
-/// - https://vulkan-tutorial.com/en/Vertex_buffers/Vertex_buffer_creation
+/// - https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -178,11 +178,11 @@ namespace myth::vulkan {
 
     MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
         vulkan::shader::create_info shader_create_info{
-            .swapchain_extent           = m_swapchain.image_extent(),
-            .render_pass                = m_main_render_pass.handle(),
-            .binaries                   = shader_binaries,
-            .layout                     = layout,
-            .primitive                  = primitive
+            .swapchain_extent = m_swapchain.image_extent(),
+            .render_pass      = m_main_render_pass.handle(),
+            .binaries         = shader_binaries,
+            .layout           = layout,
+            .primitive        = primitive
         };
 
         std::unique_ptr<vulkan::shader> shader = std::make_unique<vulkan::shader>();
@@ -193,6 +193,24 @@ namespace myth::vulkan {
     auto backend::destroy_shader(myth::shader* shader) -> void {
         vulkan::shader* vks = static_cast<vulkan::shader*>(shader);
         vulkan::shader::destroy(vks, m_device, VK_NULL_HANDLE);
+    }
+
+    MYL_NO_DISCARD auto backend::create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<myth::render_buffer> {
+        vulkan::render_buffer::create_info render_buffer_create_info{
+            .usage                = render_buffer_usage_to_VkBufferUsageFlags(usage),
+            .bytes                = static_cast<VkDeviceSize>(bytes),
+            ///.properties           = ,
+            .sharing_mode         = VK_SHARING_MODE_EXCLUSIVE
+        };
+
+        std::unique_ptr<vulkan::render_buffer> render_buffer = std::make_unique<vulkan::render_buffer>();
+        vulkan::render_buffer::create(render_buffer.get(), m_device, render_buffer_create_info, VK_NULL_HANDLE);
+        return render_buffer;
+    }
+
+    auto backend::destroy_render_buffer(myth::render_buffer* buffer) -> void {
+        vulkan::render_buffer* vkrb = static_cast<vulkan::render_buffer*>(buffer);
+        vulkan::render_buffer::destroy(vkrb, m_device, VK_NULL_HANDLE);
     }
 
     auto backend::set_clear_color(const myl::f32vec3& color) -> void {
@@ -341,13 +359,18 @@ namespace myth::vulkan {
         m_current_frame_index = (m_current_frame_index + 1) % m_swapchain.max_frames_in_flight();
     }
 
-    auto backend::draw(myth::shader& shader) -> void {
+    auto backend::draw(draw_data& draw_data) -> void {
+        // Get current command buffer
         command_buffer& current_command_buffer = m_command_buffers[m_current_frame_index];
+        vulkan::render_buffer& vkrb = static_cast<vulkan::render_buffer&>(draw_data.vertex_buffer);
+        VkDeviceSize offsets[]{ 0 };
         
-        vulkan::shader& vk_shader = static_cast<vulkan::shader&>(shader);
+        vulkan::shader& vk_shader = static_cast<vulkan::shader&>(draw_data.shader);
         vk_shader.bind(current_command_buffer.handle());
 
-        vkCmdDraw(current_command_buffer.handle(), 3, 1, 0, 0);
+        vkCmdBindVertexBuffers(current_command_buffer.handle(), 0, 1, &vkrb.handle(), offsets);
+
+        vkCmdDraw(current_command_buffer.handle(), static_cast<uint32_t>(draw_data.vertex_count), 1, 0, 0);
     }
 
     auto backend::prepare_shutdown() -> void {

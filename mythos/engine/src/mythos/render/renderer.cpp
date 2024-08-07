@@ -12,8 +12,10 @@ namespace myth {
     };
 
     struct renderer_data {
-        std::unique_ptr<shader> triangle_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
-        render_buffer           triangle_vbo{};
+        std::unique_ptr<shader>        triangle_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
+        std::unique_ptr<render_buffer> triangle_vbo = nullptr;
+        myl::u32                       triangle_vertex_count = 0;
+        const myl::u32                 triangle_max_vertex_count = 3 * 1024;
     };
 
     struct internal_shader {
@@ -79,24 +81,25 @@ namespace myth {
         MYTHOS_INFO("Render API '{}' selected", render_api_to_string(s_api));
 
         s_backend = renderer_backend::create(s_api, config);
-        MYTHOS_TRACE("Renderer initialized");
+        MYTHOS_TRACE("Renderer initialized");        
 
-        g_rd = renderer_data{};
+        g_rd.triangle_shader = shader::create(triangle_shader_info.faux_path, triangle_shader_info.data, shader_primitive::triangle);
+        g_rd.triangle_vbo = s_backend->create_render_buffer(render_buffer_usage::vertex, g_rd.triangle_max_vertex_count * sizeof(triangle_vertex));
 
-        const std::vector<triangle_vertex> triangle_vertices = { /// ????
-            {{ 0.f, -.5f }, { 1.f, 0.f, 0.f, 1.f }},
+        std::vector<triangle_vertex> triangle_vertices = {
+            {{ 0.f, -.5f }, { 1.f, 1.f, 1.f, 1.f }},
             {{ .5f, .5f },  { 0.f, 1.f, 0.f, 1.f }},
             {{ -.5f, .5f }, { 0.f, 0.f, 1.f, 1.f }}
         };
 
-        g_rd.triangle_shader = shader::create(triangle_shader_info.faux_path, triangle_shader_info.data, shader_primitive::triangle);
-        g_rd.triangle_vbo = s_backend->create_buffer(render_buffer_usage::vertex, g_rd.max_triangle_vertices * sizeof(triangle_vertex));
+        g_rd.triangle_vbo->set(triangle_vertices.data(), triangle_vertices.size() * sizeof(triangle_vertex));
+        g_rd.triangle_vertex_count = 3;
     }
 
     auto renderer::shutdown() -> void {
         s_backend->prepare_shutdown();
 
-        s_backend->destroy_buffer(g_rd.triangle_vbo);
+        s_backend->destroy_render_buffer(g_rd.triangle_vbo.get()); /// This may need to be called between swapchain destroy and device destroy
         shader::destroy(g_rd.triangle_shader);
 
         MYTHOS_TRACE("Terminating renderer...");
@@ -120,7 +123,13 @@ namespace myth {
         s_backend->end_frame();
     }
 
-    auto renderer::draw() -> void {
-        renderer::backend()->draw(*g_rd.triangle_shader.get());
+    auto renderer::draw() -> void {     
+        draw_data draw_data{
+            .shader        = *g_rd.triangle_shader.get(),
+            .vertex_buffer = *g_rd.triangle_vbo.get(),
+            .vertex_count  = g_rd.triangle_vertex_count
+        };
+
+        renderer::backend()->draw(draw_data);
     }
 }

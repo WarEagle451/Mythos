@@ -29,12 +29,12 @@ namespace myth::vulkan {
 
     class device {
         VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
-        VkDevice m_device = VK_NULL_HANDLE;
+        VkDevice         m_device = VK_NULL_HANDLE;
 
         VkPhysicalDeviceProperties m_properties{};
-        VkPhysicalDeviceFeatures m_available_features{};
-        VkPhysicalDeviceFeatures m_enabled_features{ VK_FALSE };
-        device_queue_indices m_qfi{};
+        VkPhysicalDeviceFeatures   m_available_features{};
+        VkPhysicalDeviceFeatures   m_enabled_features{ VK_FALSE };
+        device_queue_indices       m_qfi{};
 
         VkQueue m_queue_compute = VK_NULL_HANDLE;
         VkQueue m_queue_graphics = VK_NULL_HANDLE;
@@ -66,5 +66,7 @@ namespace myth::vulkan {
         MYL_NO_DISCARD constexpr auto graphics_queue() const noexcept -> VkQueue { return m_queue_graphics; }
         MYL_NO_DISCARD constexpr auto present_queue() const noexcept -> VkQueue { return m_queue_present; }
         MYL_NO_DISCARD constexpr auto transfer_queue() const noexcept -> VkQueue { return m_queue_transfer; }
+
+        MYL_NO_DISCARD auto find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties) const -> uint32_t;
     };
 }
