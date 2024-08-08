@@ -118,11 +118,11 @@ namespace myth {
     }
 
     auto application::quit() noexcept -> void {
-        /// MYTODO: This should send a request to quit event, there may be some operations that can not be interupted.
+        /// MYTODO: This should send a request to quit event, there may be some operations that cannot/shouldn't be interupted.
         m_running = false;
     }
 
-    auto application::update_cursor_capture() -> void {
+    auto application::update_cursor_capture() -> void { /// MYTODO: Should be handle in the window class maybe
         if (m_cursor_capturing_window == nullptr)
             return;
 

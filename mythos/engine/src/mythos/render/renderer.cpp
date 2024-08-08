@@ -4,6 +4,7 @@
 
 #include <myl/platform.hpp>
 #include <myl/math/vec4.hpp>
+#include <myl/memory.hpp>
 
 namespace myth {
     struct triangle_vertex {
@@ -12,10 +13,11 @@ namespace myth {
     };
 
     struct renderer_data {
-        std::unique_ptr<shader>        triangle_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
-        std::unique_ptr<render_buffer> triangle_vbo = nullptr;
-        myl::u32                       triangle_vertex_count = 0;
-        const myl::u32                 triangle_max_vertex_count = 3 * 1024;
+        std::unique_ptr<shader>              triangle_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
+        std::unique_ptr<render_buffer>       triangle_vbo = nullptr;
+        myl::buffer<std::allocator<myl::u8>> triangle_vertex_data;
+        myl::u32                             triangle_vertex_count = 0;
+        const myl::u32                       triangle_max_vertex_count = 3 * 1024;
     };
 
     struct internal_shader {
@@ -84,22 +86,27 @@ namespace myth {
         MYTHOS_TRACE("Renderer initialized");        
 
         g_rd.triangle_shader = shader::create(triangle_shader_info.faux_path, triangle_shader_info.data, shader_primitive::triangle);
-        g_rd.triangle_vbo = s_backend->create_render_buffer(render_buffer_usage::vertex, g_rd.triangle_max_vertex_count * sizeof(triangle_vertex));
-
-        std::vector<triangle_vertex> triangle_vertices = {
+        const myl::usize triangle_vertices_byte_count = g_rd.triangle_max_vertex_count * sizeof(triangle_vertex);
+        g_rd.triangle_vbo = s_backend->create_render_buffer(render_buffer_usage::vertex, triangle_vertices_byte_count);
+        g_rd.triangle_vertex_data.allocate(triangle_vertices_byte_count);
+        
+        triangle_vertex vertices[]{ /// MYTemp: To be removed upon addition of index rendering
             {{ 0.f, -.5f }, { 1.f, 1.f, 1.f, 1.f }},
             {{ .5f, .5f },  { 0.f, 1.f, 0.f, 1.f }},
             {{ -.5f, .5f }, { 0.f, 0.f, 1.f, 1.f }}
         };
-
-        g_rd.triangle_vbo->set(triangle_vertices.data(), triangle_vertices.size() * sizeof(triangle_vertex));
+        
+        g_rd.triangle_vertex_data.set(vertices, 3 * sizeof(triangle_vertex));
         g_rd.triangle_vertex_count = 3;
+
+        g_rd.triangle_vbo->set(g_rd.triangle_vertex_data.data(), g_rd.triangle_vertex_count * sizeof(triangle_vertex));
     }
 
     auto renderer::shutdown() -> void {
         s_backend->prepare_shutdown();
 
         s_backend->destroy_render_buffer(g_rd.triangle_vbo.get()); /// This may need to be called between swapchain destroy and device destroy
+        // g_rd.triangle_vertex_data will automatically delete data
         shader::destroy(g_rd.triangle_shader);
 
         MYTHOS_TRACE("Terminating renderer...");
