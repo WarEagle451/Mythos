@@ -33,7 +33,7 @@ namespace myth {
 
     struct renderer_configuration {
         myl::f32vec3 clear_color = myl::f32vec3(0.f);
-        bool vsync = true; /// MYTODO: PUT THIS INTO TEST BED
+        bool vsync = true;
     };
 
     struct draw_data {

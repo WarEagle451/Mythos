@@ -36,9 +36,9 @@ namespace myth::vulkan {
         VkPhysicalDeviceFeatures   m_enabled_features{ VK_FALSE };
         device_queue_indices       m_qfi{};
 
-        VkQueue m_queue_compute = VK_NULL_HANDLE;
+        VkQueue m_queue_compute  = VK_NULL_HANDLE;
         VkQueue m_queue_graphics = VK_NULL_HANDLE;
-        VkQueue m_queue_present = VK_NULL_HANDLE;
+        VkQueue m_queue_present  = VK_NULL_HANDLE;
         VkQueue m_queue_transfer = VK_NULL_HANDLE;
     public:
         struct create_info {

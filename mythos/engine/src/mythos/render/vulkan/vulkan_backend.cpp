@@ -7,7 +7,10 @@
 #include <mythos/version.hpp>
 
 /// MYTODO: Continue Vulkan tutorial from;
-/// - https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer
+/// - https://vulkan-tutorial.com/Vertex_buffers/Index_buffer
+/// - Implement VulkanMemoryAllocator, it's bad to have allocations (staging, vertex, index buffers)
+///     https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+///     on page https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer at the bottom of the page
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -150,25 +153,26 @@ namespace myth::vulkan {
         render_pass::create(&m_main_render_pass, m_device, render_pass_create_info, VK_NULL_HANDLE);
 
         command_pool::create_info command_pool_create_info{
+            .queue              = m_device.graphics_queue(),
             .queue_family_index = m_device.queue_family_indices().graphics
         };
 
-        command_pool::create(&m_command_pool, m_device, command_pool_create_info, VK_NULL_HANDLE);
+        command_pool::create(&m_graphics_command_pool, m_device, command_pool_create_info, VK_NULL_HANDLE);
 
         m_swapchain.recreate_framebuffers(m_device, m_main_render_pass.handle(), VK_NULL_HANDLE);
-        m_command_buffers.resize(m_swapchain.max_frames_in_flight());
-        m_command_pool.allocate_command_buffers(m_device, m_command_buffers.begin(), m_command_buffers.end());
+        m_graphics_command_buffers.resize(m_swapchain.max_frames_in_flight());
+        m_graphics_command_pool.allocate_command_buffers(m_device, m_graphics_command_buffers.begin(), m_graphics_command_buffers.end());
     }
 
     backend::~backend() {
         vkDeviceWaitIdle(m_device.logical());
 
-        m_command_pool.deallocate_command_buffers(m_device, m_command_buffers.begin(), m_command_buffers.end());
-        m_command_buffers.clear();
+        m_graphics_command_pool.deallocate_command_buffers(m_device, m_graphics_command_buffers.begin(), m_graphics_command_buffers.end());
+        m_graphics_command_buffers.clear();
 
         m_swapchain.destroy_framebuffers(m_device, VK_NULL_HANDLE);
 
-        command_pool::destroy(&m_command_pool, m_device, VK_NULL_HANDLE);
+        command_pool::destroy(&m_graphics_command_pool, m_device, VK_NULL_HANDLE);
         render_pass::destroy(&m_main_render_pass, m_device, VK_NULL_HANDLE);
         swapchain::destroy(&m_swapchain, m_device, VK_NULL_HANDLE);
         device::destroy(&m_device, VK_NULL_HANDLE);
@@ -196,10 +200,28 @@ namespace myth::vulkan {
     }
 
     MYL_NO_DISCARD auto backend::create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<myth::render_buffer> {
+        VkBufferUsageFlags vk_usage = render_buffer_usage_to_VkBufferUsageFlags(usage);
+        VkMemoryPropertyFlags memory_properties{};
+        switch (usage) {
+            using enum render_buffer_usage;
+        case index:
+            memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            break;
+        case vertex:
+            vk_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            break;
+        default:
+            memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            MYTHOS_ERROR("Vulkan - Unknown buffer usage: {}", static_cast<myl::u32>(usage));
+            break;
+        }
+        
         vulkan::render_buffer::create_info render_buffer_create_info{
-            .usage                = render_buffer_usage_to_VkBufferUsageFlags(usage),
+            .command_pool         = m_graphics_command_pool,
+            .usage                = vk_usage,
             .bytes                = static_cast<VkDeviceSize>(bytes),
-            ///.properties           = ,
+            .properties           = memory_properties,
             .sharing_mode         = VK_SHARING_MODE_EXCLUSIVE
         };
 
@@ -293,7 +315,7 @@ namespace myth::vulkan {
             .maxDepth = 1.f
         };
         
-        command_buffer& current_command_buffer = m_command_buffers[m_current_frame_index];
+        command_buffer& current_command_buffer = m_graphics_command_buffers[m_current_frame_index];
         current_command_buffer.reset();
         current_command_buffer.begin();
         m_main_render_pass.begin(current_command_buffer.handle(), m_swapchain.framebuffers()[m_swapchain.current_image_index()], scissor);
@@ -307,7 +329,7 @@ namespace myth::vulkan {
     }
 
     auto backend::end_frame() -> void {
-        command_buffer& current_command_buffer = m_command_buffers[m_current_frame_index];
+        command_buffer& current_command_buffer = m_graphics_command_buffers[m_current_frame_index];
         
         m_main_render_pass.end(current_command_buffer.handle());
         current_command_buffer.end();
@@ -361,7 +383,7 @@ namespace myth::vulkan {
 
     auto backend::draw(draw_data& draw_data) -> void {
         // Get current command buffer
-        command_buffer& current_command_buffer = m_command_buffers[m_current_frame_index];
+        command_buffer& current_command_buffer = m_graphics_command_buffers[m_current_frame_index];
         vulkan::render_buffer& vkrb = static_cast<vulkan::render_buffer&>(draw_data.vertex_buffer);
         VkDeviceSize offsets[]{ 0 };
         

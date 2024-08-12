@@ -29,14 +29,18 @@ namespace myth::vulkan {
         };
 
         MYTHOS_VULKAN_VERIFY(vkCreateCommandPool, device.logical(), &command_pool_create_info, allocator, &h->m_command_pool);
+
+        h->m_queue = ci.queue;
     }
 
     auto command_pool::destroy(command_pool* h, device& device, VkAllocationCallbacks* allocator) noexcept -> void {
+        h->m_queue = VK_NULL_HANDLE;
+
         if (h->m_command_pool)
             vkDestroyCommandPool(device.logical(), h->m_command_pool, allocator);
     }
 
-    auto command_pool::allocate_command_buffers(device& device, std::vector<command_buffer>::iterator begin, std::vector<command_buffer>::iterator end) -> void {
+    auto command_pool::allocate_command_buffers(device& device, command_buffer* first, myl::u32 count) -> void {
         VkCommandBufferAllocateInfo command_buffer_allocate_info{
             .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             //.pNext = ,
@@ -45,28 +49,58 @@ namespace myth::vulkan {
             .commandBufferCount = 1,
         };
 
-        while (begin != end) {
-            if (begin->m_command_buffer != VK_NULL_HANDLE) {
-                MYTHOS_ERROR("Double allocating command buffer '{}' is forbidden! Skipping...", reinterpret_cast<intptr_t>(begin->m_command_buffer));
-                ++begin;
+        for (myl::u32 i = 0; i != count; ++i, ++first) {
+            if (first->m_command_buffer != VK_NULL_HANDLE) {
+                MYTHOS_ERROR("Command buffer '{}' is already allocated, allocating again is undefined behaviour, skipping...", reinterpret_cast<intptr_t>(first->m_command_buffer));
                 continue;
             }
 
-            MYTHOS_VULKAN_VERIFY(vkAllocateCommandBuffers, device.logical(), &command_buffer_allocate_info, &begin->m_command_buffer);
-            ++begin;
+            MYTHOS_VULKAN_VERIFY(vkAllocateCommandBuffers, device.logical(), &command_buffer_allocate_info, &first->m_command_buffer);
         }
     }
 
-    auto command_pool::deallocate_command_buffers(device& device, std::vector<command_buffer>::iterator begin, std::vector<command_buffer>::iterator end) -> void {
-        while (begin != end) {
-            if (begin->m_command_buffer == VK_NULL_HANDLE) {
-                MYTHOS_ERROR("Double deallocating command buffer '{}' is forbidden! Skipping...", reinterpret_cast<intptr_t>(begin->m_command_buffer));
-                ++begin;
+    auto command_pool::allocate_command_buffers(device& device, std::vector<command_buffer>::iterator first, std::vector<command_buffer>::iterator last) -> void {
+        VkCommandBufferAllocateInfo command_buffer_allocate_info{
+            .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+            //.pNext = ,
+            .commandPool        = m_command_pool,
+            .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+            .commandBufferCount = 1,
+        };
+
+        while (first != last) {
+            if (first->m_command_buffer != VK_NULL_HANDLE) {
+                MYTHOS_ERROR("Command buffer '{}' is already allocated, allocating again is undefined behaviour, skipping...", reinterpret_cast<intptr_t>(first->m_command_buffer));
+                ++first;
                 continue;
             }
 
-            vkFreeCommandBuffers(device.logical(), m_command_pool, 1, &begin->m_command_buffer);
-            ++begin;
+            MYTHOS_VULKAN_VERIFY(vkAllocateCommandBuffers, device.logical(), &command_buffer_allocate_info, &first->m_command_buffer);
+            ++first;
+        }
+    }
+
+    auto command_pool::deallocate_command_buffers(device& device, command_buffer* first, myl::u32 count) -> void {
+        for (myl::u32 i = 0; i != count; ++i, ++first) {
+            if (first->m_command_buffer == VK_NULL_HANDLE) {
+                MYTHOS_ERROR("Command buffer '{}' is already deallocated, deallocating again is undefined behaviour, skipping...", reinterpret_cast<intptr_t>(first->m_command_buffer));
+                continue;
+            }
+
+            vkFreeCommandBuffers(device.logical(), m_command_pool, 1, &first->m_command_buffer);
+        }
+    }
+
+    auto command_pool::deallocate_command_buffers(device& device, std::vector<command_buffer>::iterator first, std::vector<command_buffer>::iterator last) -> void {
+        while (first != last) {
+            if (first->m_command_buffer == VK_NULL_HANDLE) {
+                MYTHOS_ERROR("Command buffer '{}' is already deallocated, deallocating again is undefined behaviour, skipping...", reinterpret_cast<intptr_t>(first->m_command_buffer));
+                ++first;
+                continue;
+            }
+
+            vkFreeCommandBuffers(device.logical(), m_command_pool, 1, &first->m_command_buffer);
+            ++first;
         }
     }
 }

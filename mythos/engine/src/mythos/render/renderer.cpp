@@ -99,7 +99,7 @@ namespace myth {
         g_rd.triangle_vertex_data.set(vertices, 3 * sizeof(triangle_vertex));
         g_rd.triangle_vertex_count = 3;
 
-        g_rd.triangle_vbo->set(g_rd.triangle_vertex_data.data(), g_rd.triangle_vertex_count * sizeof(triangle_vertex));
+        g_rd.triangle_vbo->upload(g_rd.triangle_vertex_data.data(), g_rd.triangle_vertex_count * sizeof(triangle_vertex));
     }
 
     auto renderer::shutdown() -> void {

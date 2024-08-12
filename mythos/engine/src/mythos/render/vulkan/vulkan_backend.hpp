@@ -17,19 +17,19 @@
 
 namespace myth::vulkan {
     class backend : public myth::renderer_backend {
-        VkInstance m_instance;
+        VkInstance   m_instance;
         VkSurfaceKHR m_surface;
         
-        device m_device;
-        command_pool m_command_pool;
-        swapchain m_swapchain;
-        render_pass m_main_render_pass;
+        device       m_device;
+        command_pool m_graphics_command_pool;
+        swapchain    m_swapchain;
+        render_pass  m_main_render_pass;
 
-        std::vector<command_buffer> m_command_buffers;
+        std::vector<command_buffer> m_graphics_command_buffers;
 
         uint32_t m_current_frame_index;
 
-        bool m_framebuffer_resized;
+        bool       m_framebuffer_resized;
         VkExtent2D m_cached_framebuffer_extent;
 
         bool m_cached_vsync;

@@ -15,8 +15,7 @@ namespace myth::vulkan {
         };
 
         MYTHOS_VULKAN_VERIFY(vkCreateBuffer, device.logical(), &buffer_create_info, allocator, &handle->m_buffer);
-
-        /// MYTODO: MAYBE DO THIS IN BACKEND AND PASS INTO ci.properties, specifically -> VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+        
         VkMemoryRequirements memory_requirements{};
         vkGetBufferMemoryRequirements(device.logical(), handle->m_buffer, &memory_requirements);
 
@@ -24,11 +23,13 @@ namespace myth::vulkan {
             .sType           = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
             ///.pNext           = ,
             .allocationSize  = memory_requirements.size,
-            .memoryTypeIndex = device.find_memory_type(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+            .memoryTypeIndex = device.find_memory_type(memory_requirements.memoryTypeBits, ci.properties)
         };
 
         MYTHOS_VULKAN_VERIFY(vkAllocateMemory, device.logical(), &allocate_info, allocator, &handle->m_memory);
-        handle->m_logical_device = device.logical();
+        handle->m_memory_properties = ci.properties;
+        handle->m_device = &device;
+        handle->m_command_pool = &ci.command_pool;
         handle->bind();
     }
 
@@ -38,8 +39,86 @@ namespace myth::vulkan {
         vkFreeMemory(device.logical(), handle->m_memory, allocator);
     }
 
+    auto render_buffer::copy(render_buffer& src, render_buffer& dst, VkDeviceSize size, VkDeviceSize offset, VkDeviceSize index, command_pool& command_pool) -> void {
+        command_buffer copy_command_buffer{};
+        command_pool.allocate_command_buffers(*dst.m_device, &copy_command_buffer, 1);
+        copy_command_buffer.begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+        VkBufferCopy copy_region{
+            .srcOffset = 0,
+            .dstOffset = 0,
+            .size      = size,
+        };
+
+        vkCmdCopyBuffer(copy_command_buffer.handle(), src.handle(), dst.handle(), 1, &copy_region);
+        copy_command_buffer.end();
+
+        VkSubmitInfo submit_info{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            ///.pNext                =,
+            ///.waitSemaphoreCount   =,
+            ///.pWaitSemaphores      =,
+            ///.pWaitDstStageMask    =,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &copy_command_buffer.handle(),
+            ///.signalSemaphoreCount =,
+            ///.pSignalSemaphores    =,
+        };
+
+        /// MYTODO: Fences may also be used, this can allow the drive to optimize things
+        vkQueueSubmit(command_pool.queue(), 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(command_pool.queue());
+        
+        command_pool.deallocate_command_buffers(*dst.m_device, &copy_command_buffer, 1);
+        
+        ///VkCommandBufferAllocateInfo command_buffer_allocate_info{
+        ///    .sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        ///    ///.pNext              =,
+        ///    .commandPool        = ,
+        ///    .level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        ///    .commandBufferCount = 1
+        ///};
+        ///
+        ///VkCommandBuffer command_buffer{};
+        ///vkAllocateCommandBuffers(dst.m_logical_device, &command_buffer_allocate_info, &command_buffer);
+        ///
+        ///VkCommandBufferBeginInfo command_buffer_begin_info{
+        ///    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        ///    ///.pNext = ,
+        ///    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        ///    ///.pInheritanceInfo = 
+        ///};
+        ///
+        ///vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info);
+        ///VkBufferCopy copy_region{
+        ///    .srcOffset = 0,
+        ///    .dstOffset = 0,
+        ///    .size      = size,
+        ///};
+        ///vkCmdCopyBuffer(command_buffer, src.handle(), dst.handle(), 1, &copy_region);
+        ///vkEndCommandBuffer(command_buffer);
+        ///
+        ///VkSubmitInfo submit_info{
+        ///    .sType                = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        ///    ///.pNext                =,
+        ///    ///.waitSemaphoreCount   =,
+        ///    ///.pWaitSemaphores      =,
+        ///    ///.pWaitDstStageMask    =,
+        ///    .commandBufferCount   = 1,
+        ///    .pCommandBuffers      = &command_buffer,
+        ///    ///.signalSemaphoreCount =,
+        ///    ///.pSignalSemaphores    =,
+        ///};
+        ///
+        ////// MYTODO: Should be on the transfer queue, but all graphics queues are transfer queues so this works for now
+        ///vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE); /// MYTODO: Fences may also be used, this can allow the drive to optimize things
+        ///vkQueueWaitIdle(graphics_queue);
+        ///
+        ///vkFreeCommandBuffers(dst.m_logical_device, , 1, &command_buffer);
+    }
+
     auto render_buffer::bind(myl::usize offset, myl::usize index) -> void {
-        vkBindBufferMemory(m_logical_device, m_buffer, m_memory, offset); /// MYTODO: OFFSET NEEDS TO BE CALCULATED with index and blocksize
+        vkBindBufferMemory(m_device->logical(), m_buffer, m_memory, offset); /// MYTODO: OFFSET NEEDS TO BE CALCULATED with index and blocksize
     }
 
     auto render_buffer::unbind() -> void {
@@ -48,13 +127,13 @@ namespace myth::vulkan {
 
     auto render_buffer::set(void* data, myl::usize size, myl::usize offset, myl::usize index) -> void {
         void* data_ptr = nullptr;
-        vkMapMemory(m_logical_device, m_memory, static_cast<VkDeviceSize>(offset), static_cast<VkDeviceSize>(size), 0, &data_ptr); /// MYTODO: OFFSET NEEDS TO BE CALCULATED with index and blocksize
+        vkMapMemory(m_device->logical(), m_memory, static_cast<VkDeviceSize>(offset), static_cast<VkDeviceSize>(size), 0, &data_ptr); /// MYTODO: OFFSET NEEDS TO BE CALCULATED with index and blocksize
         memcpy(data_ptr, data, static_cast<size_t>(size));
         
         /// MYTODO: IMPLEMENT & Figure out where vkInvalidateMappedMemoryRanges should be
         /// https://vulkan-tutorial.com/en/Vertex_buffers/Vertex_buffer_creation - Above "Binding the vertex buffer"
         ///// Non VK_MEMORY_PROPERTY_HOST_COHERENT_BIT buffers must have mapped memory flushed
-        ///if (!(m_memory_flags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+        ///if (!(m_memory_properties & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
         ///    VkMappedMemoryRange range{
         ///        .sType  = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
         ///        .memory = m_memory,
@@ -65,10 +144,46 @@ namespace myth::vulkan {
         ///    vkFlushMappedMemoryRanges(m_logical_device, 1, &range);
         ///}
 
-        vkUnmapMemory(m_logical_device, m_memory);
+        vkUnmapMemory(m_device->logical(), m_memory);
     }
 
     auto render_buffer::upload(void* data, myl::usize size, myl::usize offset, myl::usize index) -> void {
+        const VkDeviceSize vk_size = static_cast<VkDeviceSize>(size);
+        const VkDeviceSize vk_offset = static_cast<VkDeviceSize>(offset);
+        const VkDeviceSize vk_index = static_cast<VkDeviceSize>(index);
 
+        // The most optimal memory has the VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT flag and is usally not accessible by the CPU on dedicated graphics cards.
+        // Therefore, a staging buffer must be used to set data.
+        if (m_memory_properties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+            /// MYTODO: dedicated command pool https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer
+            ///     Should be on the transfer queue, but all graphics queues are transfer queues so this works for now
+            create_info staging_buffer_create_info{
+                .command_pool = *m_command_pool,
+                .usage        = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                .bytes        = vk_size,
+                .properties   = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                .sharing_mode = VK_SHARING_MODE_EXCLUSIVE,
+            };
+
+            render_buffer staging_buffer{};
+            render_buffer::create(&staging_buffer, *m_device, staging_buffer_create_info, VK_NULL_HANDLE);
+
+            staging_buffer.set(data, vk_size, vk_offset, vk_index);
+
+            /// MYTODO: dedicated command pool https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer
+            ///     Should be on the transfer queue, but all graphics queues are transfer queues so this works for now
+            /*
+            * "Memory transfer operations are executed using command buffers, just like drawing commands.
+            * Therefore we must first allocate a temporary command buffer. You may wish to create a separate
+            * command pool for these kinds of short-lived buffers, because the implementation may be able to
+            * apply memory allocation optimizations. You should use the VK_COMMAND_POOL_CREATE_TRANSIENT_BIT flag
+            * during command pool generation in that case."
+            */
+            render_buffer::copy(staging_buffer, *this, vk_size, vk_offset, vk_index, *m_command_pool); /// ARE THESE REVERSED??? 
+
+            render_buffer::destroy(&staging_buffer, *m_device, VK_NULL_HANDLE);
+        }
+        else
+            set(data, size, offset, index);
     }
 }
