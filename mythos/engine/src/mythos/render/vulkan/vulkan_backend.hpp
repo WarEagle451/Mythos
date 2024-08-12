@@ -54,7 +54,7 @@ namespace myth::vulkan {
         auto begin_frame() -> bool override;
         auto end_frame() -> void override;
 
-        auto draw(draw_data& draw_data) -> void override;
+        auto draw(indexed_draw_data& draw_data) -> void override;
 
         auto prepare_shutdown() -> void override;
 

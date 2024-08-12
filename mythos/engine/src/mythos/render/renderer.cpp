@@ -7,17 +7,22 @@
 #include <myl/memory.hpp>
 
 namespace myth {
-    struct triangle_vertex {
+    struct vertex {
         myl::f32vec2 position;
         myl::f32vec4 color;
     };
 
     struct renderer_data {
-        std::unique_ptr<shader>              triangle_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
-        std::unique_ptr<render_buffer>       triangle_vbo = nullptr;
-        myl::buffer<std::allocator<myl::u8>> triangle_vertex_data;
-        myl::u32                             triangle_vertex_count = 0;
-        const myl::u32                       triangle_max_vertex_count = 3 * 1024;
+        const myl::u32 max_quads = 1024;
+        const myl::u32 max_quad_vertices = max_quads * 4;
+        const myl::u32 max_quad_indices = max_quads * 6;
+
+        std::unique_ptr<shader>              quad_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
+        myl::buffer<std::allocator<myl::u8>> quad_vertex_data;
+        std::unique_ptr<render_buffer>       quad_vbo = nullptr;
+        myl::u32                             quad_vertex_count = 0; /// MYTEMP: Until batching is introduced
+        std::unique_ptr<render_buffer>       quad_ibo = nullptr;
+        myl::u32                             quad_index_count = 0;
     };
 
     struct internal_shader {
@@ -25,7 +30,7 @@ namespace myth {
         const char* data;
     };
 
-    constexpr internal_shader triangle_shader_info{
+    constexpr internal_shader quad_shader_info{
         .faux_path = "resources/shaders/mythos_internal_triangle.glsl",
         .data =
             "#type vertex\r\n"
@@ -85,29 +90,51 @@ namespace myth {
         s_backend = renderer_backend::create(s_api, config);
         MYTHOS_TRACE("Renderer initialized");        
 
-        g_rd.triangle_shader = shader::create(triangle_shader_info.faux_path, triangle_shader_info.data, shader_primitive::triangle);
-        const myl::usize triangle_vertices_byte_count = g_rd.triangle_max_vertex_count * sizeof(triangle_vertex);
-        g_rd.triangle_vbo = s_backend->create_render_buffer(render_buffer_usage::vertex, triangle_vertices_byte_count);
-        g_rd.triangle_vertex_data.allocate(triangle_vertices_byte_count);
-        
-        triangle_vertex vertices[]{ /// MYTemp: To be removed upon addition of index rendering
-            {{ 0.f, -.5f }, { 1.f, 1.f, 1.f, 1.f }},
-            {{ .5f, .5f },  { 0.f, 1.f, 0.f, 1.f }},
-            {{ -.5f, .5f }, { 0.f, 0.f, 1.f, 1.f }}
+        // Quad
+
+        g_rd.quad_shader = shader::create(quad_shader_info.faux_path, quad_shader_info.data, shader_primitive::triangle);
+
+        const myl::usize quad_vertices_byte_size = g_rd.max_quad_vertices * sizeof(vertex);
+        g_rd.quad_vbo = s_backend->create_render_buffer(render_buffer_usage::vertex, quad_vertices_byte_size);
+
+        vertex quad_vertices[]{ /// MYTemp: To be removed upon addition of index rendering
+            {{ -.5f, -.5f }, { 1.f, 0.f, 0.f, 1.f }},
+            {{  .5f, -.5f }, { 0.f, 1.f, 0.f, 1.f }},
+            {{  .5f,  .5f }, { 0.f, 0.f, 1.f, 1.f }},
+            {{ -.5f,  .5f }, { 1.f, 1.f, 1.f, 1.f }}
         };
         
-        g_rd.triangle_vertex_data.set(vertices, 3 * sizeof(triangle_vertex));
-        g_rd.triangle_vertex_count = 3;
+        g_rd.quad_vertex_data.allocate(quad_vertices_byte_size);
+        g_rd.quad_vertex_data.set(quad_vertices, 4 * sizeof(vertex));
+        g_rd.quad_vertex_count = 4;
 
-        g_rd.triangle_vbo->upload(g_rd.triangle_vertex_data.data(), g_rd.triangle_vertex_count * sizeof(triangle_vertex));
+        g_rd.quad_vbo->upload(g_rd.quad_vertex_data.data(), g_rd.quad_vertex_count * sizeof(vertex));
+
+        std::vector<uint16_t> quad_indices(g_rd.max_quad_indices); /// MYTODO: increase vertices limit, this will max at 65535
+        for (myl::u32 i = 0, offset = 0; i != g_rd.max_quad_indices; i += 6, offset += 4) {
+            quad_indices[i + 0] = offset + 0;
+            quad_indices[i + 1] = offset + 1;
+            quad_indices[i + 2] = offset + 2;
+            quad_indices[i + 3] = offset + 2;
+            quad_indices[i + 4] = offset + 3;
+            quad_indices[i + 5] = offset + 0;
+        }
+
+        const myl::usize quad_indices_byte_size = g_rd.max_quad_indices * sizeof(uint16_t);
+        g_rd.quad_ibo = s_backend->create_render_buffer(render_buffer_usage::index, quad_indices_byte_size);
+        g_rd.quad_ibo->upload(quad_indices.data(), quad_indices_byte_size);
+        g_rd.quad_index_count = 6; /// Temp: should not be done here
     }
 
     auto renderer::shutdown() -> void {
         s_backend->prepare_shutdown();
 
-        s_backend->destroy_render_buffer(g_rd.triangle_vbo.get()); /// This may need to be called between swapchain destroy and device destroy
-        // g_rd.triangle_vertex_data will automatically delete data
-        shader::destroy(g_rd.triangle_shader);
+        s_backend->destroy_render_buffer(g_rd.quad_ibo.get());
+        s_backend->destroy_render_buffer(g_rd.quad_vbo.get());
+
+        g_rd.quad_vertex_data.deallocate();
+
+        shader::destroy(g_rd.quad_shader);
 
         MYTHOS_TRACE("Terminating renderer...");
         s_backend.reset();
@@ -131,12 +158,14 @@ namespace myth {
     }
 
     auto renderer::draw() -> void {     
-        draw_data draw_data{
-            .shader        = *g_rd.triangle_shader.get(),
-            .vertex_buffer = *g_rd.triangle_vbo.get(),
-            .vertex_count  = g_rd.triangle_vertex_count
+        indexed_draw_data indexed_draw_data{
+            .shader        = *g_rd.quad_shader.get(),
+            .vertex_buffer = *g_rd.quad_vbo.get(),
+            .vertex_count  = g_rd.quad_vertex_count,
+            .index_buffer  = *g_rd.quad_ibo.get(),
+            .index_count   = g_rd.quad_index_count
         };
 
-        renderer::backend()->draw(draw_data);
+        renderer::backend()->draw(indexed_draw_data);
     }
 }

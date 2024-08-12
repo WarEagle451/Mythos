@@ -7,10 +7,10 @@
 #include <mythos/version.hpp>
 
 /// MYTODO: Continue Vulkan tutorial from;
-/// - https://vulkan-tutorial.com/Vertex_buffers/Index_buffer
+/// - https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_layout_and_buffer
 /// - Implement VulkanMemoryAllocator, it's bad to have allocations (staging, vertex, index buffers)
 ///     https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
-///     on page https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer at the bottom of the page
+///     on page https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer (at the bottom of the page)
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
@@ -204,9 +204,7 @@ namespace myth::vulkan {
         VkMemoryPropertyFlags memory_properties{};
         switch (usage) {
             using enum render_buffer_usage;
-        case index:
-            memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-            break;
+        case index: MYL_FALLTHROUGH;
         case vertex:
             vk_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -381,18 +379,20 @@ namespace myth::vulkan {
         m_current_frame_index = (m_current_frame_index + 1) % m_swapchain.max_frames_in_flight();
     }
 
-    auto backend::draw(draw_data& draw_data) -> void {
+    auto backend::draw(indexed_draw_data& indexed_draw_data) -> void {
+        vulkan::shader& vk_shader = static_cast<vulkan::shader&>(indexed_draw_data.shader);
+        VkDeviceSize offsets[]{ 0 };
+        vulkan::render_buffer& vkvb = static_cast<vulkan::render_buffer&>(indexed_draw_data.vertex_buffer);
+        vulkan::render_buffer& vkib = static_cast<vulkan::render_buffer&>(indexed_draw_data.index_buffer);
+
         // Get current command buffer
         command_buffer& current_command_buffer = m_graphics_command_buffers[m_current_frame_index];
-        vulkan::render_buffer& vkrb = static_cast<vulkan::render_buffer&>(draw_data.vertex_buffer);
-        VkDeviceSize offsets[]{ 0 };
-        
-        vulkan::shader& vk_shader = static_cast<vulkan::shader&>(draw_data.shader);
+
         vk_shader.bind(current_command_buffer.handle());
 
-        vkCmdBindVertexBuffers(current_command_buffer.handle(), 0, 1, &vkrb.handle(), offsets);
-
-        vkCmdDraw(current_command_buffer.handle(), static_cast<uint32_t>(draw_data.vertex_count), 1, 0, 0);
+        vkCmdBindVertexBuffers(current_command_buffer.handle(), 0, 1, &vkvb.handle(), offsets);
+        vkCmdBindIndexBuffer(current_command_buffer.handle(), vkib.handle(), 0, VK_INDEX_TYPE_UINT16); /// MYTODO: VK_INDEX_TYPE_UINT16 should not be the only index buffer type
+        vkCmdDrawIndexed(current_command_buffer.handle(), static_cast<uint32_t>(indexed_draw_data.index_count), 1, 0, 0, 0);
     }
 
     auto backend::prepare_shutdown() -> void {
