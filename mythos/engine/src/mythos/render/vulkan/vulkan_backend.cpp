@@ -266,7 +266,6 @@ namespace myth::vulkan {
             return false;
         }
 
-
         /// MYTODO: if skip by minimization is needed then is should be done here
 
         // Wait for previous frame to stop rendering
@@ -391,7 +390,7 @@ namespace myth::vulkan {
         vk_shader.bind(current_command_buffer.handle());
 
         vkCmdBindVertexBuffers(current_command_buffer.handle(), 0, 1, &vkvb.handle(), offsets);
-        vkCmdBindIndexBuffer(current_command_buffer.handle(), vkib.handle(), 0, VK_INDEX_TYPE_UINT16); /// MYTODO: VK_INDEX_TYPE_UINT16 should not be the only index buffer type
+        vkCmdBindIndexBuffer(current_command_buffer.handle(), vkib.handle(), 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(current_command_buffer.handle(), static_cast<uint32_t>(indexed_draw_data.index_count), 1, 0, 0, 0);
     }
 

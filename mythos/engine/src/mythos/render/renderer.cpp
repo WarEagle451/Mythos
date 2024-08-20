@@ -7,6 +7,8 @@
 #include <myl/memory.hpp>
 
 namespace myth {
+    /// MYTodo: Remove vertex structs at some point, should be automatically generated from shader code
+
     struct vertex {
         myl::f32vec2 position;
         myl::f32vec4 color;
@@ -88,7 +90,6 @@ namespace myth {
         MYTHOS_INFO("Render API '{}' selected", render_api_to_string(s_api));
 
         s_backend = renderer_backend::create(s_api, config);
-        MYTHOS_TRACE("Renderer initialized");        
 
         // Quad
 
@@ -97,7 +98,7 @@ namespace myth {
         const myl::usize quad_vertices_byte_size = g_rd.max_quad_vertices * sizeof(vertex);
         g_rd.quad_vbo = s_backend->create_render_buffer(render_buffer_usage::vertex, quad_vertices_byte_size);
 
-        vertex quad_vertices[]{ /// MYTemp: To be removed upon addition of index rendering
+        vertex quad_vertices[]{ /// MYTemp: To be removed upon addition of batch rendering
             {{ -.5f, -.5f }, { 1.f, 0.f, 0.f, 1.f }},
             {{  .5f, -.5f }, { 0.f, 1.f, 0.f, 1.f }},
             {{  .5f,  .5f }, { 0.f, 0.f, 1.f, 1.f }},
@@ -110,7 +111,7 @@ namespace myth {
 
         g_rd.quad_vbo->upload(g_rd.quad_vertex_data.data(), g_rd.quad_vertex_count * sizeof(vertex));
 
-        std::vector<uint16_t> quad_indices(g_rd.max_quad_indices); /// MYTODO: increase vertices limit, this will max at 65535
+        std::vector<uint32_t> quad_indices(g_rd.max_quad_indices);
         for (myl::u32 i = 0, offset = 0; i != g_rd.max_quad_indices; i += 6, offset += 4) {
             quad_indices[i + 0] = offset + 0;
             quad_indices[i + 1] = offset + 1;
@@ -120,10 +121,12 @@ namespace myth {
             quad_indices[i + 5] = offset + 0;
         }
 
-        const myl::usize quad_indices_byte_size = g_rd.max_quad_indices * sizeof(uint16_t);
+        const myl::usize quad_indices_byte_size = g_rd.max_quad_indices * sizeof(decltype(quad_indices)::value_type);
         g_rd.quad_ibo = s_backend->create_render_buffer(render_buffer_usage::index, quad_indices_byte_size);
         g_rd.quad_ibo->upload(quad_indices.data(), quad_indices_byte_size);
         g_rd.quad_index_count = 6; /// Temp: should not be done here
+
+        MYTHOS_TRACE("Renderer initialized");
     }
 
     auto renderer::shutdown() -> void {

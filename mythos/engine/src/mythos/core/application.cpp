@@ -8,6 +8,8 @@
 
 #include <utility>
 
+/// MYTODO: Application should be able to run headless
+
 namespace myth {
     myl::observer_ptr<application> application::s_instance = nullptr;
 
@@ -103,7 +105,7 @@ namespace myth {
                 for (auto& layer : m_layer_stack)
                     layer->update(ts);
 
-                if (m_window->state() != window_state::minimized) { /// MYTODO: SHOULD THIS BE HANDLED BY THE RENDERER BACKEND???
+                if (m_window->state() != window_state::minimized) {
                     const bool good_frame = renderer::begin_frame();
                     if (good_frame) {
                         for (auto& layer : m_layer_stack)
@@ -119,6 +121,7 @@ namespace myth {
 
     auto application::quit() noexcept -> void {
         /// MYTODO: This should send a request to quit event, there may be some operations that cannot/shouldn't be interupted.
+
         m_running = false;
     }
 
