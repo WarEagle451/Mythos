@@ -7,8 +7,6 @@
 
 #include <memory>
 
-/// MYTODO: SPDLOG_USE_STD_FORMAT
-
 namespace myth {
     class log {
         static std::shared_ptr<spdlog::logger> s_logger;

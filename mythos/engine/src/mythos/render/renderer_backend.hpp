@@ -39,7 +39,6 @@ namespace myth {
     struct indexed_draw_data {
         shader&        shader;
         render_buffer& vertex_buffer;
-        myl::u32       vertex_count = 0;
         render_buffer& index_buffer;
         myl::u32       index_count = 0;
     };

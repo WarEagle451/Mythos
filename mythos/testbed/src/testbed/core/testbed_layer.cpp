@@ -32,22 +32,27 @@ namespace testbed {
         d.dispatch<myth::event::key_pressed>(MYTHOS_BIND_EVENT_FUNC(testbed_layer::on_key_pressed));
     }
 
-    myl::f32vec3 hsv_clear_color{ 0.f, 1.f, 1.f };
+    myl::f32vec3 hsv_color{ 0.f, 1.f, 1.f };
     bool vsync_toggle = true;
 
     auto testbed_layer::update(MYL_MAYBE_UNUSED myth::timestep ts) -> void {
         if (myth::application::get().main_window()->state() != myth::window_state::minimized)
             myth::application::get().main_window()->set_title(std::format("FPS: {:.2f}", 1.f / static_cast<float>(ts)).c_str());
 
-        hsv_clear_color[0] += 100.f * ts;
-        if (hsv_clear_color[0] >= 360.f)
-            hsv_clear_color[0] -= 360.f;
-        myth::renderer::set_clear_color(myl::hsv_to_rgb(hsv_clear_color));
+        hsv_color[0] += 100.f * ts;
+        if (hsv_color[0] >= 360.f)
+            hsv_color[0] -= 360.f;
     }
 
     auto testbed_layer::render() -> void {
-        /// MYTEMP: Replace with a proper draw command
-        myth::renderer::draw();
+        myth::renderer::begin();
+        myth::renderer::draw_quad({ 0.5f, 0 }, { 1, 0, 0, 1 });
+        myth::renderer::flush_batch();
+
+        myth::renderer::begin();
+        myth::renderer::draw_quad({ 0, 0 }, myl::hsv_to_rgba(hsv_color));
+        myth::renderer::flush_batch();
+
     }
 
     auto testbed_layer::on_key_pressed(myth::event::key_pressed& e) -> bool {

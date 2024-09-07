@@ -8,8 +8,6 @@
 
 #include <array>
 
-/// MYTODO: Up to 4 input devices, Would need to keep track of controllers being plugged in (This would be os dependent)
-
 namespace myth {
     using button_code = myl::u32;
     namespace button {

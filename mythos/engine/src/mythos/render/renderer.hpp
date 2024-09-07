@@ -1,6 +1,9 @@
 #pragma once
 #include <mythos/render/renderer_backend.hpp>
 
+#include <myl/math/vec2.hpp>
+#include <myl/math/vec4.hpp>
+
 namespace myth {
     class renderer {
         static render_api s_api;
@@ -18,6 +21,18 @@ namespace myth {
         static auto begin_frame() -> bool;
         static auto end_frame() -> void;
 
-        static auto draw() -> void; /// MYTEMP: Replace with a proper draw command
+        static auto begin_quad_batch() -> void;
+        static auto begin_batch() -> void;
+
+        static auto flush_quad_batch() -> void;
+        static auto flush_batch() -> void;
+
+        static auto next_quad_batch() -> void;
+        static auto next_batch() -> void;
+
+        static auto begin() -> void;
+        static auto end() -> void;
+
+        static auto draw_quad(const myl::f32vec2& pos, const myl::f32vec4& color) -> void;
     };
 }
