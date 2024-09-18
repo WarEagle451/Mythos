@@ -77,6 +77,32 @@ namespace myth::vulkan {
             .maxDepth = 1.f
         };
 
+        // Create Descriptor
+
+        /// MYTODO: Make a descriptor class
+        /// - Remove class member
+        /// - Remove vkDestroyDescriptorSetLayout in shader::destroy
+        /// MYTODO: The descriptors should be probably be create ahead of shader creation and passed to the shader
+
+        VkDescriptorSetLayoutBinding ubo_layout_binding{
+            .binding            = 0,
+            .descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount    = 1,
+            .stageFlags         = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr
+        };
+
+        /// MYTODO: A global descriptor creation should drawn from a pool and reused and not created here everytime
+        VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info{
+            .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            ///.pNext        = ,
+            ///.flags        = ,
+            .bindingCount = 1,
+            .pBindings    = &ubo_layout_binding,
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateDescriptorSetLayout, device.logical(), &descriptor_set_layout_create_info, VK_NULL_HANDLE, &h->m_descriptor_set_layout);
+
         // Create pipeline
 
         pipeline::create_info pipeline_create_info{
@@ -85,7 +111,8 @@ namespace myth::vulkan {
             .scissor                   = scissor,
             .viewport                  = viewport,
             .shader_stage_create_infos = shader_stage_create_infos,
-            .render_pass               = ci.render_pass
+            .render_pass               = ci.render_pass,
+            .descriptor_set_layouts{ h->m_descriptor_set_layout },
         };
 
         pipeline::create(&h->m_pipeline, device, pipeline_create_info, allocator);
@@ -101,9 +128,11 @@ namespace myth::vulkan {
 
     auto shader::destroy(shader* h, device& device, VkAllocationCallbacks* allocator) noexcept -> void {
         pipeline::destroy(&h->m_pipeline, device, allocator);
+
+        vkDestroyDescriptorSetLayout(device.logical(), h->m_descriptor_set_layout, VK_NULL_HANDLE);
     }
 
     auto shader::bind(VkCommandBuffer command_buffer) -> void {
-        m_pipeline.bind(command_buffer);
+        m_pipeline.bind(command_buffer);     
     }
 }

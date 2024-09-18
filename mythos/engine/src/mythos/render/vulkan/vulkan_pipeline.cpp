@@ -156,8 +156,8 @@ namespace myth::vulkan {
             .sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             //.pNext = ,
             //.flags = ,
-            .setLayoutCount         = 0,
-            .pSetLayouts            = nullptr,
+            .setLayoutCount         = static_cast<uint32_t>(ci.descriptor_set_layouts.size()),
+            .pSetLayouts            = ci.descriptor_set_layouts.data(),
             .pushConstantRangeCount = 0,
             .pPushConstantRanges    = nullptr
         };

@@ -7,9 +7,10 @@ namespace myth::vulkan {
     MYL_NO_DISCARD static constexpr auto render_buffer_usage_to_VkBufferUsageFlags(render_buffer_usage usage) -> VkBufferUsageFlags {
         switch (usage) {
             using enum render_buffer_usage;
-        case index:  return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        case vertex: return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        default:     return VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+        case index:    return VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+        case uniform:  return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        case vertex:   return VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        default:       return VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
         }
     }
 
@@ -18,16 +19,20 @@ namespace myth::vulkan {
 
         VkBuffer              m_buffer = VK_NULL_HANDLE;
         VkDeviceMemory        m_memory = VK_NULL_HANDLE;
+        VkDeviceSize          m_memory_block_size = 0;
         VkMemoryPropertyFlags m_memory_properties;
         device*               m_device = nullptr;
         command_pool*         m_command_pool = nullptr;
+        void*              persistent_mapping_ptr = nullptr;
     public:
         struct create_info {
             command_pool&         command_pool;
             VkBufferUsageFlags    usage;
-            VkDeviceSize          bytes;
             VkMemoryPropertyFlags properties;
+            VkDeviceSize          block_count;
+            VkDeviceSize          block_size;
             VkSharingMode         sharing_mode;
+            bool                  persistent;
         };
 
         static auto create(render_buffer* handle, device& device, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;

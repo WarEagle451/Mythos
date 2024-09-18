@@ -4,6 +4,7 @@
 
 namespace myth::vulkan {
     class shader : public myth::shader {
+        VkDescriptorSetLayout m_descriptor_set_layout;
         pipeline m_pipeline{};
     public:
         struct create_info {

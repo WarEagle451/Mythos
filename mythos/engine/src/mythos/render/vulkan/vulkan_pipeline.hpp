@@ -14,6 +14,7 @@ namespace myth::vulkan {
             const VkViewport&                                  viewport;
             const std::vector<VkPipelineShaderStageCreateInfo> shader_stage_create_infos;           
             VkRenderPass                                       render_pass;
+            const std::vector<VkDescriptorSetLayout>           descriptor_set_layouts;
         };
 
         static auto create(pipeline* handle, device& device, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;

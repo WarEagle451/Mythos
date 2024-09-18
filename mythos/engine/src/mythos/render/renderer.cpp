@@ -2,32 +2,46 @@
 #include <mythos/render/renderer.hpp>
 #include <mythos/render/shader.hpp>
 
-#include <myl/platform.hpp>
 #include <myl/memory.hpp>
+#include <myl/platform.hpp>
 
 /// MYBUG: Successive draw calls within the same frame will overwrite undrawn data if it occupies the same memory.
 /// Eg. draw call 1: AAooo | draw call 2: Booo -> drawn to screen as BAoo
 /// Best guess is that the previous draw call is not drawn immediately when told to or is still in the process of drawing.
 /// Possibly solved by adding a fence to the renderers draw command per shader type
 /// Could also be an issued if I do not understand drawing to work like I think I do
+/// - This leans towards that it could require multiple descriptor sets - https://www.reddit.com/r/vulkan/comments/8ryoit/multiple_draw_calls/
 
 namespace myth {
     /// MYTodo: Remove vertex structs at some point, should be automatically generated from shader code
 
     struct vertex {
-        myl::f32vec2 position;
+        myl::f32vec3 position;
         myl::f32vec4 color;
     };
 
+    struct global_ubo_data {
+        myl::f32mat4x4 camera_view_projection{};
+    };
+
     struct renderer_data {
+        frame_data frame_data{};
+
+        // Global Uniform Buffer
+
+        global_ubo_data                global_ubo_data{};
+        std::unique_ptr<render_buffer> global_ubo = nullptr;
+
+        // Quads
+
         const myl::u32 max_quads = 1024;
         const myl::u32 max_quad_vertices = max_quads * 4;
         const myl::u32 max_quad_indices = max_quads * 6;
-        const myl::f32vec2 local_quad_vertex_positions[4] = { /// MYTODO: Will need to be changed to f32vec3 if 3d
-            { -.5f, -.5f },
-            {  .5f, -.5f },
-            {  .5f,  .5f },
-            { -.5f,  .5f }
+        const myl::f32vec3 local_quad_vertex_positions[4] = {
+            { -.5f, -.5f, 0.f },
+            {  .5f, -.5f, 0.f },
+            {  .5f,  .5f, 0.f },
+            { -.5f,  .5f, 0.f }
         };
 
         std::unique_ptr<shader>              quad_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
@@ -52,15 +66,19 @@ namespace myth {
             "struct vertex_output {\r\n"
             "    vec4 color;\r\n"
             "};\r\n"
+
+            "layout(binding = 0) uniform global_ubo_data {\r\n"
+            "    mat4 view_projection;\r\n"
+            "} u_global_ubo_data;\r\n"
                         
-            "layout(location = 0) in vec2 i_position;\r\n"
+            "layout(location = 0) in vec3 i_position;\r\n"
             "layout(location = 1) in vec4 i_color;\r\n"
 
             "layout(location = 0) out vertex_output o_output;\r\n"
             
             "void main() {\r\n"
             "    o_output.color = i_color;\r\n"
-            "    gl_Position = vec4(i_position, 0.0, 1.0);\r\n"
+            "    gl_Position = u_global_ubo_data.view_projection * vec4(i_position, 1.0);\r\n"
             "}\r\n"
             
             "#type fragment\r\n"
@@ -102,6 +120,11 @@ namespace myth {
 
         s_backend = renderer_backend::create(s_api, config);
 
+        // Global Uniform Buffer
+
+        g_rd.global_ubo_data = global_ubo_data{};
+        g_rd.global_ubo = s_backend->create_render_buffer(myth::render_buffer_usage::uniform, sizeof(global_ubo_data));
+
         // Quad
 
         g_rd.quad_shader = shader::create(quad_shader_info.faux_path, quad_shader_info.data, shader_primitive::triangle);
@@ -133,6 +156,8 @@ namespace myth {
     auto renderer::shutdown() -> void {
         s_backend->prepare_shutdown();
 
+        // Quads
+
         s_backend->destroy_render_buffer(g_rd.quad_ibo.get());
         s_backend->destroy_render_buffer(g_rd.quad_vbo.get());
 
@@ -140,6 +165,10 @@ namespace myth {
         g_rd.quad_vertex_data_ptr = nullptr;
 
         shader::destroy(g_rd.quad_shader);
+
+        // Global Uniform Buffer
+
+        s_backend->destroy_render_buffer(g_rd.global_ubo.get());
 
         MYTHOS_TRACE("Terminating renderer...");
         s_backend.reset();
@@ -155,7 +184,8 @@ namespace myth {
     }
 
     auto renderer::begin_frame() -> bool {
-        return s_backend->begin_frame();
+        s_backend->begin_frame(&g_rd.frame_data);
+        return g_rd.frame_data.good;
     }
 
     auto renderer::end_frame() -> void {
@@ -201,7 +231,10 @@ namespace myth {
         begin_batch();
     }
 
-    auto renderer::begin() -> void {
+    auto renderer::begin(const myl::f32mat4x4& view_projection) -> void {
+        g_rd.global_ubo_data.camera_view_projection = view_projection;
+        g_rd.global_ubo->set(&g_rd.global_ubo_data, sizeof(global_ubo_data), 0, g_rd.frame_data.index);
+
         begin_batch();
     }
 
@@ -209,7 +242,7 @@ namespace myth {
         flush_batch();
     }
 
-    auto renderer::draw_quad(const myl::f32vec2& pos, const myl::f32vec4& color) -> void {
+    auto renderer::draw_quad(const myl::f32vec3& pos, const myl::f32vec4& color) -> void {
         if (g_rd.max_quad_indices < g_rd.quad_index_count)
             next_quad_batch();
 

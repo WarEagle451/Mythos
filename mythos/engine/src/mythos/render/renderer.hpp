@@ -1,7 +1,8 @@
 #pragma once
 #include <mythos/render/renderer_backend.hpp>
 
-#include <myl/math/vec2.hpp>
+#include <myl/math/mat4x4.hpp>
+#include <myl/math/vec3.hpp>
 #include <myl/math/vec4.hpp>
 
 namespace myth {
@@ -30,9 +31,9 @@ namespace myth {
         static auto next_quad_batch() -> void;
         static auto next_batch() -> void;
 
-        static auto begin() -> void;
+        static auto begin(const myl::f32mat4x4& view_projection) -> void;
         static auto end() -> void;
 
-        static auto draw_quad(const myl::f32vec2& pos, const myl::f32vec4& color) -> void;
+        static auto draw_quad(const myl::f32vec3& pos, const myl::f32vec4& color) -> void;
     };
 }

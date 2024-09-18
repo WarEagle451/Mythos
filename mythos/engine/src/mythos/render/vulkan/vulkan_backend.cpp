@@ -8,6 +8,7 @@
 
 /// MYTODO: Continue Vulkan tutorial from;
 /// - https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_layout_and_buffer
+///         - IMPORTANT: MUST COMPLETE https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_pool_and_sets BEFORE ABOVE WORKS
 /// - Implement VulkanMemoryAllocator, it's bad to have allocations (staging, vertex, index buffers)
 ///     https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 ///     on page https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer (at the bottom of the page)
@@ -200,28 +201,42 @@ namespace myth::vulkan {
     }
 
     MYL_NO_DISCARD auto backend::create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<myth::render_buffer> {
-        VkBufferUsageFlags vk_usage = render_buffer_usage_to_VkBufferUsageFlags(usage);
-        VkMemoryPropertyFlags memory_properties{};
+        vulkan::render_buffer::create_info render_buffer_create_info{
+            .command_pool = m_graphics_command_pool,
+            .usage        = render_buffer_usage_to_VkBufferUsageFlags(usage),
+            .properties   = 0,
+            .block_count  = 1,
+            .block_size   = static_cast<VkDeviceSize>(bytes),
+            .sharing_mode = VK_SHARING_MODE_EXCLUSIVE,
+            .persistent   = false,
+        };
+        
         switch (usage) {
             using enum render_buffer_usage;
         case index: MYL_FALLTHROUGH;
         case vertex:
-            vk_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-            memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            render_buffer_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            render_buffer_create_info.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+            break;
+        case uniform:
+            ///render_buffer_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+            render_buffer_create_info.properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+            render_buffer_create_info.block_count = static_cast<VkDeviceSize>(m_swapchain.max_frames_in_flight()),
+
+            /// MYTODO: Confirm uniform buffer memory can be split per frame
+            // Instead of creating n uniform buffers to match the amount of frames in flight, multiply the alloated memory
+            // to a single uniform buffer and offset the data passed to a shader.
+            render_buffer_create_info.block_size *= render_buffer_create_info.block_count;
+
+            // Uniform buffers will be mapped to the same memory until the end of it's lifetime
+            render_buffer_create_info.persistent = true;
             break;
         default:
-            memory_properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+            render_buffer_create_info.properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
             MYTHOS_ERROR("Vulkan - Unknown buffer usage: {}", static_cast<myl::u32>(usage));
             break;
         }
-        
-        vulkan::render_buffer::create_info render_buffer_create_info{
-            .command_pool         = m_graphics_command_pool,
-            .usage                = vk_usage,
-            .bytes                = static_cast<VkDeviceSize>(bytes),
-            .properties           = memory_properties,
-            .sharing_mode         = VK_SHARING_MODE_EXCLUSIVE
-        };
 
         std::unique_ptr<vulkan::render_buffer> render_buffer = std::make_unique<vulkan::render_buffer>();
         vulkan::render_buffer::create(render_buffer.get(), m_device, render_buffer_create_info, VK_NULL_HANDLE);
@@ -248,7 +263,11 @@ namespace myth::vulkan {
         m_cached_vsync = value;
     }
 
-    auto backend::begin_frame() -> bool {
+    auto backend::begin_frame(frame_data* frame_data) -> void {
+        /// MYTODO: Correct logic?
+        // Frame index is not updated until the end of end_frame()
+        frame_data->index = static_cast<myl::u32>(m_current_frame_index);
+
         // Conditions for a bad frame
 
         // Zero sized framebuffers are illegal in Vulkan
@@ -263,7 +282,9 @@ namespace myth::vulkan {
 
             m_swapchain.recreate(&m_swapchain, m_device, m_main_render_pass.handle(), swapchain_create_info, VK_NULL_HANDLE);
             m_vsync = m_cached_vsync;
-            return false;
+
+            frame_data->good = false;
+            return;
         }
 
         /// MYTODO: if skip by minimization is needed then is should be done here
@@ -289,11 +310,13 @@ namespace myth::vulkan {
 
                 swapchain::recreate(&m_swapchain, m_device, m_main_render_pass.handle(), swapchain_create_info, VK_NULL_HANDLE);
                 m_framebuffer_resized = false;
-                return false;
+                frame_data->good = false;
+                return;
             }
             default:
                 MYTHOS_FATAL("Failed to acquire swapchain image: {}", vkresult_string(acquire_next_image_result, true));
-                return false;
+                frame_data->good = false;
+                return;
         }
 
         vkResetFences(m_device.logical(), 1, &current_frame_fence); // Only reset fence if work is being submitted
@@ -322,7 +345,7 @@ namespace myth::vulkan {
         vkCmdSetViewport(current_command_buffer.handle(), 0, 1, &viewport);
         vkCmdSetScissor(current_command_buffer.handle(), 0, 1, &scissor);
 
-        return true;
+        frame_data->good = true;
     }
 
     auto backend::end_frame() -> void {

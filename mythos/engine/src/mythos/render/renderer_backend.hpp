@@ -36,6 +36,12 @@ namespace myth {
         bool vsync = true;
     };
 
+    struct frame_data {
+        bool good;
+
+        myl::u32 index;
+    };
+
     struct indexed_draw_data {
         shader&        shader;
         render_buffer& vertex_buffer;
@@ -58,7 +64,7 @@ namespace myth {
         virtual auto set_clear_color(const myl::f32vec3& color) -> void = 0;
         virtual auto set_vsync(bool value) -> void = 0;
 
-        virtual auto begin_frame() -> bool = 0;
+        virtual auto begin_frame(frame_data* frame_data) -> void = 0;
         virtual auto end_frame() -> void = 0;
 
         virtual auto draw(indexed_draw_data& draw_data) -> void = 0;

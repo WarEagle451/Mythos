@@ -6,6 +6,7 @@
 namespace myth {
     enum class render_buffer_usage {
         index,
+        uniform,
         vertex
     };
 
