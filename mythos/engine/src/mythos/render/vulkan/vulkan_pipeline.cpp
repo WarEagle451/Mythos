@@ -196,7 +196,13 @@ namespace myth::vulkan {
             vkDestroyPipelineLayout(device.logical(), h->m_layout, allocator);
     }
 
-    auto pipeline::bind(VkCommandBuffer command_buffer) -> void {
+    auto pipeline::bind(VkCommandBuffer command_buffer, const VkDescriptorSet& descriptor_set) -> void {
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 0, 1, &descriptor_set, 0, nullptr);
+    }
+
+    auto pipeline::bind(VkCommandBuffer command_buffer, const std::vector<VkDescriptorSet>& descriptor_sets) -> void {
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline);
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_layout, 0, static_cast<uint32_t>(descriptor_sets.size()), descriptor_sets.data(), 0, nullptr);
     }
 }

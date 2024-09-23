@@ -67,7 +67,7 @@ namespace myth {
             "    vec4 color;\r\n"
             "};\r\n"
 
-            "layout(binding = 0) uniform global_ubo_data {\r\n"
+            "layout(set = 0, binding = 0) uniform global_ubo_data {\r\n"
             "    mat4 view_projection;\r\n"
             "} u_global_ubo_data;\r\n"
                         

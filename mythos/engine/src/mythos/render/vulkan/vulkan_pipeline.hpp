@@ -14,12 +14,13 @@ namespace myth::vulkan {
             const VkViewport&                                  viewport;
             const std::vector<VkPipelineShaderStageCreateInfo> shader_stage_create_infos;           
             VkRenderPass                                       render_pass;
-            const std::vector<VkDescriptorSetLayout>           descriptor_set_layouts;
+            const std::vector<VkDescriptorSetLayout>&          descriptor_set_layouts;
         };
 
         static auto create(pipeline* handle, device& device, const create_info& create_info, VkAllocationCallbacks* allocator) -> void;
         static auto destroy(pipeline* handle, device& device, VkAllocationCallbacks* allocator) noexcept -> void;
 
-        auto bind(VkCommandBuffer command_buffer) -> void;
+        auto bind(VkCommandBuffer command_buffer, const VkDescriptorSet& descriptor_set) -> void;
+        auto bind(VkCommandBuffer command_buffer, const std::vector<VkDescriptorSet>& descriptor_sets) -> void;
     };
 }

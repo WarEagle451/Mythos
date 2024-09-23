@@ -1,6 +1,7 @@
 #pragma once
 #include <mythos/render/renderer_backend.hpp>
 #include <mythos/render/vulkan/vulkan_command_objects.hpp>
+#include <mythos/render/vulkan/vulkan_descriptor.hpp>
 #include <mythos/render/vulkan/vulkan_device.hpp>
 #include <mythos/render/vulkan/vulkan_render_pass.hpp>
 #include <mythos/render/vulkan/vulkan_swapchain.hpp>
@@ -26,6 +27,10 @@ namespace myth::vulkan {
         render_pass  m_main_render_pass;
 
         std::vector<command_buffer> m_graphics_command_buffers;
+
+        VkDescriptorSetLayout        m_uniform_buffer_descriptor_set_layout;
+        descriptor_pool              m_uniform_descriptor_pool;
+        std::vector<VkDescriptorSet> m_uniform_descriptor_sets;
 
         uint32_t m_current_frame_index;
 

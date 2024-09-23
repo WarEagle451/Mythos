@@ -143,7 +143,7 @@ namespace myth::vulkan {
             };
 
             render_buffer staging_buffer{};
-            render_buffer::create(&staging_buffer, *m_device, staging_buffer_create_info, VK_NULL_HANDLE);
+            render_buffer::create(&staging_buffer, *m_device, staging_buffer_create_info, VK_NULL_HANDLE); /// MYTODO: This is unable to pass an allocator into, fix
 
             staging_buffer.set(data, vk_size, vk_offset, vk_index);
 
@@ -156,9 +156,8 @@ namespace myth::vulkan {
             * apply memory allocation optimizations. You should use the VK_COMMAND_POOL_CREATE_TRANSIENT_BIT flag
             * during command pool generation in that case."
             */
-            render_buffer::copy(staging_buffer, *this, vk_size, vk_offset, vk_index, *m_command_pool); /// ARE THESE REVERSED??? 
-
-            render_buffer::destroy(&staging_buffer, *m_device, VK_NULL_HANDLE);
+            render_buffer::copy(staging_buffer, *this, vk_size, vk_offset, vk_index, *m_command_pool); /// ARE THESE REVERSED???
+            render_buffer::destroy(&staging_buffer, *m_device, VK_NULL_HANDLE); /// MYTODO: This is unable to pass an allocator into, fix
         }
         else
             set(data, size, offset, index);

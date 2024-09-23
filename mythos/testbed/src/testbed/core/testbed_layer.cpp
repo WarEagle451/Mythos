@@ -47,7 +47,7 @@ namespace testbed {
         if (myth::application::get().main_window()->state() != myth::window_state::minimized)
             myth::application::get().main_window()->set_title(std::format("FPS: {:.2f}", 1.f / static_cast<float>(ts)).c_str());
 
-        time_passed = ts * 1000.f * 90.f;
+        time_passed += ts * 90.f;
         if (time_passed > 90.f)
             time_passed -= 90.f;
 
@@ -58,11 +58,9 @@ namespace testbed {
 
     auto testbed_layer::render() -> void {
         // Inverse of transform is view
-        myl::f32mat4x4 view = myl::inverse(myl::create_transform<myl::f32>({ 0.f, 0.f, -1.f, }, { 0.f, 0.f, 0.f }, { 1.f, 1.f, 1.f }));
+        myl::f32mat4x4 view = myl::inverse(myl::create_transform<myl::f32>({ 0.f, 0.f, -5.f, }, { 0.f, 0.f, 0.f }, { 1.f, 1.f, 1.f }));
         myl::f32mat4x4 model = myl::rotate(myl::f32vec3(0, 0, myl::radians(time_passed))); /// Why??
         myl::f32mat4x4 projection = myl::perspective(myl::radians(45.f), fov, .1f, 10.f);
-
-        /// ubo.proj[1][1] *= -1; maybe needed
 
         myth::renderer::begin(projection * view * model);
 

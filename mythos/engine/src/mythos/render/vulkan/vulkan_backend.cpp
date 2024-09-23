@@ -7,8 +7,7 @@
 #include <mythos/version.hpp>
 
 /// MYTODO: Continue Vulkan tutorial from;
-/// - https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_layout_and_buffer
-///         - IMPORTANT: MUST COMPLETE https://vulkan-tutorial.com/en/Uniform_buffers/Descriptor_pool_and_sets BEFORE ABOVE WORKS
+/// - https://vulkan-tutorial.com/en/Texture_mapping/Images
 /// - Implement VulkanMemoryAllocator, it's bad to have allocations (staging, vertex, index buffers)
 ///     https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 ///     on page https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer (at the bottom of the page)
@@ -153,6 +152,29 @@ namespace myth::vulkan {
         
         render_pass::create(&m_main_render_pass, m_device, render_pass_create_info, VK_NULL_HANDLE);
 
+        /// MYHACK: Creating the global ubo descriptor here may not be desired
+
+        VkDescriptorSetLayoutBinding ubo_layout_binding{
+            .binding            = 0,
+            .descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptorCount    = 1,
+            .stageFlags         = VK_SHADER_STAGE_VERTEX_BIT,
+            .pImmutableSamplers = nullptr
+        };
+
+        /// MYTODO: A global descriptor creation should drawn from a pool and reused and not created here everytime,
+        /// Additionally, a different uniform buffer may be needed. possible solution is to have the shader hold an array of shared pointer to
+        /// the buffers it needs, therefore when the shader gets destroyed so will the buffers if they do not need to exist elsewhere
+        VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info{
+            .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+            ///.pNext        = ,
+            ///.flags        = ,
+            .bindingCount = 1,
+            .pBindings    = &ubo_layout_binding,
+        };
+
+        MYTHOS_VULKAN_VERIFY(vkCreateDescriptorSetLayout, m_device.logical(), &descriptor_set_layout_create_info, VK_NULL_HANDLE, &m_uniform_buffer_descriptor_set_layout);
+
         command_pool::create_info command_pool_create_info{
             .queue              = m_device.graphics_queue(),
             .queue_family_index = m_device.queue_family_indices().graphics
@@ -163,10 +185,23 @@ namespace myth::vulkan {
         m_swapchain.recreate_framebuffers(m_device, m_main_render_pass.handle(), VK_NULL_HANDLE);
         m_graphics_command_buffers.resize(m_swapchain.max_frames_in_flight());
         m_graphics_command_pool.allocate_command_buffers(m_device, m_graphics_command_buffers.begin(), m_graphics_command_buffers.end());
+
+        descriptor_pool::create_info uniform_descriptor_pool_create_info{
+            .descriptor_set_type  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .descriptor_set_count = m_swapchain.max_frames_in_flight(),
+            .pool_create_flags    = 0
+        };
+
+        descriptor_pool::create(&m_uniform_descriptor_pool, m_device, uniform_descriptor_pool_create_info, VK_NULL_HANDLE);
     }
 
     backend::~backend() {
         vkDeviceWaitIdle(m_device.logical());
+
+        // Not necessary to free m_uniform_descriptor_sets as they weren't created with the VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT flag,
+        // they will be handled when their descriptor pool is destroyed
+        descriptor_pool::destroy(&m_uniform_descriptor_pool, m_device, VK_NULL_HANDLE);
+        vkDestroyDescriptorSetLayout(m_device.logical(), m_uniform_buffer_descriptor_set_layout, VK_NULL_HANDLE);
 
         m_graphics_command_pool.deallocate_command_buffers(m_device, m_graphics_command_buffers.begin(), m_graphics_command_buffers.end());
         m_graphics_command_buffers.clear();
@@ -183,11 +218,12 @@ namespace myth::vulkan {
 
     MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
         vulkan::shader::create_info shader_create_info{
-            .swapchain_extent = m_swapchain.image_extent(),
-            .render_pass      = m_main_render_pass.handle(),
-            .binaries         = shader_binaries,
-            .layout           = layout,
-            .primitive        = primitive
+            .swapchain_extent       = m_swapchain.image_extent(),
+            .render_pass            = m_main_render_pass.handle(),
+            .binaries               = shader_binaries,
+            .layout                 = layout,
+            .primitive              = primitive,
+            .descriptor_set_layouts{ m_uniform_buffer_descriptor_set_layout }
         };
 
         std::unique_ptr<vulkan::shader> shader = std::make_unique<vulkan::shader>();
@@ -219,15 +255,8 @@ namespace myth::vulkan {
             render_buffer_create_info.properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
             break;
         case uniform:
-            ///render_buffer_create_info.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
             render_buffer_create_info.properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-            render_buffer_create_info.block_count = static_cast<VkDeviceSize>(m_swapchain.max_frames_in_flight()),
-
-            /// MYTODO: Confirm uniform buffer memory can be split per frame
-            // Instead of creating n uniform buffers to match the amount of frames in flight, multiply the alloated memory
-            // to a single uniform buffer and offset the data passed to a shader.
-            render_buffer_create_info.block_size *= render_buffer_create_info.block_count;
+            render_buffer_create_info.block_count = static_cast<VkDeviceSize>(m_swapchain.max_frames_in_flight());
 
             // Uniform buffers will be mapped to the same memory until the end of it's lifetime
             render_buffer_create_info.persistent = true;
@@ -240,6 +269,36 @@ namespace myth::vulkan {
 
         std::unique_ptr<vulkan::render_buffer> render_buffer = std::make_unique<vulkan::render_buffer>();
         vulkan::render_buffer::create(render_buffer.get(), m_device, render_buffer_create_info, VK_NULL_HANDLE);
+
+        if (usage == render_buffer_usage::uniform) { // Descriptors
+            /// MYTODO: Does this layout even have to be destroyed later? why not after creation of the descriptors?
+            std::vector<VkDescriptorSetLayout> uniform_descriptor_layouts(m_swapchain.max_frames_in_flight(), m_uniform_buffer_descriptor_set_layout);
+
+            m_uniform_descriptor_pool.allocate(m_device, &m_uniform_descriptor_sets, uniform_descriptor_layouts);
+            for (myl::u32 i = 0; i != m_uniform_descriptor_sets.size(); ++i) {
+                VkDescriptorBufferInfo descriptor_buffer_info{
+                    .buffer = render_buffer->handle(),
+                    .offset = render_buffer_create_info.block_size * i, /// MYTODO: Is this correct? or 0
+                    .range  = render_buffer_create_info.block_size, /// and VK_WHOLE_SIZE
+                };
+                
+                VkWriteDescriptorSet descriptor_write{
+                    .sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    //.pNext            =,
+                    .dstSet           = m_uniform_descriptor_sets[i],
+                    .dstBinding       = 0,
+                    .dstArrayElement  = 0,
+                    .descriptorCount  = 1,
+                    .descriptorType   = m_uniform_descriptor_pool.descriptor_type(),
+                    .pImageInfo       = nullptr,
+                    .pBufferInfo      = &descriptor_buffer_info,
+                    .pTexelBufferView = nullptr
+                };
+
+                vkUpdateDescriptorSets(m_device.logical(), 1, &descriptor_write, 0, nullptr);
+            }
+        }
+
         return render_buffer;
     }
 
@@ -264,7 +323,6 @@ namespace myth::vulkan {
     }
 
     auto backend::begin_frame(frame_data* frame_data) -> void {
-        /// MYTODO: Correct logic?
         // Frame index is not updated until the end of end_frame()
         frame_data->index = static_cast<myl::u32>(m_current_frame_index);
 
@@ -410,7 +468,7 @@ namespace myth::vulkan {
         // Get current command buffer
         command_buffer& current_command_buffer = m_graphics_command_buffers[m_current_frame_index];
 
-        vk_shader.bind(current_command_buffer.handle());
+        vk_shader.bind(current_command_buffer.handle(), m_uniform_descriptor_sets[m_current_frame_index]);
 
         vkCmdBindVertexBuffers(current_command_buffer.handle(), 0, 1, &vkvb.handle(), offsets);
         vkCmdBindIndexBuffer(current_command_buffer.handle(), vkib.handle(), 0, VK_INDEX_TYPE_UINT32);
