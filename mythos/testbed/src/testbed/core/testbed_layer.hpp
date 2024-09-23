@@ -5,9 +5,12 @@
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/event/window_event.hpp>
 
+#include <testbed/camera.hpp>
+
 namespace testbed {
     class testbed_layer final : public myth::layer {
         myth::timestep m_smooth_ts = 0.f;
+        camera m_camera;
     public:
         MYL_NO_DISCARD testbed_layer();
         ~testbed_layer() override;

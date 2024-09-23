@@ -8,6 +8,7 @@
 
 /// MYTODO: Continue Vulkan tutorial from;
 /// - https://vulkan-tutorial.com/en/Texture_mapping/Images
+/// - Did not implement alignment at the bottom of https://vulkan-tutorial.com/Uniform_buffers/Descriptor_pool_and_sets
 /// - Implement VulkanMemoryAllocator, it's bad to have allocations (staging, vertex, index buffers)
 ///     https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 ///     on page https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer (at the bottom of the page)
