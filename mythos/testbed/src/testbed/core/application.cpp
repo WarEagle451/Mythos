@@ -1,5 +1,6 @@
 #include <testbed/core/application.hpp>
 #include <testbed/core/testbed_layer.hpp>
+#include <testbed/layers/event_layer.hpp>
 #include <testbed/log.hpp>
 
 #include <mythos/entry.hpp>
@@ -11,6 +12,7 @@ namespace testbed {
     application::application(const myth::application_specification& specs)
         : myth::application(specs) {
         log::init();
+        //push_layer(std::make_unique<event_layer>());
         push_layer(std::make_unique<testbed_layer>());
     }
 

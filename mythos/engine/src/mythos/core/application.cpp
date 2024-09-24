@@ -94,7 +94,7 @@ namespace myth {
         while(m_running) {
             /// MYBUG: Keeping track of the time split like this is bad, if the app is paused or the os has
             /// pause it the game loop will not run and a large value will accumulate for ts, this
-            /// accumulation should be ignored, "split" should occur again when the application is unsuspended
+            /// accumulation should be ignored, "split" should occur again when the application is unsuspended        
 
             ts = timer.split<std::chrono::seconds, myl::f64>();
             m_stats.timestep = ts;
@@ -142,8 +142,6 @@ namespace myth {
         if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
             update_cursor_capture();
 
-        if (&e.window() == m_window.get())
-            return true;
         return false;
     }
 
@@ -151,8 +149,6 @@ namespace myth {
         if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
             update_cursor_capture();
 
-        if (&e.window() == m_window.get())
-            return true;
         return false;
     }
     
@@ -169,8 +165,6 @@ namespace myth {
     }
 
     auto application::on_window_focus_gain(event::window_focus_gain& e) -> bool {
-        if (&e.window() == m_window.get())
-            return true;
         return false;
     }
 
@@ -178,8 +172,6 @@ namespace myth {
         if (m_cursor_capturing_window && &e.window() == m_cursor_capturing_window.get())
             release_cursor();
 
-        if (&e.window() == m_window.get())
-            return true;
         return false;
     }
 

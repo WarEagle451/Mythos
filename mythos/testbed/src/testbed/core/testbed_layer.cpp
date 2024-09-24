@@ -42,9 +42,6 @@ namespace testbed {
     bool vsync_toggle = true;
 
     auto testbed_layer::update(MYL_MAYBE_UNUSED myth::timestep ts) -> void {
-        if (myth::application::get().main_window()->state() != myth::window_state::minimized)
-            myth::application::get().main_window()->set_title(std::format("FPS: {:.2f}", 1.f / static_cast<float>(ts)).c_str());
-
         m_camera.on_update(ts);
 
         hsv_color[0] += 100.f * ts;

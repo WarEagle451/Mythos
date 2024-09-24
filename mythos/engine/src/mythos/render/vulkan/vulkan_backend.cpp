@@ -272,15 +272,15 @@ namespace myth::vulkan {
         vulkan::render_buffer::create(render_buffer.get(), m_device, render_buffer_create_info, VK_NULL_HANDLE);
 
         if (usage == render_buffer_usage::uniform) { // Descriptors
-            /// MYTODO: Does this layout even have to be destroyed later? why not after creation of the descriptors?
+            // Layout does not have to be destroyed later as VkDescriptorSetLayout is a pointer and the vector is only holding a copy to that address
             std::vector<VkDescriptorSetLayout> uniform_descriptor_layouts(m_swapchain.max_frames_in_flight(), m_uniform_buffer_descriptor_set_layout);
 
             m_uniform_descriptor_pool.allocate(m_device, &m_uniform_descriptor_sets, uniform_descriptor_layouts);
             for (myl::u32 i = 0; i != m_uniform_descriptor_sets.size(); ++i) {
                 VkDescriptorBufferInfo descriptor_buffer_info{
                     .buffer = render_buffer->handle(),
-                    .offset = render_buffer_create_info.block_size * i, /// MYTODO: Is this correct? or 0
-                    .range  = render_buffer_create_info.block_size, /// and VK_WHOLE_SIZE
+                    .offset = render_buffer_create_info.block_size * i,
+                    .range  = render_buffer_create_info.block_size,
                 };
                 
                 VkWriteDescriptorSet descriptor_write{
@@ -360,7 +360,8 @@ namespace myth::vulkan {
             case VK_SUCCESS:
                 break;
             case VK_SUBOPTIMAL_KHR:
-                break; /// MYTODO: Should the swapchain recreate if it is suboptimal?
+                /// MYTODO: It is possible the swapchain should recreate if it is suboptimal.
+                break;
             case VK_ERROR_OUT_OF_DATE_KHR: {
                 swapchain::create_info swapchain_create_info{
                     .surface = m_surface, 
