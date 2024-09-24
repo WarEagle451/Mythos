@@ -33,7 +33,7 @@ namespace myth::vulkan {
 
         VkPhysicalDeviceProperties m_properties{};
         VkPhysicalDeviceFeatures   m_available_features{};
-        VkPhysicalDeviceFeatures   m_enabled_features{ VK_FALSE };
+        VkPhysicalDeviceFeatures   m_enabled_features{};
         device_queue_indices       m_qfi{};
 
         VkQueue m_queue_compute  = VK_NULL_HANDLE;

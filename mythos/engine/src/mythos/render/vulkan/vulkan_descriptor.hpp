@@ -4,11 +4,6 @@
 #include <vector>
 
 namespace myth::vulkan {
-    class descriptor_set {
-        VkDescriptorSetLayout m_set_layout;
-    public:
-    };
-
     class descriptor_pool {
         VkDescriptorPool m_pool;
         VkDescriptorType m_descriptor_set_type;

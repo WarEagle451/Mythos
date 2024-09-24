@@ -99,13 +99,15 @@ namespace myth::vulkan {
         return true;
     }
 
-    MYL_NO_DISCARD static auto rate_physical_device(const VkPhysicalDeviceProperties& properties, const VkPhysicalDeviceFeatures& features) -> myl::u64 {
+    MYL_NO_DISCARD static auto rate_physical_device(const VkPhysicalDeviceProperties& properties, MYL_MAYBE_UNUSED const VkPhysicalDeviceFeatures& features) -> myl::u64 {
         myl::u64 rating = 0;
         if (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
             rating += 1000;
 
         // Maximum possible size of textures affects graphics quality
         rating += properties.limits.maxImageDimension2D;
+
+        /// MYTODO: Rate features of physical device (Remove MYL_MAYBE_UNUSED)
 
         return rating;
     }

@@ -2,7 +2,7 @@
 #include <mythos/render/vulkan/vulkan_backend.hpp>
 #include <mythos/render/vulkan/vulkan_platform.hpp>
 #include <mythos/render/vulkan/vulkan_render_buffer.hpp>
-#include <mythos/render/vulkan/vulkan_shader.hpp>>
+#include <mythos/render/vulkan/vulkan_shader.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 #include <mythos/version.hpp>
 
@@ -15,16 +15,27 @@
 
 namespace myth::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-    static VKAPI_ATTR auto debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, void* user_data) -> VkBool32 {
+    static VKAPI_ATTR auto debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, MYL_MAYBE_UNUSED VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, MYL_MAYBE_UNUSED void* user_data) -> VkBool32 {
         /// MYTODO: Extend Vulkan debug callback with the following:
-        /// - type
+        /// - type (Remove MYL_MAYBE_UNUSED)
         ///    - VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT - Ignore
         ///    - VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT - Violates spec or possible mistake
         ///    - VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT - Possible non-optimal use of Vulkan
+        /// 
         /// - callback_data
-        ///    - pObjects - Array of Vulkan objects related to the message
-        ///    - objectCount - Number of objects
-        
+        ///    - sType is a VkStructureType value identifying this structure.
+        ///    - pNext is NULL or a pointer to a structure extending this structure.
+        //    - flags is 0 and is reserved for future use.
+        ///    - pMessageIdName is NULL or a null - terminated UTF - 8 string that identifies the particular message ID that is associated with the provided message.If the message corresponds to a validation layer message, then this string may contain the portion of the Vulkan specification that is believed to have been violated.
+        ///    - messageIdNumber is the ID number of the triggering message.If the message corresponds to a validation layer message, then this number is related to the internal number associated with the message being triggered.
+        ///    - pMessage is NULL if messageTypes is equal to VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT, or a null - terminated UTF - 8 string detailing the trigger conditions.
+        ///    - queueLabelCount is a count of items contained in the pQueueLabels array.
+        ///    - pQueueLabels is NULL or a pointer to an array of VkDebugUtilsLabelEXT active in the current VkQueue at the time the callback was triggered.Refer to Queue Labels for more information.
+        ///    - cmdBufLabelCount is a count of items contained in the pCmdBufLabels array.
+        ///    - pCmdBufLabels is NULL or a pointer to an array of VkDebugUtilsLabelEXT active in the current VkCommandBuffer at the time the callback was triggered.Refer to Command Buffer Labels for more information.
+        ///    - objectCount is a count of items contained in the pObjects array.
+        ///    - pObjects is a pointer to an array of VkDebugUtilsObjectNameInfoEXT objects related to the detected issue.The array is roughly in order or importance, but the 0th element is always guaranteed to be the most important object for this message.
+
         switch (severity) {
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: MYTHOS_TRACE("Validation Layer - {}", callback_data->pMessage); break;
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:    MYTHOS_INFO("Validation Layer - {}", callback_data->pMessage); break;
@@ -41,7 +52,7 @@ namespace myth::vulkan {
         required->emplace_back("VK_LAYER_KHRONOS_validation");
 
         uint32_t count = 0;
-        vkEnumerateInstanceLayerProperties(&count, VK_NULL_HANDLE);
+        vkEnumerateInstanceLayerProperties(&count, nullptr);
         std::vector<VkLayerProperties> available(count);
         vkEnumerateInstanceLayerProperties(&count, available.data());
 
@@ -88,9 +99,9 @@ namespace myth::vulkan {
         }
 
         uint32_t available_count = 0;
-        vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, &available_count, VK_NULL_HANDLE);
+        vkEnumerateInstanceExtensionProperties(nullptr, &available_count, nullptr);
         std::vector<VkExtensionProperties> available(available_count);
-        vkEnumerateInstanceExtensionProperties(VK_NULL_HANDLE, &available_count, available.data());
+        vkEnumerateInstanceExtensionProperties(nullptr, &available_count, available.data());
 
         if (!available.empty()) {
             MYTHOS_DEBUG("Available Vulkan extensions:");
@@ -532,7 +543,7 @@ namespace myth::vulkan {
             .messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
             .messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT,
             .pfnUserCallback = debug_callback,
-            .pUserData       = VK_NULL_HANDLE // Passing a pointer here would allow that pointer to be used in the debug callback
+            .pUserData       = nullptr // Passing a pointer here would allow that pointer to be used in the debug callback
         };
         instance_create_info.pNext = &debug_messenger_create_info;
 #endif
