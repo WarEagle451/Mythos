@@ -93,7 +93,7 @@ namespace myth {
             case tessellation_control:		return ".tscn";
             case tessellation_evaluation:	return ".tsev";
             case unknown:					return ".ohno";
-            default:				
+            default:                        return ".ohno";
         }
     }
 
@@ -103,8 +103,6 @@ namespace myth {
     }
 
     MYL_NO_DISCARD static auto make_shader_binary_path(const std::filesystem::path& source_path, shader_type type) -> std::filesystem::path {
-        /// MYTodo: May not always be spriv-v compiling
-
         // Format: "[cache directory]/[filename].[api].[shader type].spv"
         return shader_cache_directory() / (source_path.stem().string() + render_api_file_extension(renderer::api()) + shader_type_file_extension(type) + ".spv");
     }

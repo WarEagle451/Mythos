@@ -1,154 +1,129 @@
-#include <mythos/event/gamepad_event.hpp>
+#include <mythos/event/hid_event.hpp>
 #include <mythos/event/key_event.hpp>
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/input.hpp>
+#include <mythos/log.hpp>
 
-/// MYTEMP:
-#define MYTHOS_ENABLE_CONTROLLER_WIP
-
-/// MYTODO: Split this up into seperate source files
 #ifdef MYL_OS_WINDOWS
-#   include <Windows.h> // WinUser.h
-namespace myth {
-    auto input::set_cursor_position(const myl::i32vec2& position) -> void {
-        SetCursorPos(position.x, position.y);
-    }
-
-    auto input::set_cursor_visibility(bool visibility) -> void {
-        CURSORINFO ci{ .cbSize = sizeof(CURSORINFO) };
-        GetCursorInfo(&ci);
-        if ((ci.flags & CURSOR_SHOWING) != visibility)
-            ShowCursor(visibility);
-    }
-
-    auto input::confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void {
-        RECT rect{
-            .left = tl.x,
-            .top = tl.y,
-            .right = br.x,
-            .bottom = br.y
-        };
-        ClipCursor(&rect);
-    }
-
-    auto input::release_cursor() -> void {
-        ClipCursor(NULL);
-    }
-
-    auto input::query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void {
-        if (caps_lock)
-            *caps_lock = (GetKeyState(VK_CAPITAL) & 0x0001) == 0 ? input::state::up : input::state::down;
-        if (num_lock)
-            *num_lock = (GetKeyState(VK_NUMLOCK) & 0x0001) == 0 ? input::state::up : input::state::down;
-        if (scroll_lock)
-            *scroll_lock = (GetKeyState(VK_SCROLL) & 0x0001) == 0 ? input::state::up : input::state::down;
-    }
-}
-#else
-#   include <mythos/log.hpp>
-namespace myth {
-    auto input::set_cursor_position(const myl::i32vec2& position) -> void {
-        MYTHOS_ERROR("myth::input::set_cursor_position is not available on this platform");
-    }
-
-    auto input::set_cursor_visability(bool visable) -> void {
-        MYTHOS_ERROR("myth::input::set_cursor_visability is not available on this platform");
-    }
-
-    auto input::confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void {
-        MYTHOS_ERROR("myth::input::confine_cursor is not available on this platform");
-    }
-
-    auto input::unconfine_cursor() -> void {
-        MYTHOS_ERROR("myth::input::unconfine_cursor is not available on this platform");
-    }
-
-    auto input::query_toggleable_key_states(input::state* caps_lock, input::state* num_lock, input::state* scroll_lock) -> void {
-        MYTHOS_ERROR("myth::input::query_toggleable_key_states is not available on this platform");    
-    }
-}
+#   include <mythos/platform/windows/win_input.hpp>
 #endif
 
-/// MYTODO: Implement Controllers
-/// - Dualshock 3
-///     - https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information
-/// - DualSense Edge
-/// - Xbox 360
-/// - Sixaxis
-/// - Xbox Wireless Controller
-///     - Models: 1537, 1697, 1698 "Elite", 1708, 1797 "Elite 2", 1914
-/// - Google Stadia
-///     - line 215 onwards ? https://github.com/71/stadiacontroller/blob/master/src/stadia.rs
-///     - https://github.com/helloparthshah/StadiaWireless
-/// - Luna Controller
-
-/// MYTODO: Additional Dualsense resources
-/// - https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db
-/// - https://controllers.fandom.com/wiki/Sony_DualSense
-
 namespace myth {
-    std::array<input::state, key::size> input::s_key_states;
-    mousecode input::s_mouse_button_states;
-    button_code input::s_gamepad_button_states;
+    keyboard                          input::s_keyboard;
+    mouse                             input::s_mouse;
+    std::vector<std::unique_ptr<hid>> input::s_registered_devices = {};
 
-    myl::f32vec2 input::s_window_cursor_position;
-    myl::f32vec2 input::s_cursor_delta;
-    myl::f32vec2 input::s_scroll_delta;
-    myl::f32vec2 input::s_stick_deadzones;
-    myl::f32vec2 input::s_left_stick;
-    myl::f32vec2 input::s_right_stick;
-    myl::f32vec2 input::s_trigger_delta;
-
-    ///myl::f32quat input::s_gyroscope;
-    myl::f32vec3 input::s_accelerometer;
-
-    myl::u32vec2 input::s_touchpad_touch1_coords;
-    myl::u32vec2 input::s_touchpad_touch2_coords;
-
-    auto input::init(const input_configuration& config) -> void {
+    auto input::init() -> void {
         clear();
-        s_stick_deadzones = config.stick_deadzones;
+    }
 
-        /// MYTODO: Should probably query everything that is not a delta
-        query_toggleable_key_states(&s_key_states[key::caps_lock], &s_key_states[key::num_lock], &s_key_states[key::scroll_lock]);
+    auto input::shutdown() -> void {
+        while (!s_registered_devices.empty())
+            remove_device(s_registered_devices.back()->id);
     }
 
     auto input::update() -> void {
-        s_cursor_delta = { 0.f, 0.f };
-        s_scroll_delta = { 0.f, 0.f };
-        s_left_stick = { 0.f, 0.f };
-        s_right_stick = { 0.f, 0.f };
-        s_trigger_delta = { 0.f, 0.f };
+        // Deltas need to be reset as it is possible in the next data set that they will be the same as before
+
+        s_mouse.cursor_delta = { 0.f, 0.f };
+        s_mouse.scroll_delta = { 0.f, 0.f };
+
+        for (auto& device : s_registered_devices)
+            device->update();
     }
 
     auto input::clear() -> void {
-        s_key_states.fill(state::up);
-        s_mouse_button_states = mouse_button::none;
-        s_gamepad_button_states = button::none;
+        s_keyboard.keys.fill(keyboard::state::up);        
+        query_togglable_keys(&s_keyboard);
 
-        s_window_cursor_position = { 0.f, 0.f };
-        s_cursor_delta = { 0.f, 0.f };
-        s_scroll_delta = { 0.f, 0.f };
-        s_stick_deadzones = { 0.f, 0.f };
-        s_left_stick = { 0.f, 0.f };
-        s_right_stick = { 0.f, 0.f };
-        s_trigger_delta = { 0.f, 0.f };
+        s_mouse.button_states = mouse_button::none;
+        s_mouse.cursor_delta = { 0.f, 0.f };
+        s_mouse.scroll_delta = { 0.f, 0.f };
+        s_mouse.window_cursor_position = { 0.f, 0.f };
 
-        ///s_gyroscope = myl::f32quat(0.f);
-        s_accelerometer = { 0.f, 0.f, 0.f };
+        for (auto& device : s_registered_devices)
+            device->button_states = hid_button::none;
 
-        s_touchpad_touch1_coords = { 0, 0 };
-        s_touchpad_touch2_coords = { 0, 0 };
+        /// MYTODO: Clearing state of devices
     }
 
-    auto input::process_key(keycode code, state state) -> void {
+    auto input::register_device(std::unique_ptr<hid>&& new_device) -> bool {
+        for (auto& existing_device : s_registered_devices)
+            if (existing_device->id == new_device->id) {
+                MYTHOS_WARN("A device with id '{}' is already registered", new_device->id);
+                return false;
+            }
+
+        s_registered_devices.emplace_back(std::move(new_device));
+        MYTHOS_DEBUG("New device registered. ID: {}", s_registered_devices.back()->id);
+        return true;
+    }
+
+    auto input::remove_device(hid::id_type id) -> bool {
+        for (auto it = s_registered_devices.begin(), end = s_registered_devices.end(); it != end; ++it)
+            if ((*it)->id == id) {
+                s_registered_devices.erase(it);
+                MYTHOS_DEBUG("Device removed. ID: {}", id);
+                return true;
+            }
+
+        MYTHOS_WARN("A device with id '{}' is not registered", id);
+        return false;
+    }
+
+    auto input::remove_device(hid* handle) -> bool {
+        return remove_device(handle->id);
+    }
+
+    auto input::get_device(hid::id_type id) -> hid* {
+        for (auto& existing_device : s_registered_devices)
+            if (existing_device->id == id)
+                return existing_device.get();
+
+        MYTHOS_WARN("A device with id '{}' is not registered", id);
+        return nullptr;
+    }
+
+    auto input::set_cursor_position(const myl::i32vec2& position) -> void {
+#ifdef MYL_OS_WINDOWS
+        win::set_cursor_position(position);
+#else
+        MYTHOS_WARN("myth::input::set_cursor_position is not implemented on this platform");
+#endif
+    }
+
+    auto input::set_cursor_visibility(bool visible) -> void {
+#ifdef MYL_OS_WINDOWS
+        win::set_cursor_visibility(visible);
+#else
+        MYTHOS_WARN("myth::input::set_cursor_visability is not implemented on this platform");
+#endif
+    }
+
+    auto input::confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void {
+#ifdef MYL_OS_WINDOWS
+        win::confine_cursor(tl, br);
+#else
+        MYTHOS_ERROR("myth::input::confine_cursor is not implemented on this platform");
+#endif
+    }
+
+    auto input::release_cursor() -> void {
+#ifdef MYL_OS_WINDOWS
+        win::release_cursor();
+#else
+        MYTHOS_ERROR("myth::input::unconfine_cursor is not implemented on this platform");
+#endif
+    }
+
+    auto input::process_key(keycode code, keyboard::state state) -> void {
         if (code == key::unknown)
             return;
 
-        if (s_key_states[code] != state) { // Pressed (Non held) and released events should only be fired on key state change
-            s_key_states[code] = state;
+        if (s_keyboard.keys[code] != state) { // Pressed (Non held) and released events should only be fired on key state change
+            s_keyboard.keys[code] = state;
 
-            if (state == state::up) {
+            if (state == keyboard::state::up) {
                 event::key_released e(code);
                 event::fire(e);
             }
@@ -157,7 +132,7 @@ namespace myth {
                 event::fire(e);
             }
         }
-        else if (state == state::down) { // Key is held down
+        else if (state == keyboard::state::down) { // Key is held down
             event::key_pressed e(code, true);
             event::fire(e);
         }
@@ -174,9 +149,9 @@ namespace myth {
     auto input::process_mouse_buttons_up(mousecode code) -> void {
         // new = 0110; old = 1010
         // old & new = 0010. Therefore bit 2 has changed state to up
-        const mousecode changed_buttons = s_mouse_button_states & code;
+        const mousecode changed_buttons = s_mouse.button_states & code;
         if (changed_buttons != 0) {
-            s_mouse_button_states &= ~changed_buttons; // Clear bits
+            s_mouse.button_states &= ~changed_buttons; // Clear bits
             event::mouse_released e(changed_buttons);
             event::fire(e);
         }
@@ -185,334 +160,65 @@ namespace myth {
     auto input::process_mouse_buttons_down(mousecode code) -> void {
         // new = 0110; old = 1010
         // ~(old | ~new) = 0100. Therefore bit 3 has changed state to down
-        const mousecode changed_buttons = ~(s_mouse_button_states | ~code);
+        const mousecode changed_buttons = ~(s_mouse.button_states | ~code);
         if (changed_buttons != 0) {
-            s_mouse_button_states |= changed_buttons; // Set bits
+            s_mouse.button_states |= changed_buttons; // Set bits
             event::mouse_pressed e(changed_buttons);
             event::fire(e);
         }
     }
 
     auto input::process_mouse_wheel(const myl::f32vec2& delta) -> void {
-        s_scroll_delta = delta;
-        event::mouse_scrolled e(s_scroll_delta);
+        s_mouse.scroll_delta = delta;
+        event::mouse_scrolled e(delta);
         event::fire(e);
     }
 
     auto input::process_cursor_delta(const myl::f32vec2& delta) -> void {
         if (delta.x != 0.f || delta.y != 0.f)
-            s_cursor_delta = delta;
+            s_mouse.cursor_delta = delta;
     }
 
     auto input::process_window_cursor_position(const myl::f32vec2& position) -> void {
-        if (s_window_cursor_position != position) {
-            s_window_cursor_position = position;
-            event::mouse_moved e(s_window_cursor_position);
+        if (s_mouse.window_cursor_position != position) {
+            s_mouse.window_cursor_position = position;
+            event::mouse_moved e(position);
             event::fire(e);
         }
     }
 
-    auto input::process_hid(myl::u16 vendor_id, myl::u16 product_id, myl::u8* data, myl::u32 byte_count) -> void {
-        switch (vendor_id) {
-            case 0x18D1: // Google
-                ///if (product_id == 0x9400) // Stadia Controller
-                ///    process_controller_stadia(data, byte_count);
-                break;
-            case 0x045E: // Microsoft
-                switch (product_id) {
-                    ///case 0x0202: process_controller_(data, byte_count); break; // Xbox Controller
-                    ///case 0x0285: process_controller_(data, byte_count); break; // Xbox Controller S
-                    ///case 0x0288: process_controller_(data, byte_count); break; // Xbox Controller S Hub
-                    ///case 0x0289: process_controller_(data, byte_count); break; // Xbox Controller S 
-                    ///case 0x028E: process_controller_(data, byte_count); break; // Xbox360 Controller
-                    ///case 0x028F: process_controller_(data, byte_count); break; // Xbox360 Wireless Contoller via Plug & Charge Cable
-                    ///case 0x02D1: process_controller_(data, byte_count); break; // Xbox One Controller
-                    ///case 0x02DD: process_controller_(data, byte_count); break; // Xbox One Controller (Firmware 2015)
-                    ///case 0x02E0: process_controller_(data, byte_count); break; // Xbox One Wireless Controller
-                    ///case 0x02E3: process_controller_(data, byte_count); break; // Xbox One Elite Controller
-                    ///case 0x02EA: process_controller_(data, byte_count); break; // Xbox One Controller
-                    ///case 0x02FD: process_controller_(data, byte_count); break; // Xbox One S Controller (Bluetooth)
-                    ///case 0x0B00: process_controller_(data, byte_count); break; // Xbox Elite Series 2 Controller (model 1797)
-                    ///case 0x0B12: process_controller_(data, byte_count); break; // Xbox Controller
-                    default: break;
-                }
-                break;
-            case 0x054C: // Sony
-                switch (product_id) {
-                    case 0x05C4: MYL_FALLTHROUGH;
-                    case 0x09CC: process_controller_dualshock4(data, byte_count); break;
-                    case 0x0CE6: process_controller_dualsense(data, byte_count); break;
-                    ///case 0x0DF2: // Dualsense Edge 
-                    default: break;
-                }
-                break;
-            default: break;
-        }
+    auto input::process_hid(hid::id_type id, myl::u8* data, myl::u32 byte_count) -> void {
+        for (auto& device : s_registered_devices)
+            if (device->id == id) {
+                if (device->process_callback)
+                    device->process_callback(device.get(), data, byte_count);
+                return;
+            }
     }
 
-    auto input::process_controller_buttons(button_code down) -> void {
+    auto input::process_hid_buttons(hid* device, hid_button_code down) -> void {
         // Refer to process_mouse_buttons_down for explanation
-        const button_code changed_to_down = ~(s_gamepad_button_states | ~down);
-        if (changed_to_down != button::none) {
-            s_gamepad_button_states |= changed_to_down;
-            event::gamepad_button_pressed e(changed_to_down);
+        const hid_button_code changed_to_down = ~(device->button_states | ~down);
+        if (changed_to_down != hid_button::none) {
+            device->button_states |= changed_to_down;
+            event::hid_button_pressed e(device, changed_to_down);
             event::fire(e);
         }
 
         // Refer to process_mouse_buttons_up for explanation
-        const button_code changed_to_up = s_gamepad_button_states & ~down; // ~down == up buttons set to 1
-        if (changed_to_up != button::none) {
-            s_gamepad_button_states &= ~changed_to_up;
-            event::gamepad_button_released e(changed_to_up);
+        const hid_button_code changed_to_up = device->button_states & ~down; // ~down == up buttons set to 1
+        if (changed_to_up != hid_button::none) {
+            device->button_states &= ~changed_to_up;
+            event::hid_button_released e(device, changed_to_up);
             event::fire(e);
         }
     }
 
-    auto input::process_dpad(myl::u8 byte, button_code& down) -> void {
-        switch (byte) {
-            case 0x0: down |= button::up; break;
-            case 0x1: down |= button::up | button::right; break;
-            case 0x2: down |= button::right; break;
-            case 0x3: down |= button::down | button::right; break;
-            case 0x4: down |= button::down; break;
-            case 0x5: down |= button::down | button::left; break;
-            case 0x6: down |= button::left; break;
-            case 0x7: down |= button::up | button::left; break;
-        }
-    }
-
-    auto input::process_controller_sticks(const myl::f32vec2& left, const myl::f32vec2& right) -> void {
-        if (myl::length(left) > s_stick_deadzones[0])
-            s_left_stick = left;
-
-        if (myl::length(right) > s_stick_deadzones[1])
-            s_right_stick = right;
-    }
-
-#define MYTHOS_IMPL_GAMEPAD_BUTTON(byte, bit, button)\
-    if ((data[byte] >> bit) & 1)\
-        buttons_down |= button;
-
-    auto input::process_controller_dualsense(myl::u8* data, myl::u32 byte_count) -> void {
-        // https://github.com/nondebug/dualsense
-
-        /// MYTODO: Additional controller resources
-        /// - https://github.com/Ohjurot/DualSense-Windows
-        /// - https://www.reddit.com/r/Dualsense/comments/pl3fsb/code_to_generate_all_dualsense_trigger_effects/
-        /// - https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db
-        /// - https://patchwork.kernel.org/project/linux-input/patch/20201219062336.72568-6-roderick@gaikai.com/
-
-        // USB connection is 64 bytes, bluetooth uses more
-        const myl::u32 offset = byte_count == 64 ? 3 : 0;
-        
-        const myl::f32vec2 left_stick{
-            static_cast<myl::f32>(static_cast<myl::u16>(data[1]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(data[2]) - 0x80) / 128.f
-        };
-
-        const myl::f32vec2 right_stick{
-            static_cast<myl::f32>(static_cast<myl::u16>(data[3]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(data[4]) - 0x80) / 128.f
-        };
-
-        process_controller_sticks(left_stick, right_stick);
-
-        s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8 - offset])) / 255.f;
-        s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9 - offset])) / 255.f;
-
-        button_code buttons_down = button::none;
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 4, button::ps_square);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 5, button::ps_cross);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 6, button::ps_circle);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5 + offset, 7, button::ps_triangle);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 0, button::left_bumper);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 1, button::right_bumper);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 2, button::left_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 3, button::right_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 4, button::ps_create);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 5, button::options);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 6, button::left_stick);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6 + offset, 7, button::right_stick);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 0, button::ps_logo);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7 + offset, 1, button::ps_touchpad);
-        process_dpad(data[5 + offset] & 0xF, buttons_down);
-
-        if (offset == 3) // The DuelSense's mute button can only be detected in usb mode
-            MYTHOS_IMPL_GAMEPAD_BUTTON(10, 2, button::ps_mic);
-
-        process_controller_buttons(buttons_down);
-
-#ifdef MYTHOS_ENABLE_CONTROLLER_WIP
-        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_touchpad_touch1_coords = {
-            static_cast<myl::u32>(data[31 + offset]) | static_cast<myl::u32>(data[32 + offset] & 0x0F) << 8,
-            (static_cast<myl::u32>(data[33 + offset]) << 4) | ((data[32 + offset] & 0xF0) >> 4)
-        };
-
-        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_touchpad_touch2_coords = {
-            static_cast<myl::u32>(data[35 + offset]) | static_cast<myl::u32>(data[36 + offset] & 0x0F) << 8,
-            (static_cast<myl::u32>(data[39 + offset]) << 4) | ((data[36 + offset] & 0xF0) >> 4)
-        };
-       /// MYTHOS_ERROR("[{}, {}]", s_trackpad_touch1_coords.x, s_trackpad_touch1_coords.y);
-#endif
-
-#ifdef MYTHOS_ENABLE_CONTROLLER_WIP
-        //s_gyroscope = myl::f32quat(
-        //    w,
-        //    static_cast<myl::f32>((static_cast<myl::u16>(data[20 + offset]) << 8) | static_cast<myl::u16>(data[21 + offset])),
-        //    static_cast<myl::f32>((static_cast<myl::u16>(data[22 + offset]) << 8) | static_cast<myl::u16>(data[23 + offset])),
-        //    static_cast<myl::f32>((static_cast<myl::u16>(data[24 + offset]) << 8) | static_cast<myl::u16>(data[25 + offset]))
-        //);
-
-        //s_accelerometer = myl::f32vec3{
-        //    static_cast<myl::f32>((static_cast<myl::i16>(data[13 + offset]) << 8) | static_cast<myl::i16>(data[14 + offset])),
-        //    static_cast<myl::f32>((static_cast<myl::i16>(data[15 + offset]) << 8) | static_cast<myl::i16>(data[16 + offset])),
-        //    static_cast<myl::f32>((static_cast<myl::i16>(data[17 + offset]) << 8) | static_cast<myl::i16>(data[18 + offset]))
-        //};
-        //MYTHOS_ERROR("Accelerometer: [{}, {}, {}]", s_accelerometer.x, s_accelerometer.y, s_accelerometer.z);
-#endif
-
-        /// Missing inputs
-        /// - Microphone
-        /// - Headset Jack
-        /// - Battery Status
-
-        // Outputs
-        /// - Haptic Feedback
-        /// - Adaptive Triggers
-        /// - Light Bar
-        /// - Speaker
-        /// - Headset Jack
-
-        /// Unknown Data
-        /// - Byte 7 (8 Bits) - Sometype of counter, increments everytime hid recieves input
-        /// - Byte 10 Bit 3 (13 Bits)
-        /// - Byte 12 Bit 0 (52 Bytes)
-
-        /// X Byte Location for usb
-        /// - 07: ? Increments everytime hid recieves input
-        /// - 11: ?
-        /// - 12: ? Increments everytime hid recieves input
-        /// - 13: Time counter in seconds
-        /// - 14: Amount of Roll over from 13
-        /// - 15: ? Amount of Roll over from 14
-        /// - 16: ? Accel
-        /// - 17: ? Accel down
-        /// - 18: ? Accel 
-        /// - 19: ? Accel to right
-        /// - 20: ? Accel Spin
-        /// - 21: ? Accel
-        /// - 22: ?
-        /// - 23: Gyro Roll
-        /// - 24: Gyro Roll
-        /// - 25: Gyro Yaw
-        /// - 26: Gyro Yaw
-        /// - 27: Gyro Pitch
-        /// - 28: Gyro Pitch
-        /// - 29: ?
-        /// - 30: ? Some type of counter
-        /// - 31: ? Some type of counter
-        /// - 32: ?
-        /// - 33: Touchpad - 1st input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
-        /// - 37: Touchpad - 2nd input - Bit 0 = is touch pad touched - first input | Bits 1-7 = Touch count tracker
-        /// - 41: ? Something with Touchpad Regardless of input number
-        /// - 42: ?
-        /// - 43: ?
-        /// - 44: ?
-        /// - 45: ?
-        /// - 46: ?
-        /// - 47: ?
-        /// - 48: ?
-        /// - 49: ?
-        /// - 50: ?
-        /// - 51: ? Some type of counter
-        /// - 52: Roll over Counter for 51
-        /// - 53: ?
-        /// - 54: ?
-        /// - 55: ?
-        /// - 56: ?
-        /// - 57: ?
-        /// - 58: ?
-        /// - 59: ?
-        /// - 60: ?
-        /// - 61: ?
-        /// - 62: ?
-        /// - 63: ?
-    }
-
-    auto input::process_controller_dualshock4(myl::u8* data, myl::u32 byte_count) -> void {
-        // https://www.psdevwiki.com/ps4/DS4-BT
-        // https://www.psdevwiki.com/ps4/DS4-USB
-
-        /// MYTODO: byte_count is unused, is bluetooth the same as usb?
-
-        /// MYTODO: Additional Dualshock inputs
-        ///                             USB            Bluetooth
-        /// Battery                  : Byte[12] Bit[-] | Byte[15] Bit[-]
-        /// Gyro X                   : Byte[13 - 14]   | Byte[16 - 17]
-        /// Gyro Y                   : Byte[15 - 16]   | Byte[18 - 19]
-        /// Gyro Z                   : Byte[17 - 18]   | Byte[20 - 21]
-        /// Accel X (signed)         : Byte[19 - 20]   | Byte[22 - 23]
-        /// Accel Y (signed)         : Byte[21 - 22]   | Byte[24 - 25]
-        /// Accel Z (signed)         : Byte[23 - 24]   | Byte[26 - 27]
-        /// AUX connection           : Byte[30] Bit[-] | Byte[33] Bit[-] ? Is this the Same
-        /// Touchpad finger 1 touch  : Byte[35] Bit[-] | Byte[] Bit[] // Refer to https://www.psdevwiki.com/ps4/DS4-BT for Trackpad info
-        /// Touchpad Data finger 1   : Byte[36 - 38]   | Byte[] Bit[]
-        /// Touchpad finger 2 touch  : Byte[39] Bit[-] | Byte[] Bit[]
-        /// Touchpad Data finger 2   : Byte[40 - 42]   | Byte[] Bit[]
-        /// Touchpad More Data fin 1 : Byte[44 - 47]   | Byte[] Bit[]
-        /// Touchpad More Data fin 2 : Byte[48 - 51]   | Byte[] Bit[]
-
-        const myl::f32vec2 left_stick{
-            static_cast<myl::f32>(static_cast<myl::u16>(data[1]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(data[2]) - 0x80) / 128.f
-        };
-
-        const myl::f32vec2 right_stick{
-            static_cast<myl::f32>(static_cast<myl::u16>(data[3]) - 0x80) / 128.f,
-            static_cast<myl::f32>(static_cast<myl::u16>(data[4]) - 0x80) / 128.f
-        };
-
-        process_controller_sticks(left_stick, right_stick);
-
-        s_trigger_delta[0] = static_cast<myl::f32>(static_cast<myl::u8>(data[8])) / 255.f;
-        s_trigger_delta[1] = static_cast<myl::f32>(static_cast<myl::u8>(data[9])) / 255.f;
-
-        button_code buttons_down = button::none;
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 4, button::ps_square);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 5, button::ps_cross);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 6, button::ps_circle);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(5, 7, button::ps_triangle);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 0, button::left_bumper);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 1, button::right_bumper);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 2, button::left_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 3, button::right_trigger);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 4, button::ps_share);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 5, button::options);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 6, button::left_stick);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(6, 7, button::right_stick);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7, 0, button::ps_logo);
-        MYTHOS_IMPL_GAMEPAD_BUTTON(7, 1, button::ps_touchpad);
-        process_dpad(data[5] & 0xF, buttons_down);
-        process_controller_buttons(buttons_down);
-
-#ifdef MYTHOS_ENABLE_CONTROLLER_WIP
-        /// MYTODO: The following link has a possible lead on enabling motion data in bluetooth mode
-        /// - https://gamedev.stackexchange.com/questions/87106/accessing-dualshock-4-motion-sensor-in-windows-ideally-unity#:~:text=No%20motion%20sensor%20data%20when%20connected%20via%20Bluetooth
-
-        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_touchpad_touch1_coords = {
-            static_cast<myl::u32>(data[36]) | static_cast<myl::u32>(data[37] & 0x0F) << 8,
-            (static_cast<myl::u32>(data[38]) << 4) | ((data[37] & 0xF0) >> 4)
-        };
-
-        /// MYBUG: Does not work in bluetooth mode, I think you have to use a outreport to request the controller to send that information
-        s_touchpad_touch2_coords = {
-            static_cast<myl::u32>(data[40]) | static_cast<myl::u32>(data[41] & 0x0F) << 8,
-            (static_cast<myl::u32>(data[42]) << 4) | ((data[41] & 0xF0) >> 4)
-        };
-        //MYTHOS_ERROR("[{}, {}]", s_touchpad_touch1_coords.x, s_touchpad_touch1_coords.y);
+    auto input::query_togglable_keys(keyboard* keyboard) -> void {
+#ifdef MYL_OS_WINDOWS
+        win::query_togglable_keys(keyboard);
+#else
+        MYTHOS_WARN("input::query_togglable_keys is not implemented on this platform");
 #endif
     }
 }

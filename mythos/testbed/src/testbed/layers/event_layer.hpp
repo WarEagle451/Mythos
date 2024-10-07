@@ -1,6 +1,6 @@
 #pragma once
 #include <mythos/core/layer.hpp>
-#include <mythos/event/gamepad_event.hpp>
+#include <mythos/event/hid_event.hpp>
 #include <mythos/event/key_event.hpp>
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/event/window_event.hpp>
@@ -17,8 +17,8 @@ namespace testbed {
         auto update(MYL_MAYBE_UNUSED myth::timestep ts) -> void override {}
         auto render() -> void override {}
     private:
-        auto on_gamepad_button_pressed(myth::event::gamepad_button_pressed&) -> bool;
-        auto on_gamepad_button_released(myth::event::gamepad_button_released&) -> bool;
+        auto on_hid_button_pressed(myth::event::hid_button_pressed&) -> bool;
+        auto on_hid_button_released(myth::event::hid_button_released&) -> bool;
 
         auto on_key_pressed(myth::event::key_pressed&) -> bool;
         auto on_key_released(myth::event::key_released&) -> bool;

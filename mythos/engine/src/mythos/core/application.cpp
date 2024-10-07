@@ -30,7 +30,7 @@ namespace myth {
 
         // Initialize all systems
 
-        input::init(specs.input_config);
+        input::init();
 
         m_event_cb = MYTHOS_BIND_EVENT_FUNC(application::on_event);
         event::set_callback(m_event_cb);
@@ -56,6 +56,8 @@ namespace myth {
         if (!m_cursor_capturing_window)
             release_cursor();
         m_window.reset();
+
+        input::shutdown();
 
         MYTHOS_TRACE("Application terminated");
     }
@@ -98,7 +100,7 @@ namespace myth {
 
             ts = timer.split<std::chrono::seconds, myl::f64>();
             m_stats.timestep = ts;
-
+            
             m_window->update();
 
             if (!m_suspended) {
@@ -106,14 +108,14 @@ namespace myth {
                     layer->update(ts);
 
                 if (m_window->state() != window_state::minimized) {
+                    input::update();
+
                     const bool good_frame = renderer::begin_frame();
                     if (good_frame) {
                         for (auto& layer : m_layer_stack)
                             layer->render();
                         renderer::end_frame();
                     }
-
-                    input::update();
                 }
             }
         }
@@ -175,6 +177,37 @@ namespace myth {
         return false;
     }
 
+    auto application::on_hid_added(event::hid_added& e) -> bool {
+        // Devices should attempt to use client defined devices first
+        for (auto& l : m_layer_stack) {            
+            l->on_event(e);
+            if (e.handled)
+                return true;
+        }
+
+        auto new_device = deduce_and_create_hid(e.id(), e.vendor(), e.product());
+        if (new_device == nullptr)
+            MYTHOS_ERROR("Could not deduce HID");
+        else
+            input::register_device(std::move(new_device));
+
+        e.handled = true; // Override running through the layers again in application::on_event
+        return true;
+    }
+
+    auto application::on_hid_removed(event::hid_removed& e) -> bool {
+        for (auto& l : m_layer_stack) {            
+            l->on_event(e);
+            if (e.handled)
+                break;
+        }
+
+        if (!input::remove_device(e.id()))
+            MYTHOS_ERROR("Failed to remove device. ID: {}", e.id());
+        e.handled = true; // Override running through the layers again in application::on_event
+        return true;
+    }
+
     auto application::on_event(event::base& e) -> void {
         event::dispatcher d(e);
         d.dispatch<event::window_resize>(MYTHOS_BIND_EVENT_FUNC(application::on_window_resize));
@@ -182,12 +215,15 @@ namespace myth {
         d.dispatch<event::window_close>(MYTHOS_BIND_EVENT_FUNC(application::on_window_close));
         d.dispatch<event::window_focus_gain>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_gain));
         d.dispatch<event::window_focus_lost>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_lost));
+
+        d.dispatch<event::hid_added>(MYTHOS_BIND_EVENT_FUNC(application::on_hid_added));
+        d.dispatch<event::hid_removed>(MYTHOS_BIND_EVENT_FUNC(application::on_hid_removed));
         
         if (!e.handled)
-            for (auto& l : m_layer_stack) {
+            for (auto& l : m_layer_stack) {                
+                l->on_event(e);
                 if (e.handled)
                     break;
-                l->on_event(e);
             }
     }
 }

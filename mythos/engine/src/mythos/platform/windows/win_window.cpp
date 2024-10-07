@@ -3,6 +3,7 @@
 #   include <mythos/core/application.hpp>
 #   include <mythos/core/keyboard.hpp>
 #   include <mythos/core/mousecodes.hpp>
+#   include <mythos/event/hid_event.hpp>
 #   include <mythos/input.hpp>
 #   include <mythos/log.hpp>
 #   include <mythos/platform/windows/win_utilities.hpp>
@@ -57,13 +58,13 @@ namespace myth::win {
             { // Joystick
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
                 .usUsage = HID_USAGE_GENERIC_JOYSTICK,
-                .dwFlags = RIDEV_INPUTSINK,
+                .dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY,
                 .hwndTarget = window_handle
             },
             { // Gamepad
                 .usUsagePage = HID_USAGE_PAGE_GENERIC,
                 .usUsage = HID_USAGE_GENERIC_GAMEPAD,
-                .dwFlags = RIDEV_INPUTSINK,
+                .dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY,
                 .hwndTarget = window_handle
             },
             { // Keyboard
@@ -374,6 +375,9 @@ namespace myth::win {
     // Using WM_INPUT and RIDEV_NOLEGACY also disables the following messages when the docs don't include;
     // WM_CHAR
 
+    /// https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawinputdevice
+    /// RIDEV_DEVNOTIFY is important
+
     auto CALLBACK window::process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) -> LRESULT {
         win::window* target = static_cast<win::window*>(application::get().main_window()); 
         if (target)
@@ -504,15 +508,15 @@ namespace myth::win {
                                 if (code == key::unknown)
                                     MYTHOS_WARN("Unknown scancode: {}", code);
 #endif
-                                input::process_key(code, (keyboard.Flags & RI_KEY_BREAK) ? input::state::up : input::state::down);
+                                input::process_key(code, (keyboard.Flags & RI_KEY_BREAK) ? keyboard::state::up : keyboard::state::down);
                             }
                             return 0;
                         case RIM_TYPEHID: {
                             RID_DEVICE_INFO rid_info{};
                             UINT rid_info_size = sizeof(RID_DEVICE_INFO);
                             GetRawInputDeviceInfoA(raw.as<RAWINPUT>()->header.hDevice, RIDI_DEVICEINFO, &rid_info, &rid_info_size);
-
-                            input::process_hid(rid_info.hid.dwVendorId, rid_info.hid.dwProductId, data.hid.bRawData, data.hid.dwSizeHid);
+                            
+                            input::process_hid(reinterpret_cast<hid::id_type>(raw.as<RAWINPUT>()->header.hDevice), data.hid.bRawData, data.hid.dwSizeHid);
                             return 0;
                         }
                         default:
@@ -521,6 +525,29 @@ namespace myth::win {
                     }
                     break;
                 }
+                case WM_INPUT_DEVICE_CHANGE: {
+                    switch (w_param) {
+                        case GIDC_ARRIVAL: {
+                            RID_DEVICE_INFO rid_info{};
+                            UINT rid_info_size = sizeof(RID_DEVICE_INFO);
+                            if (!GetRawInputDeviceInfo(reinterpret_cast<HRAWINPUT>(l_param), RIDI_DEVICEINFO, &rid_info, &rid_info_size)) {
+                                MYTHOS_ERROR("Failed to get HID info");
+                                break;
+                            }
+
+                            event::hid_added e(static_cast<hid::id_type>(l_param), static_cast<myl::u16>(rid_info.hid.dwVendorId), static_cast<myl::u16>(rid_info.hid.dwProductId));
+                            event::fire(e);
+                            return 0;
+                        }
+                        case GIDC_REMOVAL: {
+                            event::hid_removed e(static_cast<hid::id_type>(l_param));
+                            event::fire(e);
+                            return 0;
+                        }
+                        default:
+                            break;
+                    }
+                } break;
                 case WM_CHAR:
                 /// MYTODO: Replace using WM_INPUT
                     input::process_typed(static_cast<WCHAR>(w_param));
