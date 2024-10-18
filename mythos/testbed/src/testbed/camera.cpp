@@ -33,7 +33,7 @@ namespace testbed {
 
     auto camera::on_update(myth::timestep ts) -> void {
 		if (!myth::input::registered_devices().empty()) {
-			auto device = static_cast<myth::gamepad*>(myth::input::registered_devices().front().get());
+			auto device = static_cast<myth::hid::gamepad*>(myth::input::registered_devices().front().get());
 
 			// Movement
 			myl::f32vec3 movement(device->left_stick.x, 0.f, -device->left_stick.y);

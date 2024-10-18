@@ -2,7 +2,7 @@
 #include <mythos/log.hpp>
 #include <mythos/platform/hid.hpp>
 
-#include <myl/math/vec2.hpp>
+/// MYTODO: If device can not find a processing callback it should fail the add device in input.cpp
 
 /// MYTODO: HID implementaion
 /// - Dualshock 3: https://github.com/felis/USB_Host_Shield_2.0/wiki/PS3-Information
@@ -21,7 +21,184 @@
 /// - https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db
 /// - https://controllers.fandom.com/wiki/Sony_DualSense
 
-/// MYTODO: Reimplement Duelsense
+namespace myth::hid {
+    static auto deduce_hid_data_processing_callback(myl::u16 vendor_id, myl::u16 product_id) -> device_base::data_processing_callback {
+        switch (vendor_id) {
+            case 0x54C: // Sony
+                switch (product_id) {
+                    case 0x05C4: MYL_FALLTHROUGH; // Dualshock 4
+                    case 0x09CC: return dualshock4_controller_data_processing_callback;
+                    ///case 0x0CE6: return dualsense_controller_processing_callback;
+                    default: break;
+                }
+                break;
+            default: break;
+        }
+
+        MYTHOS_ERROR("Device HID processing callback can't be determined. Vendor ID: {}, Product ID: {}", vendor_id, product_id);
+        /// MYTODO: If a specific process can't be determined at this point then rely on the products intended usage, eg gamepad, mouse, etc, and try a default layout
+
+        MYTHOS_FATAL("No device HID processing callback could be found, application will likey crash when device attempts to send a HID report. Vendor ID: {}, Product ID: {}", vendor_id, product_id);
+        return nullptr;
+    }
+
+    MYL_NO_DISCARD device_base::device_base(id_type id, myl::u16 vendor_id, myl::u16 product_id, data_processing_callback callback)
+        : processing_callback{ callback == nullptr ? deduce_hid_data_processing_callback(vendor_id, product_id) : callback }
+        , id{ id }
+        , vendor_id{ vendor_id }
+        , product_id{ product_id }
+        , features{} { /// MYTODO: Implement features
+
+    }
+
+    MYL_NO_DISCARD gamepad::gamepad(id_type id, myl::u16 vendor_id, myl::u16 product_id, data_processing_callback callback)
+        : device_base(id, vendor_id, product_id, callback)
+        , buttons{} {
+
+    }
+
+    // Peripheral data processing callbacks
+
+    auto dualshock4_controller_data_processing_callback(device_base* device, myl::u8* data, MYL_MAYBE_UNUSED myl::u32 byte_count) -> void {
+        /// MYTODO: byte_count is unused, is bluetooth the same as usb?
+
+        /// MYTODO: Dualshock4 controller data:
+        /// Feature                                                       | USB         |          | Bluetooth
+        /// - Battery level                                               | Byte: 12    |    
+
+        // USB Data Format from https://www.psdevwiki.com/ps4/DS4-USB & https://www.psdevwiki.com/ps4/DS4-BT
+
+        using namespace hid_button;
+        dualshock4_controller* controller = static_cast<dualshock4_controller*>(device);       
+
+        const myl::f32vec2 l_stick{
+            static_cast<myl::f32>(myl::u16(data[1]) - 0x80) / 128.f,
+            static_cast<myl::f32>(myl::u16(data[2]) - 0x80) / 128.f
+        };
+
+        controller->left_stick = myl::length(l_stick) > controller->stick_deadzones.left ?
+            l_stick :
+            myl::f32vec2(0.f);
+        
+        const myl::f32vec2 r_stick{
+            static_cast<myl::f32>(myl::u16(data[3]) - 0x80) / 128.f,
+            static_cast<myl::f32>(myl::u16(data[4]) - 0x80) / 128.f
+        };
+        
+        controller->right_stick = myl::length(r_stick) > controller->stick_deadzones.right ?
+            r_stick :
+            myl::f32vec2(0.f);
+      
+        hid_button_code buttons_down = none;
+        
+        if ((data[5] >> 4) & 1) buttons_down |= ps_square;
+        if ((data[5] >> 5) & 1) buttons_down |= ps_cross;
+        if ((data[5] >> 6) & 1) buttons_down |= ps_circle;
+        if ((data[5] >> 7) & 1) buttons_down |= ps_triangle;
+        
+        switch (data[5] & 0xF) {
+            case 0x0: buttons_down |= up; break;
+            case 0x1: buttons_down |= up | right; break;
+            case 0x2: buttons_down |= right; break;
+            case 0x3: buttons_down |= down | right; break;
+            case 0x4: buttons_down |= down; break;
+            case 0x5: buttons_down |= down | left; break;
+            case 0x6: buttons_down |= left; break;
+            case 0x7: buttons_down |= up | left; break;
+        }
+        
+        if ((data[6] >> 0) & 1) buttons_down |= left_bumper;
+        if ((data[6] >> 1) & 1) buttons_down |= right_bumper;
+        if ((data[6] >> 2) & 1) buttons_down |= left_trigger;
+        if ((data[6] >> 3) & 1) buttons_down |= right_trigger;
+        if ((data[6] >> 4) & 1) buttons_down |= ps_share;
+        if ((data[6] >> 5) & 1) buttons_down |= options;
+        if ((data[6] >> 6) & 1) buttons_down |= left_stick;
+        if ((data[6] >> 7) & 1) buttons_down |= right_stick;
+        
+        if ((data[7] >> 0) & 1) buttons_down |= ps_logo;
+        if ((data[7] >> 1) & 1) buttons_down |= ps_touchpad;
+        
+        input::process_hid_buttons(device, static_cast<buttons*>(controller), buttons_down);
+
+        controller->trigger_deltas.left = static_cast<myl::f32>(static_cast<myl::u8>(data[8])) / 255.f;
+        controller->trigger_deltas.right = static_cast<myl::f32>(static_cast<myl::u8>(data[9])) / 255.f;
+
+        /// MYTODO: Handle gyroscope
+        /// - Gyro X: angular velocity measures (follows right-hand-rule) | Byte: 13-14 |
+        /// - Gyro Y                                                      | Byte: 15-16 |
+        /// - Gyro Z                                                      | Byte: 17-18 |    
+        
+        //myl::u16* gyro_data = static_cast<myl::u16*>(static_cast<void*>(&data[13]));
+        //controller->gyro = {
+        //
+        //};
+
+        /// MYTODO: Handle accelerator
+        /// - Accel X (signed): acceleration (positive: right)            | Byte: 19-20 |
+        /// - Accel Y (signed): acceleration (positive: up)               | Byte: 21-22 |
+        /// - Accel Z (signed): acceleration (positive: towards player)   | Byte: 23-24 |
+        
+        //myl::i16* accelerator_data = static_cast<myl::i16*>(static_cast<void*>(&data[19]));
+        //controller->acceleration = {
+        //    accelerator_data,
+        //    accelerator_data + 1,
+        //    accelerator_data + 2,
+        //};
+
+        /// MYTODO: Handle touchpad
+        /// - T-PAD event active:                                         | Byte: 33    | Bit: 0-3 |
+        /// - T-PAD: tracking numbers for touch count for finger 1        | Byte: 35    | Bit: 0-6 |
+        /// - Finger down on 1st touch                                    | Byte: 35    | Bit: 7   |
+        /// - T-PAD: each finger 1 location/positional data:              | Byte: 36-38 |
+
+        //controller->touchpad_finger1 = {
+        //    ,
+        //
+        //};
+
+        /// - T-PAD: tracking numbers for touch count for finger 2        | Byte: 39    | Bit: 0-6 |
+        /// - Finger down on 2nd touch                                    | Byte: 39    | Bit: 7   |
+        /// - T-PAD: each finger 2 location/positional data:              | Byte: 40-42 |
+        /// - T-PAD: the previous touches 1st finger track and location   | Byte: 44-47 |
+        /// - T-PAD: the previous touches 2nd finger track and location   | Byte: 48-51 |
+
+        //controller->touchpad_finger2 = {
+        //    ,
+        //
+        //};
+    }
+
+    // Peripheral data structures
+
+    MYL_NO_DISCARD dualshock4_controller::dualshock4_controller(id_type id, myl::u16 vendor_id, myl::u16 product_id)
+        : gamepad(id, vendor_id, product_id, (data_processing_callback)dualshock4_controller_data_processing_callback)
+        , touchpad{} {
+
+    }
+
+    auto create(device_base::id_type id, myl::u16 vendor_id, myl::u16 product_id) -> std::unique_ptr<device_base> {
+        switch (vendor_id) {
+            case 0x54C: // Sony
+                switch (product_id) {
+                    case 0x05C4: MYL_FALLTHROUGH;                                                      // Dualshock 4
+                    case 0x09CC: return std::make_unique<gamepad>(id, vendor_id, product_id, nullptr); // Dualshock 4
+                    case 0x0CE6: return std::make_unique<gamepad>(id, vendor_id, product_id, nullptr); // DualSense
+                    ///case 0x0DF2:  // Dualsense Edge 
+                    default:
+                        MYTHOS_ERROR("Unknown Sony device detected, product ID: {}", product_id);
+                        break;
+                } break;
+            default:
+                MYTHOS_ERROR("Unknown device detected, vendor ID: {}, product ID: {}", vendor_id, product_id);
+                break;
+        }
+
+        return nullptr;
+    }
+}
+
+/// Beyond is now bad
 
 #if 0
 namespace myth {
@@ -178,197 +355,3 @@ namespace myth {
     }
 }
 #endif
-
-namespace myth {
-    static auto dualsense_controller_processing_callback(hid* device, myl::u8* data, myl::u32 byte_count) -> void {
-
-    }
-
-    static auto dualshock4_controller_processing_callback(hid* device, myl::u8* data, myl::u32 byte_count) -> void {
-        // Resources:
-        // https://www.psdevwiki.com/ps4/DS4-BT
-        // https://www.psdevwiki.com/ps4/DS4-USB
-        
-        /// MYTODO: byte_count is unused, is bluetooth the same as usb?
-
-        /// MYTODO: Dualshock4 controller data:
-        /// Feature                                                       | USB         |          | Bluetooth
-        /// - Battery level                                               | Byte: 12    |
-        /// - Gyro X: angular velocity measures (follows right-hand-rule) | Byte: 13-14 |
-        /// - Gyro Y                                                      | Byte: 15-16 |
-        /// - Gyro Z                                                      | Byte: 17-18 |
-        /// - Accel X (signed): acceleration (positive: right)            | Byte: 19-20 |
-        /// - Accel Y (signed): acceleration (positive: up)               | Byte: 21-22 |
-        /// - Accel Z (signed): acceleration (positive: towards player)   | Byte: 23-24 |
-        /// - T-PAD event active:                                         | Byte: 33    | Bit: 0-3 |
-        /// - T-PAD: tracking numbers for touch count for finger 1        | Byte: 35    | Bit: 0-6 |
-        /// - Finger down on 1st touch                                    | Byte: 35    | Bit: 7   |
-        /// - T-PAD: each finger 1 location/positional data:              | Byte: 36-38 |
-        /// - T-PAD: tracking numbers for touch count for finger 2        | Byte: 39    | Bit: 0-6 |
-        /// - Finger down on 2nd touch                                    | Byte: 39    | Bit: 7   |
-        /// - T-PAD: each finger 2 location/positional data:              | Byte: 40-42 |
-        /// - T-PAD: the previous touches 1st finger track and location   | Byte: 44-47 |
-        /// - T-PAD: the previous touches 2nd finger track and location   | Byte: 48-51 |
-
-        // USB Data Format from https://www.psdevwiki.com/ps4/DS4-USB
-
-        using namespace hid_button;
-        gamepad* gamepad = static_cast<myth::gamepad*>(device);
-        
-        const myl::f32vec2 l_stick{
-            static_cast<myl::f32>(myl::u16(data[1]) - 0x80) / 128.f,
-            static_cast<myl::f32>(myl::u16(data[2]) - 0x80) / 128.f
-        };
-        
-        if (myl::length(l_stick) > gamepad->stick_deadzones.left)
-            gamepad->left_stick = l_stick;
-        
-        const myl::f32vec2 r_stick{
-            static_cast<myl::f32>(myl::u16(data[3]) - 0x80) / 128.f,
-            static_cast<myl::f32>(myl::u16(data[4]) - 0x80) / 128.f
-        };
-        
-        if (myl::length(r_stick) > gamepad->stick_deadzones.right)
-            gamepad->right_stick = r_stick;
-        
-        hid_button_code buttons_down = none;
-        
-        if ((data[5] >> 4) & 1) buttons_down |= ps_square;
-        if ((data[5] >> 5) & 1) buttons_down |= ps_cross;
-        if ((data[5] >> 6) & 1) buttons_down |= ps_circle;
-        if ((data[5] >> 7) & 1) buttons_down |= ps_triangle;
-        
-        switch (data[5] & 0xF) {
-            case 0x0: buttons_down |= up; break;
-            case 0x1: buttons_down |= up | right; break;
-            case 0x2: buttons_down |= right; break;
-            case 0x3: buttons_down |= down | right; break;
-            case 0x4: buttons_down |= down; break;
-            case 0x5: buttons_down |= down | left; break;
-            case 0x6: buttons_down |= left; break;
-            case 0x7: buttons_down |= up | left; break;
-        }
-        
-        if ((data[6] >> 0) & 1) buttons_down |= left_bumper;
-        if ((data[6] >> 1) & 1) buttons_down |= right_bumper;
-        if ((data[6] >> 2) & 1) buttons_down |= left_trigger;
-        if ((data[6] >> 3) & 1) buttons_down |= right_trigger;
-        if ((data[6] >> 4) & 1) buttons_down |= ps_share;
-        if ((data[6] >> 5) & 1) buttons_down |= options;
-        if ((data[6] >> 6) & 1) buttons_down |= left_stick;
-        if ((data[6] >> 7) & 1) buttons_down |= right_stick;
-        
-        if ((data[7] >> 0) & 1) buttons_down |= ps_logo;
-        if ((data[7] >> 1) & 1) buttons_down |= ps_touchpad;
-        
-        input::process_hid_buttons(device, buttons_down);
-
-        gamepad->trigger_deltas.left = static_cast<myl::f32>(static_cast<myl::u8>(data[8])) / 255.f;
-        gamepad->trigger_deltas.right = static_cast<myl::f32>(static_cast<myl::u8>(data[9])) / 255.f;        
-    }
-
-    static auto determine_hid_processing_callback(myl::u16 vendor_id, myl::u16 product_id) -> hid::processing_callback {
-        switch (vendor_id) {
-            case 0x18D1: // Goodle
-                ///if (product_id == 0x9400) // Stadia Controller
-                ///    ;
-                break;
-            case 0x45E: // Microsoft
-                switch (product_id) {
-                    ///case 0x0202: return process_xbox_controller(data, byte_count); break; // Xbox Controller
-                    ///case 0x0285: return process_xbox_controller(data, byte_count); break; // Xbox Controller S
-                    ///case 0x0288: return process_xbox_controller(data, byte_count); break; // Xbox Controller S Hub
-                    ///case 0x0289: return process_xbox_controller(data, byte_count); break; // Xbox Controller S 
-                    ///case 0x028E: return process_xbox_controller(data, byte_count); break; // Xbox360 Controller
-                    ///case 0x028F: return process_xbox_controller(data, byte_count); break; // Xbox360 Wireless Contoller via Plug & Charge Cable
-                    ///case 0x02D1: return process_xbox_controller(data, byte_count); break; // Xbox One Controller
-                    ///case 0x02DD: return process_xbox_controller(data, byte_count); break; // Xbox One Controller (Firmware 2015)
-                    ///case 0x02E0: return process_xbox_controller(data, byte_count); break; // Xbox One Wireless Controller
-                    ///case 0x02E3: return process_xbox_controller(data, byte_count); break; // Xbox One Elite Controller
-                    ///case 0x02EA: return process_xbox_controller(data, byte_count); break; // Xbox One Controller
-                    ///case 0x02FD: return process_xbox_controller(data, byte_count); break; // Xbox One S Controller (Bluetooth)
-                    ///case 0x0B00: return process_xbox_controller(data, byte_count); break; // Xbox Elite Series 2 Controller (model 1797)
-                    ///case 0x0B12: return process_xbox_controller(data, byte_count); break; // Xbox Controller
-                    default: break;
-                }
-                break;
-            case 0x54C: // Sony
-                switch (product_id) {
-                    case 0x05C4: MYL_FALLTHROUGH; // Dualshock 4
-                    case 0x09CC: return dualshock4_controller_processing_callback;
-                    case 0x0CE6: return dualsense_controller_processing_callback;
-                    ///case 0x0DF2: // Dualsense Edge 
-                    default: break;
-                }
-                break;
-            default: break;
-        }
-
-        MYTHOS_ERROR("Device HID processing callback can't be determined. Vendor ID: {}, Product ID: {}", vendor_id, product_id);
-        /// MYTODO: If a specific process can't be determined at this point then rely on the products intended usage, eg gamepad, mouse, etc, and try a default layout
-
-        MYTHOS_FATAL("No device HID processing callback could be found, application will likey crash when device attempts to send a HID report. Vendor ID: {}, Product ID: {}", vendor_id, product_id);
-        return nullptr;
-    }
-
-    hid::hid(id_type id, myl::u16 vendor_id, myl::u16 product_id, hid::processing_callback callback)
-        : process_callback{ callback == nullptr ? determine_hid_processing_callback(vendor_id, product_id) : callback }
-        , id{ id }
-        , vendor{ vendor_id }
-        , product{ product_id }
-        , button_states{ hid_button::none } {
-
-    }
-
-    gamepad::gamepad(id_type id, myl::u16 vendor_id, myl::u16 product_id, processing_callback callback)
-        : hid(id, vendor_id, product_id, callback) {
-
-    }
-
-    auto gamepad::update() -> void {
-        left_stick = myl::f32vec2(0.f);
-        right_stick = myl::f32vec2(0.f);
-    }
-
-    auto deduce_and_create_hid(hid::id_type id, myl::u16 vendor, myl::u16 product) -> std::unique_ptr<hid> {
-        /// MYTODO: There must be a better way to return the type in runtime
-
-        switch (vendor) {
-            case 0x18D1: // Goodle
-                ///if (product_id == 0x9400) // Stadia Controller
-                ///    ;
-                break;
-            case 0x45E: // Microsoft
-                switch (product) {
-                    ///case 0x0202: return process_xbox_controller(data, byte_count); break; // Xbox Controller
-                    ///case 0x0285: return process_xbox_controller(data, byte_count); break; // Xbox Controller S
-                    ///case 0x0288: return process_xbox_controller(data, byte_count); break; // Xbox Controller S Hub
-                    ///case 0x0289: return process_xbox_controller(data, byte_count); break; // Xbox Controller S 
-                    ///case 0x028E: return process_xbox_controller(data, byte_count); break; // Xbox360 Controller
-                    ///case 0x028F: return process_xbox_controller(data, byte_count); break; // Xbox360 Wireless Contoller via Plug & Charge Cable
-                    ///case 0x02D1: return process_xbox_controller(data, byte_count); break; // Xbox One Controller
-                    ///case 0x02DD: return process_xbox_controller(data, byte_count); break; // Xbox One Controller (Firmware 2015)
-                    ///case 0x02E0: return process_xbox_controller(data, byte_count); break; // Xbox One Wireless Controller
-                    ///case 0x02E3: return process_xbox_controller(data, byte_count); break; // Xbox One Elite Controller
-                    ///case 0x02EA: return process_xbox_controller(data, byte_count); break; // Xbox One Controller
-                    ///case 0x02FD: return process_xbox_controller(data, byte_count); break; // Xbox One S Controller (Bluetooth)
-                    ///case 0x0B00: return process_xbox_controller(data, byte_count); break; // Xbox Elite Series 2 Controller (model 1797)
-                    ///case 0x0B12: return process_xbox_controller(data, byte_count); break; // Xbox Controller
-                default: break;
-                }
-                break;
-            case 0x54C: // Sony
-                switch (product) {
-                    case 0x05C4: MYL_FALLTHROUGH;                                                // Dualshock 4
-                    case 0x09CC: return std::make_unique<gamepad>(id, vendor, product, nullptr); // Dualshock 4
-                    case 0x0CE6: return std::make_unique<gamepad>(id, vendor, product, nullptr); // DualSense
-                    ///case 0x0DF2:  // Dualsense Edge 
-                    default: break;
-                }
-                break;
-            default: break;
-        }
-
-        return nullptr;
-    }
-}

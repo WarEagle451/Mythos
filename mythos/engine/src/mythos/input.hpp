@@ -29,21 +29,21 @@ namespace myth {
     class input {
         static keyboard                          s_keyboard;
         static mouse                             s_mouse;
-        static std::vector<std::unique_ptr<hid>> s_registered_devices;
+        static std::vector<std::unique_ptr<hid::device_base>> s_registered_devices;
     public:
         static auto init() -> void;
         static auto shutdown() -> void;
         static auto update() -> void;
         static auto clear() -> void;
 
-        static MYL_API auto register_device(std::unique_ptr<hid>&& new_device) -> bool;
-        static MYL_API auto remove_device(hid::id_type id) -> bool;
-        static MYL_API auto remove_device(hid* handle) -> bool;
+        static MYL_API auto register_device(std::unique_ptr<hid::device_base>&& new_device) -> bool;
+        static MYL_API auto remove_device(hid::device_base::id_type id) -> bool;
+        static MYL_API auto remove_device(hid::device_base* handle) -> bool;
 
         static MYL_API auto get_keyboard() -> keyboard& { return s_keyboard; }
         static MYL_API auto get_mouse() -> mouse& { return s_mouse; }
-        static MYL_API auto get_device(hid::id_type id) -> hid*;
-        static MYL_API auto registered_devices() -> std::vector<std::unique_ptr<hid>>& { return s_registered_devices; }
+        static MYL_API auto get_device(hid::device_base::id_type id) -> hid::device_base*;
+        static MYL_API auto registered_devices() -> std::vector<std::unique_ptr<hid::device_base>>& { return s_registered_devices; }
 
         // Keyboard Related
 
@@ -67,9 +67,9 @@ namespace myth {
 
         // HID Related
 
-        MYL_NO_DISCARD static MYL_API auto hid_button_states(hid* device) noexcept -> hid_button_code { return device->button_states; }
-        MYL_NO_DISCARD static MYL_API auto hid_buttons_up(hid* device, hid_button_code code) noexcept -> bool { return (device->button_states & code) == code; }
-        MYL_NO_DISCARD static MYL_API auto hid_buttons_down(hid* device, hid_button_code code) noexcept -> bool { return (device->button_states & code) == code; }
+        MYL_NO_DISCARD static MYL_API auto hid_button_states(hid::buttons* device) noexcept -> hid_button_code { return device->button_states; }
+        MYL_NO_DISCARD static MYL_API auto hid_buttons_up(hid::buttons* device, hid_button_code code) noexcept -> bool { return (device->button_states & code) == code; }
+        MYL_NO_DISCARD static MYL_API auto hid_buttons_down(hid::buttons* device, hid_button_code code) noexcept -> bool { return (device->button_states & code) == code; }
 
         // Keyboard Processing / Related
 
@@ -86,8 +86,8 @@ namespace myth {
 
         // HID Processing
 
-        static auto process_hid(hid::id_type id, myl::u8* data, myl::u32 byte_count) -> void;
-        static auto process_hid_buttons(hid* device, hid_button_code down) -> void;
+        static auto process_hid(hid::device_base::id_type id, myl::u8* data, myl::u32 byte_count) -> void;
+        static auto process_hid_buttons(hid::device_base* device, hid::buttons* data, hid_button_code down) -> void;
     private:
         static auto query_togglable_keys(keyboard* keyboard) -> void;
     };

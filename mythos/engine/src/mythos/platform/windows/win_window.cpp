@@ -516,7 +516,7 @@ namespace myth::win {
                             UINT rid_info_size = sizeof(RID_DEVICE_INFO);
                             GetRawInputDeviceInfoA(raw.as<RAWINPUT>()->header.hDevice, RIDI_DEVICEINFO, &rid_info, &rid_info_size);
                             
-                            input::process_hid(reinterpret_cast<hid::id_type>(raw.as<RAWINPUT>()->header.hDevice), data.hid.bRawData, data.hid.dwSizeHid);
+                            input::process_hid(reinterpret_cast<hid::device_base::id_type>(raw.as<RAWINPUT>()->header.hDevice), data.hid.bRawData, data.hid.dwSizeHid);
                             return 0;
                         }
                         default:
@@ -526,6 +526,8 @@ namespace myth::win {
                     break;
                 }
                 case WM_INPUT_DEVICE_CHANGE: {
+                    /// MYBUG: If the device is connected via bluetooth and usb at the same time it might register as 2 devices because l_param is only unique and not unique per device
+
                     switch (w_param) {
                         case GIDC_ARRIVAL: {
                             RID_DEVICE_INFO rid_info{};
@@ -535,12 +537,12 @@ namespace myth::win {
                                 break;
                             }
 
-                            event::hid_added e(static_cast<hid::id_type>(l_param), static_cast<myl::u16>(rid_info.hid.dwVendorId), static_cast<myl::u16>(rid_info.hid.dwProductId));
+                            event::hid_added e(static_cast<hid::device_base::id_type>(l_param), static_cast<myl::u16>(rid_info.hid.dwVendorId), static_cast<myl::u16>(rid_info.hid.dwProductId));
                             event::fire(e);
                             return 0;
                         }
                         case GIDC_REMOVAL: {
-                            event::hid_removed e(static_cast<hid::id_type>(l_param));
+                            event::hid_removed e(static_cast<hid::device_base::id_type>(l_param));
                             event::fire(e);
                             return 0;
                         }

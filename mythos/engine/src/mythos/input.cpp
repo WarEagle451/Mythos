@@ -11,7 +11,7 @@
 namespace myth {
     keyboard                          input::s_keyboard;
     mouse                             input::s_mouse;
-    std::vector<std::unique_ptr<hid>> input::s_registered_devices = {};
+    std::vector<std::unique_ptr<hid::device_base>> input::s_registered_devices = {};
 
     auto input::init() -> void {
         clear();
@@ -27,9 +27,6 @@ namespace myth {
 
         s_mouse.cursor_delta = { 0.f, 0.f };
         s_mouse.scroll_delta = { 0.f, 0.f };
-
-        for (auto& device : s_registered_devices)
-            device->update();
     }
 
     auto input::clear() -> void {
@@ -41,13 +38,10 @@ namespace myth {
         s_mouse.scroll_delta = { 0.f, 0.f };
         s_mouse.window_cursor_position = { 0.f, 0.f };
 
-        for (auto& device : s_registered_devices)
-            device->button_states = hid_button::none;
-
         /// MYTODO: Clearing state of devices
     }
 
-    auto input::register_device(std::unique_ptr<hid>&& new_device) -> bool {
+    auto input::register_device(std::unique_ptr<hid::device_base>&& new_device) -> bool {
         for (auto& existing_device : s_registered_devices)
             if (existing_device->id == new_device->id) {
                 MYTHOS_WARN("A device with id '{}' is already registered", new_device->id);
@@ -59,7 +53,7 @@ namespace myth {
         return true;
     }
 
-    auto input::remove_device(hid::id_type id) -> bool {
+    auto input::remove_device(hid::device_base::id_type id) -> bool {
         for (auto it = s_registered_devices.begin(), end = s_registered_devices.end(); it != end; ++it)
             if ((*it)->id == id) {
                 s_registered_devices.erase(it);
@@ -71,11 +65,11 @@ namespace myth {
         return false;
     }
 
-    auto input::remove_device(hid* handle) -> bool {
+    auto input::remove_device(hid::device_base* handle) -> bool {
         return remove_device(handle->id);
     }
 
-    auto input::get_device(hid::id_type id) -> hid* {
+    auto input::get_device(hid::device_base::id_type id) -> hid::device_base* {
         for (auto& existing_device : s_registered_devices)
             if (existing_device->id == id)
                 return existing_device.get();
@@ -187,28 +181,28 @@ namespace myth {
         }
     }
 
-    auto input::process_hid(hid::id_type id, myl::u8* data, myl::u32 byte_count) -> void {
+    auto input::process_hid(hid::device_base::id_type id, myl::u8* data, myl::u32 byte_count) -> void {
         for (auto& device : s_registered_devices)
             if (device->id == id) {
-                if (device->process_callback)
-                    device->process_callback(device.get(), data, byte_count);
+                if (device->processing_callback)
+                    device->processing_callback(device.get(), data, byte_count);
                 return;
             }
     }
 
-    auto input::process_hid_buttons(hid* device, hid_button_code down) -> void {
+    auto input::process_hid_buttons(hid::device_base* device, hid::buttons* data,  hid_button_code down) -> void {
         // Refer to process_mouse_buttons_down for explanation
-        const hid_button_code changed_to_down = ~(device->button_states | ~down);
+        const hid_button_code changed_to_down = ~(data->button_states | ~down);
         if (changed_to_down != hid_button::none) {
-            device->button_states |= changed_to_down;
+            data->button_states |= changed_to_down;
             event::hid_button_pressed e(device, changed_to_down);
             event::fire(e);
         }
 
         // Refer to process_mouse_buttons_up for explanation
-        const hid_button_code changed_to_up = device->button_states & ~down; // ~down == up buttons set to 1
+        const hid_button_code changed_to_up = data->button_states & ~down; // ~down == up buttons set to 1
         if (changed_to_up != hid_button::none) {
-            device->button_states &= ~changed_to_up;
+            data->button_states &= ~changed_to_up;
             event::hid_button_released e(device, changed_to_up);
             event::fire(e);
         }

@@ -185,7 +185,7 @@ namespace myth {
                 return true;
         }
 
-        auto new_device = deduce_and_create_hid(e.id(), e.vendor(), e.product());
+        auto new_device = hid::create(e.id(), e.vendor(), e.product());
         if (new_device == nullptr)
             MYTHOS_ERROR("Could not deduce HID");
         else
