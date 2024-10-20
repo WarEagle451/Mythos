@@ -27,8 +27,8 @@ namespace myth {
     };
 
     class input {
-        static keyboard                                       s_keyboard;
-        static mouse                                          s_mouse;
+        static keyboard                                  s_keyboard;
+        static mouse                                     s_mouse;
         static std::vector<std::unique_ptr<hid::device>> s_registered_devices;
     public:
         static auto init() -> void;
