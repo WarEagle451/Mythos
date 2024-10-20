@@ -1,7 +1,7 @@
 #include <mythos/input.hpp>
 #include <mythos/platform/peripherals/dualsense.hpp>
 
-/// MYTODO: Additional controller resources
+/// Additional controller resources
 /// - https://github.com/Ohjurot/DualSense-Windows
 /// - https://www.reddit.com/r/Dualsense/comments/pl3fsb/code_to_generate_all_dualsense_trigger_effects/
 /// - https://gist.github.com/Nielk1/6d54cc2c00d2201ccb8c2720ad7538db

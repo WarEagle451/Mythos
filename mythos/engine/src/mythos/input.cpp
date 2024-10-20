@@ -37,8 +37,6 @@ namespace myth {
         s_mouse.cursor_delta = { 0.f, 0.f };
         s_mouse.scroll_delta = { 0.f, 0.f };
         s_mouse.window_cursor_position = { 0.f, 0.f };
-
-        /// MYTODO: Clearing state of devices
     }
 
     auto input::register_device(std::unique_ptr<hid::device>&& new_device) -> bool {

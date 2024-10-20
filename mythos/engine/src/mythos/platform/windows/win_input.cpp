@@ -30,8 +30,6 @@ namespace myth::win {
     }
 
     auto query_togglable_keys(keyboard* keyboard) -> void {
-        /// MYTODO: Should probably query everything that is not a delta
-
         keyboard->keys[key::caps_lock]   = (GetKeyState(VK_CAPITAL) & 0x0001) == 0 ? keyboard::state::up : keyboard::state::down;
         keyboard->keys[key::num_lock]    = (GetKeyState(VK_NUMLOCK) & 0x0001) == 0 ? keyboard::state::up : keyboard::state::down;
         keyboard->keys[key::scroll_lock] = (GetKeyState(VK_SCROLL) & 0x0001) == 0 ? keyboard::state::up : keyboard::state::down;

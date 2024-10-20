@@ -16,6 +16,9 @@
 //MYTHOS_DEBUG("Touchpad Touch 1: x= {}, y={}", controller->touch1.x, controller->touch1.y);
 //MYTHOS_DEBUG("Touchpad Touch 2: x= {}, y={}", controller->touch2.x, controller->touch2.y);
 
+/// MYTODO: Additional hid resources
+/// - API style https://www.braynzarsoft.net/viewtutorial/q0-xinput-api-gamepad-class
+
 namespace myth::hid {
     using device_features = myl::usize;
     namespace device_feature {
@@ -23,9 +26,9 @@ namespace myth::hid {
             none = 0,
 
             buttons       = 1 << 0,
-            touchpad      = 1 << 1,
-            accelerometer = 1 << 2,
-            gyroscope     = 1 << 3
+            accelerometer = 1 << 1,
+            gyroscope     = 1 << 2,
+            touchpad      = 1 << 3
         };
     }
 
