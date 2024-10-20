@@ -75,6 +75,7 @@ namespace myth {
             ps_share    = start,
             ps_create   = start,
             ps_logo     = home,
+            ps_mute     = button30,
             ps_touchpad = button31,
 
             xb_y    = symbol_up,

@@ -7,24 +7,31 @@
 
 // https://usb.org/sites/default/files/hut1_5.pdf
 
-/// MYTODO: I don't think this is a good way of handling input devices
+// Useful logging calls for debugging
+//MYTHOS_DEBUG("Byte Count: {}", byte_count);
+//MYTHOS_DEBUG("Left Stick: [{}, {}]", controller->left_stick.x, controller->left_stick.y);
+//MYTHOS_DEBUG("Right Stick: [{}, {}]", controller->right_stick.x, controller->right_stick.y);
+//MYTHOS_DEBUG("Buttons: {:0>{}b}", controller->button_states, sizeof(hid_button_code) * 8);
+//MYTHOS_DEBUG("Trigger Deltas: [{}, {}]", controller->trigger_deltas.left, controller->trigger_deltas.right);
+//MYTHOS_DEBUG("Touchpad Touch 1: x= {}, y={}", controller->touch1.x, controller->touch1.y);
+//MYTHOS_DEBUG("Touchpad Touch 2: x= {}, y={}", controller->touch2.x, controller->touch2.y);
 
 namespace myth::hid {
-    /// MYTODO: Improve HID, so that upcasting is not a trusted thing
-
     using device_features = myl::usize;
     namespace device_feature {
-        enum : device_features {
+        enum : device_features { /// MYTODO: implement, is this the correct design to prevent trusted upcasting?
             none = 0,
 
-            touchpad = 1 << 0
+            buttons       = 1 << 0,
+            touchpad      = 1 << 1,
+            accelerometer = 1 << 2,
+            gyroscope     = 1 << 3
         };
     }
 
-    struct device_base {
-        using data_processing_callback = void(*)(device_base* device, myl::u8* data, myl::u32 byte_count);
+    struct device {
+        using data_processing_callback = void(*)(device* handle, myl::u8* data, myl::u32 byte_count);
         using id_type = myl::usize;
-    protected:
     public:
         data_processing_callback const processing_callback;
         const id_type                  id;
@@ -32,7 +39,7 @@ namespace myth::hid {
         const myl::u16                 product_id;
         const device_features          features = device_feature::none; /// MYTODO: Implement
 
-        MYL_NO_DISCARD device_base(id_type id, myl::u16 vendor_id, myl::u16 product_id, data_processing_callback callback = nullptr);
+        MYL_NO_DISCARD device(id_type id, myl::u16 vendor_id, myl::u16 product_id, data_processing_callback callback = nullptr);
     };
 
     // Feature structs
@@ -42,12 +49,15 @@ namespace myth::hid {
     };
 
     struct touchpad {
-
+        bool         touch1_active = false;
+        myl::u32vec2 touch1 = myl::u32vec2{ 0, 0 };
+        bool         touch2_active = false;
+        myl::u32vec2 touch2 = myl::u32vec2{ 0, 0 };
     };
 
     // General peripheral types
 
-    struct gamepad : public device_base, public buttons {
+    struct gamepad : public device, public buttons {
         myl::f32vec2 left_stick{ 0.f, 0.f };
         myl::f32vec2 right_stick{ 0.f, 0.f };
         myl::f32vec2 trigger_deltas{ 0.f, 0.f };
@@ -57,16 +67,5 @@ namespace myth::hid {
         MYL_NO_DISCARD gamepad(id_type id, myl::u16 vendor_id, myl::u16 product_id, data_processing_callback callback = nullptr);
     };
 
-    // Peripheral data processing callbacks
-
-    auto dualshock4_controller_data_processing_callback(device_base* device, myl::u8* data, myl::u32 byte_count) -> void;
-    ///auto dualsense_controller_data_processing_callback(device_base* device, myl::u8* data, myl::u32 byte_count) -> void;
-
-    // Peripheral data structures
-
-    struct dualshock4_controller : public gamepad, public touchpad {
-        MYL_NO_DISCARD dualshock4_controller(id_type id, myl::u16 vendor_id, myl::u16 product_id);
-    };
-
-    auto create(device_base::id_type id, myl::u16 vendor_id, myl::u16 product_id) -> std::unique_ptr<device_base>;
+    auto create(device::id_type id, myl::u16 vendor_id, myl::u16 product_id) -> std::unique_ptr<device>;
 }
