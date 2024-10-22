@@ -1,6 +1,6 @@
 #pragma once
-#include <mythos/core/keycodes.hpp>
 #include <mythos/event/event.hpp>
+#include <mythos/input/keycodes.hpp>
 
 namespace myth::event {
     class key_pressed : public base {

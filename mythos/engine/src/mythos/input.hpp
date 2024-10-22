@@ -1,6 +1,6 @@
 #pragma once
-#include <mythos/core/keycodes.hpp>
-#include <mythos/core/mousecodes.hpp>
+#include <mythos/input/keycodes.hpp>
+#include <mythos/input/mousecodes.hpp>
 #include <mythos/platform/hid.hpp>
 
 #include <myl/math/vec2.hpp>

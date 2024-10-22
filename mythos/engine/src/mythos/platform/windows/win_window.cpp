@@ -1,10 +1,10 @@
 #include <mythos/platform/windows/win_window.hpp>
 #ifdef MYL_OS_WINDOWS
 #   include <mythos/core/application.hpp>
-#   include <mythos/core/keyboard.hpp>
-#   include <mythos/core/mousecodes.hpp>
 #   include <mythos/event/hid_event.hpp>
 #   include <mythos/input.hpp>
+#   include <mythos/input/keyboard.hpp>
+#   include <mythos/input/mousecodes.hpp>
 #   include <mythos/log.hpp>
 #   include <mythos/platform/windows/win_utilities.hpp>
 

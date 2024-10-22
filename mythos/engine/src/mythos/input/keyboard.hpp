@@ -1,5 +1,5 @@
 #pragma once
-#include <mythos/core/keycodes.hpp>
+#include <mythos/input/keycodes.hpp>
 
 namespace myth {
     MYL_NO_DISCARD constexpr auto ps2_set1_make_scancode_to_keycode(myl::u16 scancode) noexcept -> keycode {

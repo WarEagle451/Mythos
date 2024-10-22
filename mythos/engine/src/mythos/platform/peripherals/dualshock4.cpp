@@ -105,7 +105,7 @@ namespace myth::hid {
                     (static_cast<myl::u16>(data[42]) << 4) | static_cast<myl::u16>(((data[41] & 0xF0) >> 4))
             };
         }
-        else {
+        else { // Bluetooth
             /// MYTODO: Touchpad in bluetooth mode, maybe this has to be enabled as a separate feature
         }
     }

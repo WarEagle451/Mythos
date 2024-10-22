@@ -1,5 +1,5 @@
 #pragma once
-#include <mythos/core/hid_button_code.hpp>
+#include <mythos/input/hid_button_code.hpp>
 
 #include <myl/math/vec2.hpp>
 
@@ -16,8 +16,13 @@
 //MYTHOS_DEBUG("Touchpad Touch 1: x= {}, y={}", controller->touch1.x, controller->touch1.y);
 //MYTHOS_DEBUG("Touchpad Touch 2: x= {}, y={}", controller->touch2.x, controller->touch2.y);
 
-/// MYTODO: Additional hid resources
+/// Additional hid resources
 /// - API style https://www.braynzarsoft.net/viewtutorial/q0-xinput-api-gamepad-class
+
+/// MYTODO: Add device types
+/// - joystick
+/// - accelerometer
+/// - gyroscope
 
 namespace myth::hid {
     using device_features = myl::usize;

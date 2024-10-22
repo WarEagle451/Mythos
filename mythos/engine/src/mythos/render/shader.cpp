@@ -250,7 +250,7 @@ namespace myth {
 
             std::filesystem::create_directories(shader_cache_directory()); // Ensure the caching directory exists
             if (std::ofstream out(cache_path, std::ios::binary); out.is_open()) // Caching binary
-                out.write(reinterpret_cast<char*>((*binaries)[type].data()), (*binaries)[type].size() * sizeof(shader_binary_type::value_type));  /// MYTodo: Remove reinterpret_cast
+                out.write(reinterpret_cast<char*>((*binaries)[type].data()), (*binaries)[type].size() * sizeof(shader_binary_type::value_type));
             MYTHOS_TRACE("Success!");
         }
     }
