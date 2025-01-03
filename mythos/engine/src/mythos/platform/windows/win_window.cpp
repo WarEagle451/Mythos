@@ -379,7 +379,7 @@ namespace myth::win {
     /// RIDEV_DEVNOTIFY is important
 
     auto CALLBACK window::process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) -> LRESULT {
-        win::window* target = static_cast<win::window*>(application::get().main_window()); 
+        win::window* target = static_cast<win::window*>(application::get().main_window());
         if (target)
             switch (msg) {
                 case WM_DESTROY:
@@ -532,7 +532,7 @@ namespace myth::win {
                         case GIDC_ARRIVAL: {
                             RID_DEVICE_INFO rid_info{};
                             UINT rid_info_size = sizeof(RID_DEVICE_INFO);
-                            if (!GetRawInputDeviceInfo(reinterpret_cast<HRAWINPUT>(l_param), RIDI_DEVICEINFO, &rid_info, &rid_info_size)) {
+                            if (!GetRawInputDeviceInfoA(reinterpret_cast<HRAWINPUT>(l_param), RIDI_DEVICEINFO, &rid_info, &rid_info_size)) {
                                 MYTHOS_ERROR("Failed to get HID info");
                                 break;
                             }

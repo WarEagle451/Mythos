@@ -44,12 +44,12 @@ namespace myth {
             { -.5f,  .5f, 0.f }
         };
 
-        std::unique_ptr<shader>              quad_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
-        myl::buffer<std::allocator<myl::u8>> quad_vertex_data;
-        vertex*                              quad_vertex_data_ptr;
-        std::unique_ptr<render_buffer>       quad_vbo = nullptr;
-        std::unique_ptr<render_buffer>       quad_ibo = nullptr;
-        myl::u32                             quad_index_count = 0;
+        std::unique_ptr<shader>        quad_shader = nullptr; /// MYTODO: ALL SHADERS SHOULD BE SHARED PTR INCASE OF DOUBLE LOAD
+        myl::buffer                    quad_vertex_data;
+        vertex*                        quad_vertex_data_ptr;
+        std::unique_ptr<render_buffer> quad_vbo = nullptr;
+        std::unique_ptr<render_buffer> quad_ibo = nullptr;
+        myl::u32                       quad_index_count = 0;
     };
 
     struct internal_shader {

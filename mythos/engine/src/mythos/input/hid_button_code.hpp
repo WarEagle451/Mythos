@@ -1,6 +1,8 @@
 #pragma once
 #include <myl/definitions.hpp>
 
+/// REMOVE PROBABLY
+
 namespace myth {
     using hid_button_code = myl::u32;
 

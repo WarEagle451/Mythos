@@ -39,7 +39,7 @@ namespace myth::hid {
 
     auto create(device::id_type id, myl::u16 vendor_id, myl::u16 product_id) -> std::unique_ptr<device> {
         switch (vendor_id) {
-            case 0x54C: // Sony
+            case 0x054C: // Sony
                 switch (product_id) {
                     case 0x05C4: MYL_FALLTHROUGH;                                                           // Dualshock 4
                     case 0x09CC: return std::make_unique<dualshock4_controller>(id, vendor_id, product_id); // Dualshock 4

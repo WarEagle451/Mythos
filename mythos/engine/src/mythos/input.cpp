@@ -52,7 +52,6 @@ namespace myth {
     }
 
     auto input::remove_device(hid::device::id_type id) -> bool {
-
         for (auto it = s_registered_devices.begin(), end = s_registered_devices.end(); it != end; ++it)
             if ((*it)->id == id) {
                 s_registered_devices.erase(it);

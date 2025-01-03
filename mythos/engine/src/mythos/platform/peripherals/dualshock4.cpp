@@ -35,21 +35,21 @@ namespace myth::hid {
 
         hid_button_code buttons_down = none;
 
+        switch (data[5] & 0x0F) {
+            case 0x0: buttons_down |= up;           break;
+            case 0x1: buttons_down |= up | right;   break;
+            case 0x2: buttons_down |= right;        break;
+            case 0x3: buttons_down |= down | right; break;
+            case 0x4: buttons_down |= down;         break;
+            case 0x5: buttons_down |= down | left;  break;
+            case 0x6: buttons_down |= left;         break;
+            case 0x7: buttons_down |= up | left;    break;
+        }
+
         if ((data[5] >> 4) & 1) buttons_down |= ps_square;
         if ((data[5] >> 5) & 1) buttons_down |= ps_cross;
         if ((data[5] >> 6) & 1) buttons_down |= ps_circle;
         if ((data[5] >> 7) & 1) buttons_down |= ps_triangle;
-
-        switch (data[5] & 0x0F) {
-        case 0x0: buttons_down |= up;           break;
-        case 0x1: buttons_down |= up | right;   break;
-        case 0x2: buttons_down |= right;        break;
-        case 0x3: buttons_down |= down | right; break;
-        case 0x4: buttons_down |= down;         break;
-        case 0x5: buttons_down |= down | left;  break;
-        case 0x6: buttons_down |= left;         break;
-        case 0x7: buttons_down |= up | left;    break;
-        }
 
         if ((data[6] >> 0) & 1) buttons_down |= left_bumper;
         if ((data[6] >> 1) & 1) buttons_down |= right_bumper;
