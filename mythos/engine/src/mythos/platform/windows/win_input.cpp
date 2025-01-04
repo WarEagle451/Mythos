@@ -29,10 +29,10 @@ namespace myth::win {
         ClipCursor(NULL);
     }
 
-    auto query_togglable_keys(keyboard* keyboard) -> void {
-        keyboard->keys[key::caps_lock]   = (GetKeyState(VK_CAPITAL) & 0x0001) == 0 ? keyboard::state::up : keyboard::state::down;
-        keyboard->keys[key::num_lock]    = (GetKeyState(VK_NUMLOCK) & 0x0001) == 0 ? keyboard::state::up : keyboard::state::down;
-        keyboard->keys[key::scroll_lock] = (GetKeyState(VK_SCROLL) & 0x0001) == 0 ? keyboard::state::up : keyboard::state::down;
+    auto query_togglable_keys(keyboard_state* keyboard) -> void {
+        keyboard->keys[key::caps_lock]   = (GetKeyState(VK_CAPITAL) & 0x0001) == 0 ? key_state::up : key_state::down;
+        keyboard->keys[key::num_lock]    = (GetKeyState(VK_NUMLOCK) & 0x0001) == 0 ? key_state::up : key_state::down;
+        keyboard->keys[key::scroll_lock] = (GetKeyState(VK_SCROLL) & 0x0001) == 0 ? key_state::up : key_state::down;
     }
 }
 #endif

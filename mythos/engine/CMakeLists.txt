@@ -27,6 +27,12 @@ target_include_directories(mythos_engine
         ${MYTHOS_ENGINE_INCLUDE_DIR}
 )
 
+set(platform_specific_libraries "")
+
+if (WIN32)
+    list(APPEND platform_specific_libraries "hid.lib")
+endif()
+
 # Libraries
 # TODO: Make a function that gathers all the libs into 1 variable
 target_link_libraries(mythos_engine
@@ -36,6 +42,7 @@ target_link_libraries(mythos_engine
         "${VULKAN_LIB_PATH}/shaderc_shared.lib"
         "${VULKAN_LIB_PATH}/spirv-cross-core.lib"
         "${VULKAN_LIB_PATH}/spirv-cross-glsl.lib"
+        ${platform_specific_libraries}
 )
 
 # Compile definitions

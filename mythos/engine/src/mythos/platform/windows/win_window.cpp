@@ -1,17 +1,17 @@
 #include <mythos/platform/windows/win_window.hpp>
 #ifdef MYL_OS_WINDOWS
 #   include <mythos/core/application.hpp>
-#   include <mythos/event/hid_event.hpp>
+#   include <mythos/event/device_event.hpp>
 #   include <mythos/input.hpp>
-#   include <mythos/input/keyboard.hpp>
-#   include <mythos/input/mousecodes.hpp>
 #   include <mythos/log.hpp>
-#   include <mythos/platform/windows/win_utilities.hpp>
+#   include <mythos/platform/windows/win_utility.hpp>
 
 #   include <myl/memory.hpp>
 
 #   include <Windows.h> // WinUser.h
 #   include <hidusage.h>
+#   include <hidsdi.h>
+#   include <hidpi.h>
 
 /// MYTODO: Having client_dimensions_to_window_dimensions, AdjustWindowRectEx and GetClientRect/GetWindowRect is dumb, consolidate under 1 function
 /// - Maybe split into 2 functions, client to window, window to client
@@ -20,6 +20,115 @@
 /// - https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
 
 namespace myth::win {
+    static auto process_device(device* device, RAWHID& hid_data) -> bool {
+        // Get the data from the hid
+        UINT buffer_size{};
+        GetRawInputDeviceInfoW(device->handle, RIDI_PREPARSEDDATA, NULL, &buffer_size);
+        myl::buffer buffer(buffer_size);
+        if (GetRawInputDeviceInfoW(device->handle, RIDI_PREPARSEDDATA, buffer.data(), &buffer_size) == static_cast<UINT>(-1)) {
+            MYTHOS_ERROR("win::process_device - GetRawInputDeviceInfoW failed: {}", error_as_string(GetLastError()));
+            return false;
+        }
+
+        const PHIDP_PREPARSED_DATA preparsed_data = reinterpret_cast<PHIDP_PREPARSED_DATA>(buffer.data());
+
+        HIDP_CAPS capabilities{};
+        if (HidP_GetCaps(preparsed_data, &capabilities) != HIDP_STATUS_SUCCESS) {
+            MYTHOS_ERROR("win::process_device - HidP_GetCaps failed: {}", error_as_string(GetLastError()));
+            return false;
+        }
+
+        /// MYHack: Beyond here is uncertian if it is correct
+
+        {
+            USHORT button_capabilities_count = capabilities.NumberInputButtonCaps;
+            std::vector<HIDP_BUTTON_CAPS> button_capabilities{};
+            button_capabilities.resize(button_capabilities_count);
+            if (HidP_GetButtonCaps(HidP_Input, button_capabilities.data(), &button_capabilities_count, preparsed_data) != HIDP_STATUS_SUCCESS) {
+                MYTHOS_ERROR("win::process_device - HidP_GetButtonCaps failed: {}", error_as_string(GetLastError()));
+                return false;
+            }
+
+            ULONG button_count = button_capabilities[0].Range.UsageMax - button_capabilities[0].Range.UsageMin + 1;
+            std::vector<USAGE> usages{};
+            usages.resize(button_count);
+            if (HidP_GetUsages(HidP_Input, button_capabilities[0].UsagePage, 0, usages.data(), &button_count, preparsed_data, reinterpret_cast<PCHAR>(hid_data.bRawData), hid_data.dwSizeHid) != HIDP_STATUS_SUCCESS) {
+                MYTHOS_ERROR("win::HidP_GetUsages - HidP_GetButtonCaps failed: {}", error_as_string(GetLastError()));
+                return false;
+            }
+
+            buttons buttons_down = button::none;
+            for (ULONG i = 0; i != button_count; ++i) {
+                button_code button = usages[i] - button_capabilities[0].Range.UsageMin;
+                buttons_down |= 1 << button;
+            }
+            
+            USHORT value_capabilities_count = capabilities.NumberInputValueCaps;
+            std::vector<HIDP_VALUE_CAPS> value_capabilities{};
+            value_capabilities.resize(value_capabilities_count);
+            if (HidP_GetValueCaps(HidP_Input, value_capabilities.data(), &value_capabilities_count, preparsed_data) != HIDP_STATUS_SUCCESS) {
+                MYTHOS_ERROR("win::HidP_GetUsages - HidP_GetValueCaps failed: {}", error_as_string(GetLastError()));
+                return false;
+            }
+
+            myl::f32vec2 left_stick(0.f);
+            myl::f32vec2 right_stick(0.f);
+            myl::f32vec2 triggers(0.f);
+
+            for (USHORT i = 0; i != capabilities.NumberInputValueCaps; ++i) {
+                ULONG value{};
+                if (HidP_GetUsageValue(HidP_Input, value_capabilities[i].UsagePage, 0, value_capabilities[i].Range.UsageMin, &value, preparsed_data, reinterpret_cast<PCHAR>(hid_data.bRawData), hid_data.dwSizeHid) != HIDP_STATUS_SUCCESS)
+                    continue;
+
+                switch (value_capabilities[i].Range.UsageMin) { // USAGE ID
+                    case 0x30: // X-axis
+                        left_stick.x = static_cast<myl::f32>(static_cast<myl::i32>(value) - 0x80) / 128.f;
+                        break;
+                    case 0x31: // Y-axis
+                        left_stick.y = static_cast<myl::f32>(static_cast<myl::i32>(value) - 0x80) / 128.f;
+                        break;
+                    case 0x32: // Z-axis
+                        right_stick.x = static_cast<myl::f32>(static_cast<myl::i32>(value) - 0x80) / 128.f;
+                        break;
+                    case 0x33: // Rotate-X
+                        triggers.left = static_cast<myl::f32>(value) / 255.f;
+                        break;
+                    case 0x34: // Rotate-Y
+                        triggers.right = static_cast<myl::f32>(value) / 255.f;
+                        break;
+                    case 0x35: // Rotate-Z
+                        right_stick.y = static_cast<myl::f32>(static_cast<myl::i32>(value) - 0x80) / 128.f;
+                        break;
+                    case 0x39: // Hat switch
+                        switch (value) {
+                            case 0x0: buttons_down |= gamepad_button::up; break;
+                            case 0x1: buttons_down |= gamepad_button::up | gamepad_button::right; break;
+                            case 0x2: buttons_down |= gamepad_button::right; break;
+                            case 0x3: buttons_down |= gamepad_button::right | gamepad_button::down; break;
+                            case 0x4: buttons_down |= gamepad_button::down; break;
+                            case 0x5: buttons_down |= gamepad_button::down | gamepad_button::left; break;
+                            case 0x6: buttons_down |= gamepad_button::left; break;
+                            case 0x7: buttons_down |= gamepad_button::left | gamepad_button::up; break;
+                            default:
+                                ///std::unreachable();
+                                break;
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // Process/Send for processing
+            device->state.left_stick = myl::length(left_stick) > device->state.stick_deadzone.left ? left_stick : myl::f32vec2(0.f);
+            device->state.right_stick = myl::length(right_stick) > device->state.stick_deadzone.right ? right_stick : myl::f32vec2(0.f);
+            device->state.trigger_deltas = triggers;
+
+            input::process_device_buttons(device, &device->state.buttons, buttons_down);            
+            return true;
+        }
+    } 
+
     MYL_NO_DISCARD static constexpr auto translate_raw_mouse_code(USHORT buttons) noexcept -> mousecode {
         using namespace mouse_button;
         mousecode code{ none };
@@ -78,7 +187,7 @@ namespace myth::win {
         };
 
         if (!RegisterRawInputDevices(devices, device_type_count, sizeof(RAWINPUTDEVICE)))
-            MYTHOS_FATAL("Failed to register raw input devices: {}", win::last_error_as_string(GetLastError()));
+            MYTHOS_FATAL("Failed to register raw input devices: {}", win::last_error_as_string());
     }
 
     static auto unregister_raw_input_devices() -> void {
@@ -114,7 +223,7 @@ namespace myth::win {
         };
 
         if (!RegisterRawInputDevices(devices, device_type_count, sizeof(RAWINPUTDEVICE)))
-            MYTHOS_ERROR("Failed to unregister raw input devices: {}", win::last_error_as_string(GetLastError()));
+            MYTHOS_ERROR("Failed to unregister raw input devices: {}", win::last_error_as_string());
     }
 
     MYL_NO_DISCARD static auto client_dimensions_to_window_dimensions(HWND handle, const myl::i32vec2& client_dimensions) -> myl::i32vec2 {
@@ -161,7 +270,7 @@ namespace myth::win {
         };
 
         if (!RegisterClassA(&window_class))
-            MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string(GetLastError()));
+            MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string());
 
         // Adjust window creation position and size based off configuration values
         DWORD window_style = win_window_style(m_style);
@@ -193,7 +302,7 @@ namespace myth::win {
         // Create the window
         m_handle = CreateWindowExA(window_ex_style, class_name, m_title, window_style, x, y, w, h, NULL, NULL, m_instance, NULL);
         if (!m_handle)
-            MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string(GetLastError()));
+            MYTHOS_FATAL("Window creation failed: {}", win::last_error_as_string());
 
         m_state = window_state::unknown; // Ensures set_state will not immediately return
         set_state(config.state);
@@ -215,13 +324,13 @@ namespace myth::win {
     window::~window() {
         unregister_raw_input_devices();
 
-        if (m_handle)
+        if (m_handle != NULL)
             DestroyWindow(m_handle);
     }
 
     auto window::set_title(const char* title) -> void {
         if (!SetWindowTextA(m_handle, title))
-            MYTHOS_ERROR("Window retitle failed: {}", win::last_error_as_string(GetLastError()));
+            MYTHOS_ERROR("Window retitle failed: {}", win::last_error_as_string());
         m_title = title;
     }
 
@@ -295,14 +404,14 @@ namespace myth::win {
         auto pos = correct_negative_position(position, m_dimensions);
         // Sends WM_MOVE and therefore sets m_position in WM_MOVE
         if (!SetWindowPos(m_handle, NULL, pos.x, pos.y, 0, 0, SWP_NOSIZE))
-            MYTHOS_ERROR("Window set position failed: {}", win::last_error_as_string(GetLastError()));
+            MYTHOS_ERROR("Window set position failed: {}", win::last_error_as_string());
     }
 
     auto window::set_dimensions(const myl::i32vec2& dimensions) -> void {
         auto dim = client_dimensions_to_window_dimensions(m_handle, dimensions);
         // Sends WM_SIZE and therefore sets m_dimensions in WM_SIZE
         if (!SetWindowPos(m_handle, NULL, 0, 0, dim.w, dim.h, SWP_NOMOVE))
-            MYTHOS_ERROR("Window set dimensions failed: {}", win::last_error_as_string(GetLastError()));
+            MYTHOS_ERROR("Window set dimensions failed: {}", win::last_error_as_string());
     }
 
     auto window::close() -> void {
@@ -378,187 +487,197 @@ namespace myth::win {
     /// https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawinputdevice
     /// RIDEV_DEVNOTIFY is important
 
-    auto CALLBACK window::process_message(HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param) -> LRESULT {
+    auto CALLBACK window::process_message(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) -> LRESULT {
         win::window* target = static_cast<win::window*>(application::get().main_window());
-        if (target)
-            switch (msg) {
-                case WM_DESTROY:
-                    PostQuitMessage(0);
-                    return 0;
-                case WM_MOVE: {
-                    target->m_position = {
-                        static_cast<myl::i32>(static_cast<short>(LOWORD(l_param))),
-                        static_cast<myl::i32>(static_cast<short>(HIWORD(l_param)))
-                    };
-                    event::window_move e(*target, target->m_position);
-                    event::fire(e);
-                    break;
+        if (target == nullptr)
+            goto call_default_window_procedure;
+
+        switch (msg) {
+            case WM_DESTROY: {
+                PostQuitMessage(0);
+                return 0;
                 }
-                case WM_SIZE: {
-                    switch (w_param) {
-                        case SIZE_RESTORED:  target->m_state = window_state::normal; break;
-                        case SIZE_MINIMIZED: target->m_state = window_state::minimized; break;
-                        case SIZE_MAXSHOW:   MYTHOS_WARN("WM_SIZE value 'SIZE_MAXSHOW' not implemented"); return 0;
-                        case SIZE_MAXIMIZED: target->m_state = window_state::maximized; break;
-                        case SIZE_MAXHIDE:   MYTHOS_WARN("WM_SIZE value 'SIZE_MAXHIDE' not implemented"); return 0;
-                        default:
-                            MYTHOS_WARN("Unhandled WM_SIZE WPARAM: {}", w_param);
-                            return DefWindowProcA(hwnd, msg, w_param, l_param);
-                    }
-
-                    target->m_dimensions = { static_cast<myl::i32>(LOWORD(l_param)), static_cast<myl::i32>(HIWORD(l_param)) };
-                    event::window_resize e(*target, target->m_dimensions);
-                    event::fire(e);
-                    return 0;
-                }
-                case WM_SETFOCUS: {
-                    ///MYTODO: wParam contains: A handle to the window that has lost the keyboard focus. This parameter can be NULL.
-                    event::window_focus_gain e(*target);
-                    event::fire(e);
-                    return 0;
-                }
-                case WM_KILLFOCUS: {
-                    ///MYTODO: wParam contains: A handle to the window that receives the keyboard focus. This parameter can be NULL.
-                    event::window_focus_lost e(*target);
-                    event::fire(e);
-                    return 0;
-                }
-                case WM_CLOSE: {
-                    event::window_close e(*target);
-                    event::fire(e);
-                    return 0;
-                }
-                case WM_ERASEBKGND: // Notify the OS that erasing will be handled by the app to prevent flicker
-                    return 1;
-                case WM_INPUT: {
-                    UINT size = sizeof(RAWINPUT);
-                    myl::buffer raw(size);
-                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_HEADER, raw.data(), &size, sizeof(RAWINPUTHEADER));
-                    DWORD device_type = raw.as<RAWINPUT>()->header.dwType;
-
-                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, NULL, &size, sizeof(RAWINPUTHEADER));
-                    raw.reallocate(size);
-                    GetRawInputData(reinterpret_cast<HRAWINPUT>(l_param), RID_INPUT, raw.data(), &size, sizeof(RAWINPUTHEADER));
-                    auto& data = raw.as<RAWINPUT>()->data;
-
-                    switch (device_type) {
-                        case RIM_TYPEMOUSE: {
-                            POINT mouse_coords{};
-                            GetCursorPos(&mouse_coords);
-                            const bool hovered = WindowFromPoint(mouse_coords) == target->m_handle;
-                            auto& mouse = data.mouse;
-                            
-                            // Mouse movement
-                            if (mouse.lLastX != 0 || mouse.lLastY != 0) {
-                                myl::f32vec2 deltas{ static_cast<myl::f32>(mouse.lLastX), static_cast<myl::f32>(mouse.lLastY) };
-                                if (mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
-                                    /// MYTODO: Find a way to get RIM_TYPEMOUSE to work with absolute mouse movement
-                                    MYTHOS_ERROR("Mythos does not currently support absolute mouse movement on Windows");
-                                else
-                                    input::process_cursor_delta(deltas);
-
-                                if (hovered) {
-                                    ScreenToClient(hwnd, &mouse_coords); // Translate to window coords
-                                    input::process_window_cursor_position(myl::f32vec2(static_cast<myl::f32>(mouse_coords.x), static_cast<myl::f32>(mouse_coords.y)));
-                                }
-                            }
-
-                            // Other mouse inputs
-                            const auto& mb_flags = mouse.usButtonFlags;
-                            if (mb_flags != 0) {
-                                constexpr auto mouse_button_up_flags = RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_BUTTON_4_UP | RI_MOUSE_BUTTON_5_UP;
-                                constexpr auto mouse_button_down_flags = RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN;
-                                if (hovered) { // Most other mouse inputs should only be evaluated if in the client area of the window
-                                    if ((mb_flags & mouse_button_down_flags) != 0)
-                                        input::process_mouse_buttons_down(translate_raw_mouse_code(mb_flags));
-
-                                    /// MYTODO: Enable the use of no notch mouse wheels
-                                    /// https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawmouse#:~:text=a%20multiple%20of-,WHEEL_DELTA,-%2C%20which%20is%20set
-
-                                    if (mb_flags & RI_MOUSE_WHEEL) { // Vertical mouse wheel
-                                        myl::i16 delta_y = static_cast<myl::i16>(mouse.usButtonData);
-                                        if (delta_y != 0)
-                                            input::process_mouse_wheel({ 0.f, delta_y < 0 ? -1.f : 1.f }); // Flatten to an OS-independent(-1, 1)
-                                    }
-                                    else if (mb_flags & RI_MOUSE_HWHEEL) { // Horizontal mouse wheel
-                                        myl::i16 delta_x = static_cast<myl::i16>(mouse.usButtonData);
-                                        if (delta_x != 0)
-                                            input::process_mouse_wheel({ delta_x < 0 ? -1.f : 1.f, 0.f }); // Flatten to an OS-independent(-1, 1)
-                                    }
-                                }
-                
-                                // Application thinks mouse buttons are pressed, confirm this
-                                // Prevents pressing a button in the client area and releasing outside the client area tricking the window into thinking the button is still pressed when it is not
-                                if (input::mouse_button_states() != mouse_button::none) // Button(s) are pressed
-                                    if ((mb_flags & mouse_button_up_flags) != 0)
-                                        input::process_mouse_buttons_up(translate_raw_mouse_code(mb_flags));
-                            }
-                            return 0;
-                        }
-                        case RIM_TYPEKEYBOARD:
-                            if (GET_RAWINPUT_CODE_WPARAM(w_param) == RIM_INPUT) { // Only handle keyboard with the window is in the foreground
-                                auto& keyboard = data.keyboard;
-                                USHORT scancode = keyboard.MakeCode |
-                                    ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0); // Distinguish if left or right key is pressed
-
-                                // Windows has all keyboards convert scancodes to the PS/2 Scan Code table set 1
-                                // See Remarks: https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawkeyboard#remarks
-                                keycode code = ps2_set1_make_scancode_to_keycode(scancode);
-#ifdef MYL_DEBUG
-                                if (code == key::unknown)
-                                    MYTHOS_WARN("Unknown scancode: {}", code);
-#endif
-                                input::process_key(code, (keyboard.Flags & RI_KEY_BREAK) ? keyboard::state::up : keyboard::state::down);
-                            }
-                            return 0;
-                        case RIM_TYPEHID: {
-                            RID_DEVICE_INFO rid_info{};
-                            UINT rid_info_size = sizeof(RID_DEVICE_INFO);
-                            GetRawInputDeviceInfoA(raw.as<RAWINPUT>()->header.hDevice, RIDI_DEVICEINFO, &rid_info, &rid_info_size);
-                            
-                            input::process_hid(reinterpret_cast<hid::device::id_type>(raw.as<RAWINPUT>()->header.hDevice), data.hid.bRawData, data.hid.dwSizeHid);
-                            return 0;
-                        }
-                        default:
-                            MYTHOS_ERROR("Unknown raw input message, this should not be possible!");
-                            break;
-                    }
-                    break;
-                }
-                case WM_INPUT_DEVICE_CHANGE: {
-                    /// MYBUG: If the device is connected via bluetooth and usb at the same time it might register as 2 devices because l_param is only unique and not unique per device
-
-                    switch (w_param) {
-                        case GIDC_ARRIVAL: {
-                            RID_DEVICE_INFO rid_info{};
-                            UINT rid_info_size = sizeof(RID_DEVICE_INFO);
-                            if (!GetRawInputDeviceInfoA(reinterpret_cast<HRAWINPUT>(l_param), RIDI_DEVICEINFO, &rid_info, &rid_info_size)) {
-                                MYTHOS_ERROR("Failed to get HID info");
-                                break;
-                            }
-
-                            event::hid_added e(static_cast<hid::device::id_type>(l_param), static_cast<myl::u16>(rid_info.hid.dwVendorId), static_cast<myl::u16>(rid_info.hid.dwProductId));
-                            event::fire(e);
-                            return 0;
-                        }
-                        case GIDC_REMOVAL: {
-                            event::hid_removed e(static_cast<hid::device::id_type>(l_param));
-                            event::fire(e);
-                            return 0;
-                        }
-                        default:
-                            break;
-                    }
-                } break;
-                case WM_CHAR:
-                /// MYTODO: Replace using WM_INPUT
-                    input::process_typed(static_cast<WCHAR>(w_param));
-                    return 0;
-                default:
-                    break;
+            case WM_MOVE: {
+                target->m_position = {
+                    static_cast<myl::i32>(static_cast<short>(LOWORD(lparam))),
+                    static_cast<myl::i32>(static_cast<short>(HIWORD(lparam)))
+                };
+                event::window_move e(*target, target->m_position);
+                event::fire(e);
+                break;
             }
+            case WM_SIZE: {
+                switch (wparam) {
+                    case SIZE_RESTORED:  target->m_state = window_state::normal; break;
+                    case SIZE_MINIMIZED: target->m_state = window_state::minimized; break;
+                    case SIZE_MAXSHOW:   MYTHOS_WARN("WM_SIZE value 'SIZE_MAXSHOW' not implemented"); return 0;
+                    case SIZE_MAXIMIZED: target->m_state = window_state::maximized; break;
+                    case SIZE_MAXHIDE:   MYTHOS_WARN("WM_SIZE value 'SIZE_MAXHIDE' not implemented"); return 0;
+                    default:
+                        MYTHOS_WARN("Unhandled WM_SIZE WPARAM: {}", wparam);
+                        goto call_default_window_procedure;
+                }
 
-        return DefWindowProcA(hwnd, msg, w_param, l_param);
+                target->m_dimensions = {
+                    static_cast<myl::i32>(LOWORD(lparam)),
+                    static_cast<myl::i32>(HIWORD(lparam))
+                };
+
+                event::window_resize e(*target, target->m_dimensions);
+                event::fire(e);
+                return 0;
+            }
+            case WM_SETFOCUS: {
+                ///MYTODO: wParam contains: A handle to the window that has lost the keyboard focus. This parameter can be NULL.
+                event::window_focus_gain e(*target);
+                event::fire(e);
+                return 0;
+            }
+            case WM_KILLFOCUS: {
+                ///MYTODO: wParam contains: A handle to the window that receives the keyboard focus. This parameter can be NULL.
+                event::window_focus_lost e(*target);
+                event::fire(e);
+                return 0;
+            }
+            case WM_CLOSE: {
+                event::window_close e(*target);
+                event::fire(e);
+                return 0;
+            }
+            case WM_ERASEBKGND: { // Notify the OS that erasing will be handled by the app to prevent flicker
+                return 1;
+            }
+            case WM_INPUT: {
+                HRAWINPUT raw_input_handle = reinterpret_cast<HRAWINPUT>(lparam);
+
+                // Get device type that is sending the message
+                UINT buffer_size = sizeof(RAWINPUT);
+                myl::buffer buffer(buffer_size);
+                GetRawInputData(raw_input_handle, RID_HEADER, buffer.data(), &buffer_size, sizeof(RAWINPUTHEADER));
+                HANDLE device_handle    = buffer.as<RAWINPUT>()->header.hDevice;
+                const DWORD device_type = buffer.as<RAWINPUT>()->header.dwType;
+
+                // Get the input from device
+                GetRawInputData(raw_input_handle, RID_INPUT, NULL, &buffer_size, sizeof(RAWINPUTHEADER));
+                buffer.reallocate(buffer_size);
+                GetRawInputData(raw_input_handle, RID_INPUT, buffer.data(), &buffer_size, sizeof(RAWINPUTHEADER));
+                auto& input_data = buffer.as<RAWINPUT>()->data;
+
+                switch (device_type) {
+                    case RIM_TYPEMOUSE: {
+                        POINT mouse_coords{};
+                        GetCursorPos(&mouse_coords);
+                        const bool hovered = WindowFromPoint(mouse_coords) == target->m_handle;
+                        auto& mouse = input_data.mouse;
+                        
+                        // Mouse movement
+                        if (mouse.lLastX != 0 || mouse.lLastY != 0) {
+                            myl::f32vec2 move_delta{ static_cast<myl::f32>(mouse.lLastX), static_cast<myl::f32>(mouse.lLastY) };
+                            if (mouse.usFlags & MOUSE_MOVE_RELATIVE)
+                                input::process_cursor_delta(move_delta);
+                            else if (mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
+                                MYTHOS_DEBUG("Raw input has not implemented MOUSE_MOVE_ABSOLUTE");
+
+                            if (hovered) {
+                                ScreenToClient(hwnd, &mouse_coords); // Translate to window coords
+                                input::process_cursor_position(myl::f32vec2(static_cast<myl::f32>(mouse_coords.x), static_cast<myl::f32>(mouse_coords.y)));
+                            }
+                        }
+
+                        // Other mouse inputs
+                        const USHORT mouse_button_flags = mouse.usButtonFlags;
+                        if (mouse_button_flags != 0) {
+                            // If a mouse button is released outside of the window the engine needs to process it, but only if buttons are down when this occurs
+                            if (input::mouse_state().buttons != mouse_button::none) { // Buttons are down 
+                                const USHORT mouse_buttons_up = mouse_button_flags & (RI_MOUSE_LEFT_BUTTON_UP | RI_MOUSE_RIGHT_BUTTON_UP | RI_MOUSE_MIDDLE_BUTTON_UP | RI_MOUSE_BUTTON_4_UP | RI_MOUSE_BUTTON_5_UP);
+                                if (mouse_buttons_up != 0)
+                                    input::process_mouse_button_up(translate_raw_mouse_code(mouse_buttons_up));
+                            }
+
+                            if (hovered) {
+                                const USHORT mouse_buttons_down = mouse_button_flags & (RI_MOUSE_LEFT_BUTTON_DOWN | RI_MOUSE_RIGHT_BUTTON_DOWN | RI_MOUSE_MIDDLE_BUTTON_DOWN | RI_MOUSE_BUTTON_4_DOWN | RI_MOUSE_BUTTON_5_DOWN);
+                                if (mouse_buttons_down != 0)
+                                    input::process_mouse_button_down(translate_raw_mouse_code(mouse_buttons_down));
+
+                                /// MYTODO: Enable the use of no notch mouse wheels
+                                /// REMARKS: https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawmouse
+
+                                // Process one at a time as only one of the 2 is sent at a time
+                                if (mouse_button_flags & RI_MOUSE_WHEEL) { // Vertical mouse wheel
+                                    const myl::i16 delta_y = static_cast<myl::i16>(mouse.usButtonData);
+                                    if (delta_y != 0)
+                                        input::process_mouse_wheel({ 0.f, delta_y < 0 ? -1.f : 1.f }); // Flatten to an OS-independent(-1, 1)
+                                }
+                                else if (mouse_button_flags & RI_MOUSE_HWHEEL) { // Horizontal mouse wheel
+                                    const myl::i16 delta_x = static_cast<myl::i16>(mouse.usButtonData);
+                                    if (delta_x != 0)
+                                        input::process_mouse_wheel({ delta_x < 0 ? -1.f : 1.f, 0.f }); // Flatten to an OS-independent(-1, 1)
+                                }
+                            }
+                        }
+                        return 0;
+                    }
+                    case RIM_TYPEKEYBOARD: {
+                        if (GET_RAWINPUT_CODE_WPARAM(wparam) == RIM_INPUT) { // Only handle keyboard with the window is in the foreground
+                            auto& keyboard = input_data.keyboard;
+                            const USHORT scancode = keyboard.MakeCode | ((keyboard.Flags & RI_KEY_E1) ? 0xE100 : (keyboard.Flags & RI_KEY_E0) ? 0xE000 : 0); // Distinguish if left or right key is pressed
+
+                            // Windows has all keyboards convert scancodes to the PS/2 Scan Code table set 1
+                            // See Remarks: https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawkeyboard#remarks
+                            const keycode key = translate_ps2_set1_scancode_to_keycode(scancode);
+#ifdef MYL_DEBUG
+                            if (key == key::unknown)
+                                MYTHOS_WARN("Unknown scancode: {}", key);
+#endif
+                            input::process_key(key, (keyboard.Flags & RI_KEY_BREAK) ? key_state::up : key_state::down);
+                        }
+                        return 0;
+                    }
+                    case RIM_TYPEHID: {
+                        device* device = input::get_device(static_cast<native_device_handle_type>(device_handle));
+                        if (device == nullptr)
+                            break;
+
+                        /// MYTODO: Getting all this should already be done in WM_INPUT_DEVICE_CHANGE and mark a flag as xinput
+                        if (!std::strstr(device->info.name.c_str(), "_IG")) // Xinput devices will be handled by the Xinput API
+                            process_device(device, input_data.hid);
+                        return 0;
+                    }
+                    default:
+                        /// MYTODO: Replace with std::unreachable();
+                        MYTHOS_ERROR("Unknown raw input message, this should not be possible!");
+                        break;
+                }
+
+                if (GET_RAWINPUT_CODE_WPARAM(wparam) == RIM_INPUT) // Application needs to call DefWindowProcW
+                    goto call_default_window_procedure;
+                return 0;
+            }
+            case WM_INPUT_DEVICE_CHANGE: {
+                /// MYBUG: If the device is connected via bluetooth and usb at the same time it might register as 2 devices because l_param is only unique and not unique per device
+                switch (wparam) {
+                    case GIDC_ARRIVAL:
+                        input::register_device(reinterpret_cast<native_device_handle_type>(lparam));
+                        break;
+                    case GIDC_REMOVAL:
+                        input::remove_device(reinterpret_cast<native_device_handle_type>(lparam));
+                        break;
+                    default:
+                        break;
+                }
+                return 0;
+            }
+            case WM_CHAR: {
+                /// MYTODO: Replace using WM_INPUT
+                input::process_typed(static_cast<WCHAR>(wparam));
+                return 0;
+            }
+            default:
+                break;
+        }
+
+        call_default_window_procedure:
+        return DefWindowProcA(hwnd, msg, wparam, lparam);
     }
 }
 #endif

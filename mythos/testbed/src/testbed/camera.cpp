@@ -33,16 +33,15 @@ namespace testbed {
 
     auto camera::on_update(myth::timestep ts) -> void {
 		if (!myth::input::registered_devices().empty()) {
-			auto device = static_cast<myth::hid::gamepad*>(myth::input::registered_devices().front().get());
-
+			auto& device = myth::input::registered_devices().front();
 			// Movement
-			myl::f32vec3 movement(device->left_stick.x, 0.f, -device->left_stick.y);
+			myl::f32vec3 movement(device.state.left_stick.x, 0.f, -device.state.left_stick.y);
 
 			/// MYTODO: Implement camera roatation, need quaternions
 			///myl::f32quat rotation(a_tc.rotation);
 
-			if ((device->button_states & myth::hid_button::left_stick) == myth::hid_button::left_stick) movement.y -= 1;
-			if ((device->button_states & myth::hid_button::symbol_down) == myth::hid_button::symbol_down) movement.y += 1;
+			if ((device.state.buttons & myth::gamepad_button::left_stick) == myth::gamepad_button::left_stick) movement.y -= 1;
+			if ((device.state.buttons & myth::gamepad_button::action_down) == myth::gamepad_button::action_down) movement.y += 1;
 
 			if (movement != myl::f32vec3(0.f))
 				m_position += myl::normalize(movement) * .1f; // Magic number!

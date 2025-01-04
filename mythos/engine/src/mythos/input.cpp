@@ -1,4 +1,4 @@
-#include <mythos/event/hid_event.hpp>
+#include <mythos/event/device_event.hpp>
 #include <mythos/event/key_event.hpp>
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/input.hpp>
@@ -9,9 +9,9 @@
 #endif
 
 namespace myth {
-    keyboard                                  input::s_keyboard;
-    mouse                                     input::s_mouse;
-    std::vector<std::unique_ptr<hid::device>> input::s_registered_devices = {};
+    keyboard_state      input::s_keyboard;
+    mouse_state         input::s_mouse;
+    std::vector<device> input::s_registered_devices;
 
     auto input::init() -> void {
         clear();
@@ -19,7 +19,7 @@ namespace myth {
 
     auto input::shutdown() -> void {
         while (!s_registered_devices.empty())
-            remove_device(s_registered_devices.back()->id);
+            remove_device(s_registered_devices.back().handle);
     }
 
     auto input::update() -> void {
@@ -30,50 +30,65 @@ namespace myth {
     }
 
     auto input::clear() -> void {
-        s_keyboard.keys.fill(keyboard::state::up);        
+        s_keyboard.keys.fill(key_state::up);
         query_togglable_keys(&s_keyboard);
 
-        s_mouse.button_states = mouse_button::none;
+        s_mouse.buttons = mouse_button::none;
         s_mouse.cursor_delta = { 0.f, 0.f };
         s_mouse.scroll_delta = { 0.f, 0.f };
-        s_mouse.window_cursor_position = { 0.f, 0.f };
+        s_mouse.position = { 0.f, 0.f };
     }
 
-    auto input::register_device(std::unique_ptr<hid::device>&& new_device) -> bool {
+    auto input::register_device(native_device_handle_type handle) -> bool {
         for (auto& existing_device : s_registered_devices)
-            if (existing_device->id == new_device->id) {
-                MYTHOS_WARN("A device with id '{}' is already registered", new_device->id);
+            if (existing_device.handle == handle) {
+                MYTHOS_WARN("A device with handle '{}' is already registered", reinterpret_cast<uintptr_t>(handle));
                 return false;
             }
 
-        s_registered_devices.emplace_back(std::move(new_device));
-        MYTHOS_DEBUG("New device registered. ID: {}", s_registered_devices.back()->id);
-        return true;
+        device new_device{ .handle = handle };
+        if (device::create(&new_device)) {
+            s_registered_devices.emplace_back(std::move(new_device));
+            MYTHOS_DEBUG("New device registered. Handle: {}", reinterpret_cast<uintptr_t>(handle));
+            return true;
+        }
+        else {
+            MYTHOS_ERROR("Failed to register new device. Handle: {}", reinterpret_cast<uintptr_t>(handle));
+            return false;
+        }
     }
 
-    auto input::remove_device(hid::device::id_type id) -> bool {
+    auto input::remove_device(native_device_handle_type handle) -> bool {
         for (auto it = s_registered_devices.begin(), end = s_registered_devices.end(); it != end; ++it)
-            if ((*it)->id == id) {
+            if (it->handle == handle) {
+                device::destroy(&*it);
                 s_registered_devices.erase(it);
-                MYTHOS_DEBUG("Device removed. ID: {}", id);
+                MYTHOS_DEBUG("Device removed. Handle: {}", reinterpret_cast<uintptr_t>(handle));
                 return true;
             }
 
-        MYTHOS_WARN("A device with id '{}' is not registered", id);
+        MYTHOS_WARN("A device with handle '{}' is not registered", reinterpret_cast<uintptr_t>(handle));
         return false;
     }
 
-    auto input::remove_device(hid::device* handle) -> bool {
-        return remove_device(handle->id);
+    auto input::remove_device(device* device) -> bool {
+        return remove_device(device->handle);
     }
 
-    auto input::get_device(hid::device::id_type id) -> hid::device* {
-        for (auto& existing_device : s_registered_devices)
-            if (existing_device->id == id)
-                return existing_device.get();
+    auto input::get_device(native_device_handle_type handle) -> device* {
+        for (auto& device : s_registered_devices)
+            if (device.handle == handle)
+                return &device;
 
-        MYTHOS_WARN("A device with id '{}' is not registered", id);
+        MYTHOS_WARN("A device with id '{}' is not registered", reinterpret_cast<uintptr_t>(handle));
         return nullptr;
+    }
+
+    auto input::is_device_registered(native_device_handle_type handle) -> bool {
+        for (auto& device : s_registered_devices)
+            if (device.handle == handle)
+                return true;
+        return false;
     }
 
     auto input::set_cursor_position(const myl::i32vec2& position) -> void {
@@ -108,24 +123,24 @@ namespace myth {
 #endif
     }
 
-    auto input::process_key(keycode code, keyboard::state state) -> void {
-        if (code == key::unknown)
+    auto input::process_key(keycode key, myth::key_state state) -> void {
+        if (key == key::unknown)
             return;
 
-        if (s_keyboard.keys[code] != state) { // Pressed (Non held) and released events should only be fired on key state change
-            s_keyboard.keys[code] = state;
+        if (s_keyboard.keys[key] != state) { // Pressed (Non held) and released events should only be fired on key state change
+            s_keyboard.keys[key] = state;
 
-            if (state == keyboard::state::up) {
-                event::key_released e(code);
+            if (state == key_state::up) {
+                event::key_released e(key);
                 event::fire(e);
             }
             else {
-                event::key_pressed e(code, false);
+                event::key_pressed e(key, false);
                 event::fire(e);
             }
         }
-        else if (state == keyboard::state::down) { // Key is held down
-            event::key_pressed e(code, true);
+        else if (state == key_state::down) { // Key is held down
+            event::key_pressed e(key, true);
             event::fire(e);
         }
     }
@@ -138,24 +153,24 @@ namespace myth {
         event::fire(e);
     }
 
-    auto input::process_mouse_buttons_up(mousecode code) -> void {
+    auto input::process_mouse_button_down(const mousecode down) -> void {
         // new = 0110; old = 1010
-        // old & new = 0010. Therefore bit 2 has changed state to up
-        const mousecode changed_buttons = s_mouse.button_states & code;
-        if (changed_buttons != 0) {
-            s_mouse.button_states &= ~changed_buttons; // Clear bits
-            event::mouse_released e(changed_buttons);
+        // ~(old | ~new) = 0100. Therefore bit 3 has changed state to down
+        const mousecode changed_buttons = ~(s_mouse.buttons | ~down);
+        if (changed_buttons != mouse_button::none) {
+            s_mouse.buttons |= changed_buttons; // Set bits
+            event::mouse_pressed e(changed_buttons);
             event::fire(e);
         }
     }
 
-    auto input::process_mouse_buttons_down(mousecode code) -> void {
+    auto input::process_mouse_button_up(const mousecode up) -> void {
         // new = 0110; old = 1010
-        // ~(old | ~new) = 0100. Therefore bit 3 has changed state to down
-        const mousecode changed_buttons = ~(s_mouse.button_states | ~code);
-        if (changed_buttons != 0) {
-            s_mouse.button_states |= changed_buttons; // Set bits
-            event::mouse_pressed e(changed_buttons);
+        // old & new = 0010. Therefore bit 2 has changed state to up
+        const mousecode changed_buttons = s_mouse.buttons & up;
+        if (changed_buttons != mouse_button::none) {
+            s_mouse.buttons &= ~changed_buttons; // Clear bits
+            event::mouse_released e(changed_buttons);
             event::fire(e);
         }
     }
@@ -171,42 +186,33 @@ namespace myth {
             s_mouse.cursor_delta = delta;
     }
 
-    auto input::process_window_cursor_position(const myl::f32vec2& position) -> void {
-        if (s_mouse.window_cursor_position != position) {
-            s_mouse.window_cursor_position = position;
+    auto input::process_cursor_position(const myl::f32vec2& position) -> void {
+        if (s_mouse.position != position) {
+            s_mouse.position = position;
             event::mouse_moved e(position);
             event::fire(e);
         }
     }
 
-    auto input::process_hid(hid::device::id_type id, myl::u8* data, myl::u32 byte_count) -> void {
-        for (auto& device : s_registered_devices)
-            if (device->id == id) {
-                if (device->processing_callback)
-                    device->processing_callback(device.get(), data, byte_count);
-                return;
-            }
-    }
-
-    auto input::process_hid_buttons(hid::device* device, hid::buttons* data,  hid_button_code down) -> void {
+    auto input::process_device_buttons(device* device, buttons* buttons, const button_code down) -> void {
         // Refer to process_mouse_buttons_down for explanation
-        const hid_button_code changed_to_down = ~(data->button_states | ~down);
-        if (changed_to_down != hid_button::none) {
-            data->button_states |= changed_to_down;
-            event::hid_button_pressed e(device, changed_to_down);
+        const button_code changed_to_down = ~(*buttons | ~down);
+        if (changed_to_down != button::none) {
+            *buttons |= changed_to_down;
+            event::device_button_pressed e(device, changed_to_down);
             event::fire(e);
         }
 
         // Refer to process_mouse_buttons_up for explanation
-        const hid_button_code changed_to_up = data->button_states & ~down; // ~down == up buttons set to 1
-        if (changed_to_up != hid_button::none) {
-            data->button_states &= ~changed_to_up;
-            event::hid_button_released e(device, changed_to_up);
+        const button_code changed_to_up = *buttons & ~down;
+        if (changed_to_up != button::none) {
+            *buttons &= ~changed_to_up;
+            event::device_button_released e(device, changed_to_up);
             event::fire(e);
         }
     }
 
-    auto input::query_togglable_keys(keyboard* keyboard) -> void {
+    auto input::query_togglable_keys(myth::keyboard_state* keyboard) -> void {
 #ifdef MYL_OS_WINDOWS
         win::query_togglable_keys(keyboard);
 #else

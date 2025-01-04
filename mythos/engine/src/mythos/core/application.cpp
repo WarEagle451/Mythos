@@ -177,37 +177,6 @@ namespace myth {
         return false;
     }
 
-    auto application::on_hid_added(event::hid_added& e) -> bool {
-        // Devices should attempt to use client defined devices first
-        for (auto& l : m_layer_stack) {            
-            l->on_event(e);
-            if (e.handled)
-                return true;
-        }
-
-        auto new_device = hid::create(e.id(), e.vendor(), e.product());
-        if (new_device == nullptr)
-            MYTHOS_ERROR("Could not deduce HID");
-        else
-            input::register_device(std::move(new_device));
-
-        e.handled = true; // Override running through the layers again in application::on_event
-        return true;
-    }
-
-    auto application::on_hid_removed(event::hid_removed& e) -> bool {
-        for (auto& l : m_layer_stack) {            
-            l->on_event(e);
-            if (e.handled)
-                break;
-        }
-
-        if (!input::remove_device(e.id()))
-            MYTHOS_ERROR("Failed to remove device. ID: {}", e.id());
-        e.handled = true; // Override running through the layers again in application::on_event
-        return true;
-    }
-
     auto application::on_event(event::base& e) -> void {
         event::dispatcher d(e);
         d.dispatch<event::window_resize>(MYTHOS_BIND_EVENT_FUNC(application::on_window_resize));
@@ -215,9 +184,6 @@ namespace myth {
         d.dispatch<event::window_close>(MYTHOS_BIND_EVENT_FUNC(application::on_window_close));
         d.dispatch<event::window_focus_gain>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_gain));
         d.dispatch<event::window_focus_lost>(MYTHOS_BIND_EVENT_FUNC(application::on_window_focus_lost));
-
-        d.dispatch<event::hid_added>(MYTHOS_BIND_EVENT_FUNC(application::on_hid_added));
-        d.dispatch<event::hid_removed>(MYTHOS_BIND_EVENT_FUNC(application::on_hid_removed));
         
         if (!e.handled)
             for (auto& l : m_layer_stack) {                

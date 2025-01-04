@@ -1,7 +1,6 @@
 #pragma once
 #include <mythos/core/layer_stack.hpp>
 #include <mythos/event/window_event.hpp>
-#include <mythos/event/hid_event.hpp>
 #include <mythos/input.hpp>
 #include <mythos/platform/window.hpp>
 #include <mythos/render/renderer.hpp>
@@ -73,9 +72,6 @@ namespace myth {
         auto on_window_close(event::window_close& e) -> bool;
         auto on_window_focus_gain(event::window_focus_gain& e) -> bool;
         auto on_window_focus_lost(event::window_focus_lost& e) -> bool;
-
-        auto on_hid_added(event::hid_added& e) -> bool;
-        auto on_hid_removed(event::hid_removed& e) -> bool;
 
         auto on_event(event::base&) -> void;
     };

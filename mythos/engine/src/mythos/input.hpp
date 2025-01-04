@@ -1,96 +1,65 @@
 #pragma once
-#include <mythos/input/keycodes.hpp>
-#include <mythos/input/mousecodes.hpp>
-#include <mythos/platform/hid.hpp>
+#include <mythos/input/device.hpp>
 
-#include <myl/math/vec2.hpp>
-
-#include <array>
-#include <memory>
 #include <vector>
 
-/// MYTODO: REDO all controller input
-
 namespace myth {
-    struct keyboard {
-        enum class state {
-            up = false,
-            down = true
-        };
-
-        std::array<state, key::size> keys;
-    };
-
-    struct mouse {
-        mousecode button_states;
-        myl::f32vec2 cursor_delta;
-        myl::f32vec2 scroll_delta;
-        myl::f32vec2 window_cursor_position;
-    };
-
     class input {
-        static keyboard                                  s_keyboard;
-        static mouse                                     s_mouse;
-        static std::vector<std::unique_ptr<hid::device>> s_registered_devices;
+        static keyboard_state      s_keyboard;
+        static mouse_state         s_mouse;
+        static std::vector<device> s_registered_devices;
     public:
         static auto init() -> void;
         static auto shutdown() -> void;
         static auto update() -> void;
         static auto clear() -> void;
 
-        static MYL_API auto register_device(std::unique_ptr<hid::device>&& new_device) -> bool;
-        static MYL_API auto remove_device(hid::device::id_type id) -> bool;
-        static MYL_API auto remove_device(hid::device* handle) -> bool;
+        static auto register_device(native_device_handle_type handle) -> bool;
+        static auto remove_device(native_device_handle_type handle) -> bool;
+        static auto remove_device(device* device) -> bool;
 
-        static MYL_API auto get_keyboard() -> keyboard& { return s_keyboard; }
-        static MYL_API auto get_mouse() -> mouse& { return s_mouse; }
-        static MYL_API auto get_device(hid::device::id_type id) -> hid::device*;
-        static MYL_API auto registered_devices() -> std::vector<std::unique_ptr<hid::device>>& { return s_registered_devices; }
+        // Getters
 
-        // Keyboard Related
+        MYL_NO_DISCARD static MYL_API auto keyboard_state() -> const keyboard_state { return s_keyboard; }
+        MYL_NO_DISCARD static MYL_API auto mouse_state() -> const mouse_state { return s_mouse; }
+        MYL_NO_DISCARD static MYL_API auto registered_devices() -> std::vector<device>& { return s_registered_devices; }
+        MYL_NO_DISCARD static MYL_API auto get_device(native_device_handle_type handle) -> device*;
 
-        MYL_NO_DISCARD static MYL_API auto key_state(keycode code) noexcept -> keyboard::state { return s_keyboard.keys[code]; }
-        MYL_NO_DISCARD static MYL_API auto key_states() noexcept -> const std::array<keyboard::state, key::size>& { return s_keyboard.keys; }
-        MYL_NO_DISCARD static MYL_API auto key_up(keycode code) noexcept -> bool { return s_keyboard.keys[code] == keyboard::state::up; }
-        MYL_NO_DISCARD static MYL_API auto key_down(keycode code) noexcept -> bool { return s_keyboard.keys[code] == keyboard::state::down; }
+        // Query
 
-        // Mouse Related
+        MYL_NO_DISCARD static MYL_API auto is_device_registered(native_device_handle_type handle) -> bool;
 
-        MYL_NO_DISCARD static MYL_API auto mouse_button_states() noexcept -> mousecode { return s_mouse.button_states; }
-        MYL_NO_DISCARD static MYL_API auto mouse_buttons_up(mousecode code) noexcept -> bool { return (s_mouse.button_states & code) == code; }
-        MYL_NO_DISCARD static MYL_API auto mouse_buttons_down(mousecode code) noexcept -> bool { return (s_mouse.button_states & code) == code; }
+        MYL_NO_DISCARD static MYL_API auto key_state(keycode code) noexcept -> key_state { return s_keyboard.keys[code]; }
+        MYL_NO_DISCARD static MYL_API auto key_states() noexcept -> const myth::keyboard_state& { return s_keyboard; }
+        MYL_NO_DISCARD static MYL_API auto key_up(keycode code) noexcept -> bool { return s_keyboard.keys[code] == key_state::up; }
+        MYL_NO_DISCARD static MYL_API auto key_down(keycode code) noexcept -> bool { return s_keyboard.keys[code] == key_state::down; }
+
+        MYL_NO_DISCARD static MYL_API auto mouse_button_states() noexcept -> mousecode { return s_mouse.buttons; }
+        MYL_NO_DISCARD static MYL_API auto mouse_buttons_up(mousecode code) noexcept -> bool { return (s_mouse.buttons & code) == code; }
+        MYL_NO_DISCARD static MYL_API auto mouse_buttons_down(mousecode code) noexcept -> bool { return (s_mouse.buttons & code) == code; }
         MYL_NO_DISCARD static MYL_API auto cursor_delta() noexcept -> const myl::f32vec2& { return s_mouse.cursor_delta; }
         MYL_NO_DISCARD static MYL_API auto scroll_delta() noexcept -> const myl::f32vec2& { return s_mouse.scroll_delta; }
-        
+
+        // Action
+
         static auto set_cursor_position(const myl::i32vec2& position) -> void;
         static auto set_cursor_visibility(bool visible) -> void;
         static auto confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void;
         static auto release_cursor() -> void;
 
-        // HID Related
+        // Input processing
 
-        MYL_NO_DISCARD static MYL_API auto hid_button_states(hid::buttons* device) noexcept -> hid_button_code { return device->button_states; }
-        MYL_NO_DISCARD static MYL_API auto hid_buttons_up(hid::buttons* device, hid_button_code code) noexcept -> bool { return (device->button_states & code) == code; }
-        MYL_NO_DISCARD static MYL_API auto hid_buttons_down(hid::buttons* device, hid_button_code code) noexcept -> bool { return (device->button_states & code) == code; }
-
-        // Keyboard Processing / Related
-
-        static auto process_key(keycode code, keyboard::state state) -> void;
+        static auto process_key(keycode key, myth::key_state state) -> void;
         static auto process_typed(myl::u16 character) -> void;
 
-        // Mouse Processing Related
-
-        static auto process_mouse_buttons_up(mousecode code) -> void;
-        static auto process_mouse_buttons_down(mousecode code) -> void;
+        static auto process_mouse_button_down(const mousecode down) -> void;
+        static auto process_mouse_button_up(const mousecode up) -> void;
         static auto process_mouse_wheel(const myl::f32vec2& delta) -> void;
         static auto process_cursor_delta(const myl::f32vec2& delta) -> void;
-        static auto process_window_cursor_position(const myl::f32vec2& position) -> void;
+        static auto process_cursor_position(const myl::f32vec2& position) -> void;
 
-        // HID Processing
-
-        static auto process_hid(hid::device::id_type id, myl::u8* data, myl::u32 byte_count) -> void;
-        static auto process_hid_buttons(hid::device* device, hid::buttons* data, hid_button_code down) -> void;
+        static auto process_device_buttons(device* device, buttons* buttons, const button_code down) -> void;
     private:
-        static auto query_togglable_keys(keyboard* keyboard) -> void;
+        static auto query_togglable_keys(myth::keyboard_state* keyboard) -> void;
     };
 }

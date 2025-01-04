@@ -7,6 +7,9 @@
 
 #include <memory>
 
+/// MYTODO: Change format to [Time] [name] [severity]: [message] - File: [file], Line: [line], Index: [index]
+/// only for error and fatal
+
 namespace myth {
     class log {
         static std::shared_ptr<spdlog::logger> s_logger;

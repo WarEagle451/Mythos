@@ -1,6 +1,6 @@
 #pragma once
 #include <mythos/core/layer.hpp>
-#include <mythos/event/hid_event.hpp>
+#include <mythos/event/device_event.hpp>
 #include <mythos/event/key_event.hpp>
 #include <mythos/event/mouse_event.hpp>
 #include <mythos/event/window_event.hpp>

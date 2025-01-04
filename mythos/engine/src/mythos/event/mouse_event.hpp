@@ -1,6 +1,6 @@
 #pragma once
 #include <mythos/event/event.hpp>
-#include <mythos/input/mousecodes.hpp>
+#include <mythos/input/button.hpp>
 
 #include <myl/math/vec2.hpp>
 

@@ -10,6 +10,6 @@ namespace myth::win {
     auto confine_cursor(const myl::i32vec2& tl, const myl::i32vec2& br) -> void;
     auto release_cursor() -> void;
 
-    auto query_togglable_keys(keyboard* keyboard) -> void;
+    auto query_togglable_keys(keyboard_state* keyboard) -> void;
 }
 #endif

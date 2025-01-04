@@ -29,10 +29,10 @@ namespace myth::event {
         mouse_moved,
         mouse_scrolled,
 
-        hid_button_pressed,
-        hid_button_released,
-        hid_added,
-        hid_removed,
+        device_button_pressed,
+        device_button_released,
+        device_added,
+        device_removed,
     };
 
     namespace category_flags {
@@ -43,8 +43,8 @@ namespace myth::event {
             keyboard       = 1 << 2,
             mouse          = 1 << 3,
             mouse_button   = 1 << 4,
-            hid            = 1 << 5,
-            hid_button     = 1 << 6
+            device         = 1 << 5,
+            device_button  = 1 << 6
         };
     }
     using category = typename std::underlying_type<category_flags::bits>::type;

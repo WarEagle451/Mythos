@@ -13,8 +13,8 @@ namespace testbed {
 
     auto event_layer::on_event(myth::event::base& e) -> void {
         myth::event::dispatcher d(e);
-        d.dispatch<myth::event::hid_button_pressed>(MYTHOS_BIND_EVENT_FUNC(event_layer::on_hid_button_pressed));
-        d.dispatch<myth::event::hid_button_released>(MYTHOS_BIND_EVENT_FUNC(event_layer::on_hid_button_released));
+        d.dispatch<myth::event::device_button_pressed>(MYTHOS_BIND_EVENT_FUNC(event_layer::on_device_button_pressed));
+        d.dispatch<myth::event::device_button_released>(MYTHOS_BIND_EVENT_FUNC(event_layer::on_device_button_released));
 
         d.dispatch<myth::event::key_pressed>(MYTHOS_BIND_EVENT_FUNC(event_layer::on_key_pressed));
         d.dispatch<myth::event::key_released>(MYTHOS_BIND_EVENT_FUNC(event_layer::on_key_released));
@@ -32,13 +32,13 @@ namespace testbed {
         d.dispatch<myth::event::window_focus_lost>(MYTHOS_BIND_EVENT_FUNC(event_layer::on_window_focus_lost));
     }
 
-    auto event_layer::on_hid_button_pressed(myth::event::hid_button_pressed& e) -> bool {
-        TESTBED_TRACE("HID button(s) pressed: {}", e.buttons());
+    auto event_layer::on_device_button_pressed(myth::event::device_button_pressed& e) -> bool {
+        TESTBED_TRACE("device button(s) pressed: {}", e.buttons());
         return false;
     }
 
-    auto event_layer::on_hid_button_released(myth::event::hid_button_released& e) -> bool {
-        TESTBED_TRACE("HID button(s) released: {}", e.buttons());
+    auto event_layer::on_device_button_released(myth::event::device_button_released& e) -> bool {
+        TESTBED_TRACE("device button(s) released: {}", e.buttons());
         return false;
     }
 

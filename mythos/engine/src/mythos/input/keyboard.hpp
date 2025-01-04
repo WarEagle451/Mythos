@@ -1,8 +1,147 @@
 #pragma once
-#include <mythos/input/keycodes.hpp>
+#include <myl/definitions.hpp>
 
 namespace myth {
-    MYL_NO_DISCARD constexpr auto ps2_set1_make_scancode_to_keycode(myl::u16 scancode) noexcept -> keycode {
+    enum class key_state : bool {
+        up   = false,
+        down = true
+    };
+
+    using keycode = myl::u16;
+    namespace key {
+        enum : keycode {
+            escape,
+            enter,
+            tab,
+            backspace,
+
+            a,
+            b,
+            c,
+            d,
+            e,
+            f,
+            g,
+            h,
+            i,
+            j,
+            k,
+            l,
+            m,
+            n,
+            o,
+            p,
+            q,
+            r,
+            s,
+            t,
+            u,
+            v,
+            w,
+            x,
+            y,
+            z,
+
+            n0,
+            n1,
+            n2,
+            n3,
+            n4,
+            n5,
+            n6,
+            n7,
+            n8,
+            n9,
+
+            kp0,
+            kp1,
+            kp2,
+            kp3,
+            kp4,
+            kp5,
+            kp6,
+            kp7,
+            kp8,
+            kp9,
+            kp_add,
+            kp_subtract,
+            kp_multiply,
+            kp_divide,
+            kp_decimal,
+            kp_equal_sign,
+            kp_enter,
+
+            space,
+            equal_sign,
+            dash,
+            comma,
+            period,
+            slash,
+            backslash,
+            semicolon,
+            apostrophe,
+            grave_accent,
+            left_bracket,
+            right_bracket,
+
+            up,
+            down,
+            left,
+            right,
+
+            caps_lock,
+            num_lock,
+            scroll_lock,
+
+            left_shift,
+            left_control,
+            left_alt,
+            left_super,
+            right_shift,
+            right_control,
+            right_alt,
+            right_super,
+
+            home,
+            end,
+            page_up,
+            page_down,
+            insert,
+            delete_key,
+            pause,
+            printscreen,
+
+            f1,
+            f2,
+            f3,
+            f4,
+            f5,
+            f6,
+            f7,
+            f8,
+            f9,
+            f10,
+            f11,
+            f12,
+            f13,
+            f14,
+            f15,
+            f16,
+            f17,
+            f18,
+            f19,
+            f20,
+            f21,
+            f22,
+            f23,
+            f24,
+
+            size,
+            unknown = static_cast<keycode>(-1)
+        };
+    }
+
+    MYL_NO_DISCARD constexpr auto translate_ps2_set1_scancode_to_keycode(myl::u16 scancode) noexcept -> keycode {
         // From Microsoft
         // See Remarks - USB HID to PS/2 Scan Code Translation Table: https://learn.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-rawkeyboard#remarks
         switch (scancode) {
@@ -19,7 +158,7 @@ namespace myth {
             case 0x0A: return n9; // 9 (
             case 0x0B: return n0; // 0 )
             case 0x0C: return dash; // - _
-            case 0x0D: return equals; // = +
+            case 0x0D: return equal_sign; // = +
             case 0x0E: return backspace; // Backspace
             case 0x0F: return tab; // Tab
             case 0x10: return q; // Q q
@@ -95,7 +234,7 @@ namespace myth {
             case 0x56: return unknown; // Europe 2
             case 0x57: return f11; // F11
             case 0x58: return f12; // F12
-            case 0x59: return kp_equals; // Keypad =
+            case 0x59: return kp_equal_sign; // Keypad =
 
             case 0x5C: return unknown; // Keyboard Int'l 6 (PC9800 Keypad , )
 
