@@ -3,7 +3,7 @@
 
 #include <vector>
 
-namespace myth {
+namespace mye {
     class input {
         static keyboard_state      s_keyboard;
         static mouse_state         s_mouse;
@@ -30,7 +30,7 @@ namespace myth {
         MYL_NO_DISCARD static MYL_API auto is_device_registered(native_device_handle_type handle) -> bool;
 
         MYL_NO_DISCARD static MYL_API auto key_state(keycode code) noexcept -> key_state { return s_keyboard.keys[code]; }
-        MYL_NO_DISCARD static MYL_API auto key_states() noexcept -> const myth::keyboard_state& { return s_keyboard; }
+        MYL_NO_DISCARD static MYL_API auto key_states() noexcept -> const mye::keyboard_state& { return s_keyboard; }
         MYL_NO_DISCARD static MYL_API auto key_up(keycode code) noexcept -> bool { return s_keyboard.keys[code] == key_state::up; }
         MYL_NO_DISCARD static MYL_API auto key_down(keycode code) noexcept -> bool { return s_keyboard.keys[code] == key_state::down; }
 
@@ -49,7 +49,7 @@ namespace myth {
 
         // Input processing
 
-        static auto process_key(keycode key, myth::key_state state) -> void;
+        static auto process_key(keycode key, mye::key_state state) -> void;
         static auto process_typed(myl::u16 character) -> void;
 
         static auto process_mouse_button_down(const mousecode down) -> void;
@@ -60,6 +60,6 @@ namespace myth {
 
         static auto process_device_buttons(device* device, buttons* buttons, const button_code down) -> void;
     private:
-        static auto query_togglable_keys(myth::keyboard_state* keyboard) -> void;
+        static auto query_togglable_keys(mye::keyboard_state* keyboard) -> void;
     };
 }

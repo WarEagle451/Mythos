@@ -3,7 +3,7 @@
 #ifdef MYL_OS_WINDOWS
 #   include <Windows.h> // WinUser.h
 
-namespace myth::win {
+namespace mye::win {
     auto set_cursor_position(const myl::i32vec2& position) -> void {
         SetCursorPos(position.x, position.y);
     }

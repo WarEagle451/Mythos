@@ -6,7 +6,7 @@
 #include <memory>
 #include <vector>
 
-namespace myth {
+namespace mye {
     class layer_stack {
         std::vector<std::unique_ptr<layer>> m_layers;
         std::vector<std::unique_ptr<layer>>::size_type m_layer_insert_index = 0;

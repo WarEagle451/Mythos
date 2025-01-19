@@ -5,7 +5,7 @@
 #include <myl/math/vec3.hpp>
 #include <myl/math/vec4.hpp>
 
-namespace myth {
+namespace mye {
     class renderer {
         static render_api s_api;
         static std::unique_ptr<renderer_backend> s_backend;

@@ -13,7 +13,7 @@
 ///     https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
 ///     on page https://vulkan-tutorial.com/Vertex_buffers/Staging_buffer (at the bottom of the page)
 
-namespace myth::vulkan {
+namespace mye::vulkan {
 #ifdef VK_EXT_DEBUG_UTILS_EXTENSION_NAME
     static VKAPI_ATTR auto debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, MYL_MAYBE_UNUSED VkDebugUtilsMessageTypeFlagsEXT type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data, MYL_MAYBE_UNUSED void* user_data) -> VkBool32 {
         /// MYTODO: Extend Vulkan debug callback with the following:
@@ -115,7 +115,7 @@ namespace myth::vulkan {
         : m_current_frame_index{ 0 }
         , m_framebuffer_resized{ false }
         , m_vsync{ config.vsync } {
-        myth::window* window = application::get().main_window();
+        mye::window* window = application::get().main_window();
 
         create_instance();
         create_surface(&m_surface, m_instance, window, VK_NULL_HANDLE);
@@ -228,7 +228,7 @@ namespace myth::vulkan {
         destroy_instance();
     }
 
-    MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<myth::shader> {
+    MYL_NO_DISCARD auto backend::create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<mye::shader> {
         vulkan::shader::create_info shader_create_info{
             .swapchain_extent       = m_swapchain.image_extent(),
             .render_pass            = m_main_render_pass.handle(),
@@ -243,12 +243,12 @@ namespace myth::vulkan {
         return shader;
     }
 
-    auto backend::destroy_shader(myth::shader* shader) -> void {
+    auto backend::destroy_shader(mye::shader* shader) -> void {
         vulkan::shader* vks = static_cast<vulkan::shader*>(shader);
         vulkan::shader::destroy(vks, m_device, VK_NULL_HANDLE);
     }
 
-    MYL_NO_DISCARD auto backend::create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<myth::render_buffer> {
+    MYL_NO_DISCARD auto backend::create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<mye::render_buffer> {
         vulkan::render_buffer::create_info render_buffer_create_info{
             .command_pool = m_graphics_command_pool,
             .usage        = render_buffer_usage_to_VkBufferUsageFlags(usage),
@@ -314,7 +314,7 @@ namespace myth::vulkan {
         return render_buffer;
     }
 
-    auto backend::destroy_render_buffer(myth::render_buffer* buffer) -> void {
+    auto backend::destroy_render_buffer(mye::render_buffer* buffer) -> void {
         vulkan::render_buffer* vkrb = static_cast<vulkan::render_buffer*>(buffer);
         vulkan::render_buffer::destroy(vkrb, m_device, VK_NULL_HANDLE);
     }

@@ -9,8 +9,8 @@
 #include <memory>
 
 namespace testbed {
-    application::application(const myth::application_specification& specs)
-        : myth::application(specs) {
+    application::application(const mye::application_specification& specs)
+        : mye::application(specs) {
         log::init();
         //push_layer(std::make_unique<event_layer>());
         push_layer(std::make_unique<testbed_layer>());
@@ -21,9 +21,9 @@ namespace testbed {
     }
 }
 
-namespace myth {
+namespace mye {
     auto create_application() -> std::unique_ptr<application> {
-        myth::application_specification specs{
+        mye::application_specification specs{
             .info{
                .name = "Mythos Testbed",
                .version_major = MYTHOS_VERSION_MAJOR,

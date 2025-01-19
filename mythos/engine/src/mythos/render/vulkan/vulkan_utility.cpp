@@ -2,7 +2,7 @@
 
 #define MYTHOS_VULKAN_VKRESULT_TO_STRING_IMPL(result, extended, extended_msg) case result: return extended ? #result " - " extended_msg : #result
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD constexpr auto vkresult_string(VkResult code, bool extended_information) -> const char* {
         switch (code) { // From: https://registry.khronos.org/vulkan/specs/1.3-extensions/man/html/VkResult.html
             // Success Codes

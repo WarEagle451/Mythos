@@ -1,7 +1,7 @@
 #include <mythos/render/vulkan/vulkan_descriptor.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     auto descriptor_pool::create(descriptor_pool* h, device& device, const create_info& ci, VkAllocationCallbacks* allocator) -> void {
         VkDescriptorPoolSize pool_size{
             .type            = ci.descriptor_set_type,

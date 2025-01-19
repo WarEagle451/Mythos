@@ -6,7 +6,7 @@
 
 #define MYTHOS_BIND_EVENT_FUNC(fn) [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
-namespace myth::event {
+namespace mye::event {
     enum class type {
         none,
 
@@ -85,8 +85,8 @@ namespace myth::event {
     auto fire(base& e) -> void;
 }
 
-#define MYTHOS_IMPL_EVENT_CATEGORY(c) MYL_NO_DISCARD constexpr virtual auto category_flags() const -> myth::event::category override { return c; }
+#define MYTHOS_IMPL_EVENT_CATEGORY(c) MYL_NO_DISCARD constexpr virtual auto category_flags() const -> mye::event::category override { return c; }
 #define MYTHOS_IMPL_EVENT_TYPE(t)\
-    MYL_NO_DISCARD static constexpr auto static_type() -> myth::event::type { return myth::event::type::t; }\
-    MYL_NO_DISCARD constexpr virtual auto type() const -> myth::event::type override { return static_type(); }\
+    MYL_NO_DISCARD static constexpr auto static_type() -> mye::event::type { return mye::event::type::t; }\
+    MYL_NO_DISCARD constexpr virtual auto type() const -> mye::event::type override { return static_type(); }\
     MYL_NO_DISCARD constexpr virtual auto name() const -> const char* override { return #t; }

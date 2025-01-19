@@ -1,7 +1,7 @@
 #pragma once
 #include <myl/definitions.hpp>
 
-namespace myth {
+namespace mye {
     struct timestep {
     private:
         myl::f64 m_time;

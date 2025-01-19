@@ -1,7 +1,7 @@
 #pragma once
 #include <mythos/render/vulkan/vulkan_device.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     class render_pass {
         VkRenderPass m_render_pass = VK_NULL_HANDLE;
         VkClearColorValue m_clear_color{};

@@ -1,7 +1,7 @@
 #pragma once
 #include <myl/definitions.hpp>
 
-namespace myth {
+namespace mye {
     enum class key_state : bool {
         up   = false,
         down = true

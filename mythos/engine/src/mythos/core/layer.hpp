@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace myth {
+namespace mye {
     class layer {
     protected:
         std::string m_name;

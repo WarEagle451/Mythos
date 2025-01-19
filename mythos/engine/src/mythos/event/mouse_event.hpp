@@ -4,7 +4,7 @@
 
 #include <myl/math/vec2.hpp>
 
-namespace myth::event {
+namespace mye::event {
     class mouse_moved : public base {
         myl::f32vec2 m_position;
     public:

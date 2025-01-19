@@ -12,7 +12,7 @@
 /// Could also be an issued if I do not understand drawing to work like I think I do
 /// - This leans towards that it could require multiple descriptor sets - https://www.reddit.com/r/vulkan/comments/8ryoit/multiple_draw_calls/
 
-namespace myth {
+namespace mye {
     /// MYTodo: Remove vertex structs at some point, should be automatically generated from shader code
 
     struct vertex {
@@ -123,7 +123,7 @@ namespace myth {
         // Global Uniform Buffer
 
         g_rd.global_ubo_data = global_ubo_data{};
-        g_rd.global_ubo = s_backend->create_render_buffer(myth::render_buffer_usage::uniform, sizeof(global_ubo_data));
+        g_rd.global_ubo = s_backend->create_render_buffer(mye::render_buffer_usage::uniform, sizeof(global_ubo_data));
 
         // Quad
 

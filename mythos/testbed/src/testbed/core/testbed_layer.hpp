@@ -8,8 +8,8 @@
 #include <testbed/camera.hpp>
 
 namespace testbed {
-    class testbed_layer final : public myth::layer {
-        myth::timestep m_smooth_ts = 0.f;
+    class testbed_layer final : public mye::layer {
+        mye::timestep m_smooth_ts = 0.f;
         camera m_camera;
     public:
         MYL_NO_DISCARD testbed_layer();
@@ -17,11 +17,11 @@ namespace testbed {
 
         auto on_attach() -> void override;
         auto on_detach() -> void override;
-        auto on_event(myth::event::base& e) -> void override;
-        auto update(MYL_MAYBE_UNUSED myth::timestep ts) -> void override;
+        auto on_event(mye::event::base& e) -> void override;
+        auto update(MYL_MAYBE_UNUSED mye::timestep ts) -> void override;
         auto render() -> void override;
     private:
-        auto on_key_pressed(myth::event::key_pressed& e) -> bool;
-        auto on_window_resized(myth::event::window_resize& e) -> bool;
+        auto on_key_pressed(mye::event::key_pressed& e) -> bool;
+        auto on_window_resized(mye::event::window_resize& e) -> bool;
     };
 }

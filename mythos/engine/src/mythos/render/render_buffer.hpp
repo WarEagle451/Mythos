@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace myth {
+namespace mye {
     enum class render_buffer_usage {
         index,
         uniform,

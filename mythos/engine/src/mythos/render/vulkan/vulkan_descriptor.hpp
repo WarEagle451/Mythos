@@ -3,7 +3,7 @@
 
 #include <vector>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     class descriptor_pool {
         VkDescriptorPool m_pool;
         VkDescriptorType m_descriptor_set_type;

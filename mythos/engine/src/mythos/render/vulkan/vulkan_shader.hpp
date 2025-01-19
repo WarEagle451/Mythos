@@ -5,8 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
-namespace myth::vulkan {
-    class shader : public myth::shader {
+namespace mye::vulkan {
+    class shader : public mye::shader {
         pipeline m_pipeline{};
     public:
         struct create_info {

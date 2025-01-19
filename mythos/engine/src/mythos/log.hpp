@@ -10,7 +10,7 @@
 /// MYTODO: Change format to [Time] [name] [severity]: [message] - File: [file], Line: [line], Index: [index]
 /// only for error and fatal
 
-namespace myth {
+namespace mye {
     class log {
         static std::shared_ptr<spdlog::logger> s_logger;
     public:
@@ -22,13 +22,13 @@ namespace myth {
 }
 
 #ifdef MYL_DEBUG
-#   define MYTHOS_DEBUG(...) ::myth::log::get()->debug(__VA_ARGS__)
+#   define MYTHOS_DEBUG(...) ::mye::log::get()->debug(__VA_ARGS__)
 #else
 #   define MYTHOS_DEBUG(...)
 #endif
 
-#define MYTHOS_TRACE(...) ::myth::log::get()->trace(__VA_ARGS__)
-#define MYTHOS_INFO(...) ::myth::log::get()->info(__VA_ARGS__)
-#define MYTHOS_WARN(...) ::myth::log::get()->warn(__VA_ARGS__)
-#define MYTHOS_ERROR(...) ::myth::log::get()->error(__VA_ARGS__)
-#define MYTHOS_FATAL(...) ::myth::log::get()->critical(__VA_ARGS__)
+#define MYTHOS_TRACE(...) ::mye::log::get()->trace(__VA_ARGS__)
+#define MYTHOS_INFO(...) ::mye::log::get()->info(__VA_ARGS__)
+#define MYTHOS_WARN(...) ::mye::log::get()->warn(__VA_ARGS__)
+#define MYTHOS_ERROR(...) ::mye::log::get()->error(__VA_ARGS__)
+#define MYTHOS_FATAL(...) ::mye::log::get()->critical(__VA_ARGS__)

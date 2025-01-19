@@ -1,7 +1,7 @@
 #include <mythos/render/vulkan/vulkan_command_objects.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     auto command_buffer::begin(VkCommandBufferUsageFlags flags) -> void {
         VkCommandBufferBeginInfo command_buffer_begin_info{
             .sType            = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,

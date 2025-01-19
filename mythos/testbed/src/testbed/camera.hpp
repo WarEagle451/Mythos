@@ -23,7 +23,7 @@ namespace testbed {
         auto transform() const -> myl::f32mat4;
         auto view_projection() const -> myl::f32mat4 { return projection() * myl::inverse(transform()); }
 
-        auto on_update(myth::timestep ts) -> void;
+        auto on_update(mye::timestep ts) -> void;
         auto on_window_resize(const myl::i32vec2& dimensions) -> void;
     };
 }

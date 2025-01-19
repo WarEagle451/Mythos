@@ -2,9 +2,9 @@
 #include <mythos/log.hpp>
 
 auto main(MYL_MAYBE_UNUSED int arg_count, MYL_MAYBE_UNUSED char** args) -> int {
-    myth::log::init();
+    mye::log::init();
     
-    std::unique_ptr<myth::application> app = myth::create_application();
+    std::unique_ptr<mye::application> app = mye::create_application();
     app->run();
     app.reset();
 

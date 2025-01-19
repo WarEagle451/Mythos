@@ -7,7 +7,7 @@
 
 #include <memory>
 
-namespace myth {
+namespace mye {
     enum class render_api {
         vulkan,
         none

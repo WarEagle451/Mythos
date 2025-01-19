@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace myth {
+namespace mye {
     std::shared_ptr<spdlog::logger> log::s_logger = nullptr;
 
     auto log::init() -> void {

@@ -1,7 +1,7 @@
 #pragma once
 #include <mythos/render/vulkan/vulkan_device.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     struct swapchain_support_details {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector<VkSurfaceFormatKHR> available_surface_formats;

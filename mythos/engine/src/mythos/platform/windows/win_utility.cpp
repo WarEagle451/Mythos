@@ -2,7 +2,7 @@
 #ifdef MYL_OS_WINDOWS
 #   include <stringapiset.h>
 
-namespace myth::win {
+namespace mye::win {
     MYL_NO_DISCARD auto error_as_string(DWORD code) -> std::string {
 #ifdef UNICODE
         using buffer_t = LPTSTR;

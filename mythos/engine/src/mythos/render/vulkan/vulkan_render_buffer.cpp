@@ -1,7 +1,7 @@
 #include <mythos/render/vulkan/vulkan_render_buffer.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD constexpr auto calc_memory_offset(VkDeviceSize internal_block_offset, VkDeviceSize block_size, VkDeviceSize index) -> VkDeviceSize {
         return (block_size * index) + internal_block_offset;
     }

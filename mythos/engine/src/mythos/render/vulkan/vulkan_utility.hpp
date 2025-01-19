@@ -3,14 +3,14 @@
 
 #include <vulkan/vulkan.h>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD constexpr MYL_API auto vkresult_string(VkResult code, bool extended_information = false) -> const char*;
 }
 
 #define MYTHOS_VULKAN_MAKE_ASSERT(log, extended, func, ...) {\
     const VkResult result = func(__VA_ARGS__);\
     if (result != VK_SUCCESS)\
-        log("Vulkan - '"#func"' failed! - {}", myth::vulkan::vkresult_string(result, extended));\
+        log("Vulkan - '"#func"' failed! - {}", mye::vulkan::vkresult_string(result, extended));\
 }
 
 #ifdef MYL_DEBUG

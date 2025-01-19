@@ -2,9 +2,9 @@
 #include <mythos/core/application.hpp>
 
 namespace testbed {
-    class application : public myth::application {
+    class application : public mye::application {
     public:
-        MYL_NO_DISCARD application(const myth::application_specification& specs);
+        MYL_NO_DISCARD application(const mye::application_specification& specs);
         ~application();
     };
 }

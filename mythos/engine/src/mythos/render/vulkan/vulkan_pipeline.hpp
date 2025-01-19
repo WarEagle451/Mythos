@@ -2,7 +2,7 @@
 #include <mythos/render/shader.hpp>
 #include <mythos/render/vulkan/vulkan_device.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     class pipeline {
         VkPipeline m_pipeline = VK_NULL_HANDLE;
         VkPipelineLayout m_layout = VK_NULL_HANDLE;

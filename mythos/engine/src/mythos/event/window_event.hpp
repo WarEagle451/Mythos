@@ -4,7 +4,7 @@
 
 #include <myl/math/vec2.hpp>
 
-namespace myth::event {
+namespace mye::event {
     class window_resize : public base {
         window& m_window;
         myl::i32vec2 m_dimensions;

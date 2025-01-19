@@ -3,7 +3,7 @@
 
 #include <vector>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     class command_pool; // Forward declaration
 
     class command_buffer {

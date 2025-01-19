@@ -7,14 +7,14 @@
 #   include <vulkan/vulkan_win32.h>
 #endif
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     auto get_platform_required_extensions(std::vector<const char*>* extensions) -> void {
 #ifdef MYL_OS_WINDOWS
         extensions->emplace_back(VK_KHR_WIN32_SURFACE_EXTENSION_NAME);
 #endif
     }
 
-    auto create_surface(VkSurfaceKHR* surface, VkInstance instance, myth::window* target, VkAllocationCallbacks* allocator) -> void {
+    auto create_surface(VkSurfaceKHR* surface, VkInstance instance, mye::window* target, VkAllocationCallbacks* allocator) -> void {
 #ifdef MYL_OS_WINDOWS
         win::window* w = static_cast<win::window*>(target);
         VkWin32SurfaceCreateInfoKHR create_info{

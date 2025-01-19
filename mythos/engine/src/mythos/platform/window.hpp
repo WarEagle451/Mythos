@@ -9,7 +9,7 @@
 /// - Window can be created on different monitors
 /// - Multiple windows
 
-namespace myth {
+namespace mye {
     enum class window_style {
         windowed,
         fullscreen,

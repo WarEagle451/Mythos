@@ -8,7 +8,7 @@
 #   include <mythos/platform/windows/win_input.hpp>
 #endif
 
-namespace myth {
+namespace mye {
     keyboard_state      input::s_keyboard;
     mouse_state         input::s_mouse;
     std::vector<device> input::s_registered_devices;
@@ -123,7 +123,7 @@ namespace myth {
 #endif
     }
 
-    auto input::process_key(keycode key, myth::key_state state) -> void {
+    auto input::process_key(keycode key, mye::key_state state) -> void {
         if (key == key::unknown)
             return;
 
@@ -212,7 +212,7 @@ namespace myth {
         }
     }
 
-    auto input::query_togglable_keys(myth::keyboard_state* keyboard) -> void {
+    auto input::query_togglable_keys(mye::keyboard_state* keyboard) -> void {
 #ifdef MYL_OS_WINDOWS
         win::query_togglable_keys(keyboard);
 #else

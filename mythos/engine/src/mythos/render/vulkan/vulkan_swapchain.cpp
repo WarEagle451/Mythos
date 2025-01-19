@@ -5,7 +5,7 @@
 
 #include <limits>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD auto select_image_extent(const VkSurfaceCapabilitiesKHR& capabilities, const VkExtent2D& framebuffer_extent) -> VkExtent2D {
         return capabilities.currentExtent.width == std::numeric_limits<uint32_t>::max() ?
             VkExtent2D{

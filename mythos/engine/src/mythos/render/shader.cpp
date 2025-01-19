@@ -12,7 +12,7 @@
 /// - Cache shader_layout and shader types to prevent loading in all the shader code, These are things that will have to be checked if it exists or is up to date
 /// - Warn on if more than 1 type of shader stage is present in a file
 
-namespace myth {
+namespace mye {
     MYL_NO_DISCARD static constexpr auto detect_shader_type(std::string_view type) -> shader_type {
         using enum shader_type;
         if (type == "vertex")

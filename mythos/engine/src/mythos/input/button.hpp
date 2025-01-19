@@ -1,7 +1,7 @@
 #pragma once
 #include <myl/definitions.hpp>
 
-namespace myth {
+namespace mye {
     using button_code = myl::u32;
     using buttons     = button_code;
     namespace button {

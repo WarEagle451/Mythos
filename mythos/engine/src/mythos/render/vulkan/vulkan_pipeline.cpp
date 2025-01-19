@@ -2,7 +2,7 @@
 #include <mythos/render/vulkan/vulkan_pipeline.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD static constexpr auto shader_data_type_to_VkFormat(shader_data_type type) -> VkFormat {
         switch (type) {
             using enum shader_data_type;

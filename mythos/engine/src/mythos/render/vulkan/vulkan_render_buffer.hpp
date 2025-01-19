@@ -3,7 +3,7 @@
 #include <mythos/render/vulkan/vulkan_command_objects.hpp>
 #include <mythos/render/vulkan/vulkan_device.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD static constexpr auto render_buffer_usage_to_VkBufferUsageFlags(render_buffer_usage usage) -> VkBufferUsageFlags {
         switch (usage) {
             using enum render_buffer_usage;
@@ -14,7 +14,7 @@ namespace myth::vulkan {
         }
     }
 
-    class render_buffer : public myth::render_buffer {
+    class render_buffer : public mye::render_buffer {
         /// MYTODO: Best to not have pointers of device and command_pool, remove if possible
 
         VkBuffer              m_buffer = VK_NULL_HANDLE;

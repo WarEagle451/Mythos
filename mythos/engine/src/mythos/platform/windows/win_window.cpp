@@ -19,7 +19,7 @@
 /// MYTODO: Improve RIM_KEYBOARD
 /// - https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
 
-namespace myth::win {
+namespace mye::win {
     static auto process_device(device* device, RAWHID& hid_data) -> bool {
         // Get the data from the hid
         UINT buffer_size{};
@@ -243,7 +243,7 @@ namespace myth::win {
     }
 
     MYL_NO_DISCARD window::window(const window_configuration& config)
-        : myth::window(config)
+        : mye::window(config)
         , m_fullscreen_dimension_cache{ config.dimensions } {
         // Correct for any special values provided
         m_position = correct_negative_position(m_position, m_dimensions);

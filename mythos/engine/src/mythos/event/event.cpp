@@ -1,6 +1,6 @@
 #include <mythos/event/event.hpp>
 
-namespace myth::event {
+namespace mye::event {
     static callback* g_callback = nullptr;
 
     auto set_callback(callback& c) -> void {

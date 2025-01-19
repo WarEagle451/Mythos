@@ -16,8 +16,8 @@
 #   define MYTHOS_VULKAN_ENABLE_VALIDATION_LAYERS
 #endif
 
-namespace myth::vulkan {
-    class backend : public myth::renderer_backend {
+namespace mye::vulkan {
+    class backend : public mye::renderer_backend {
         VkInstance   m_instance;
         VkSurfaceKHR m_surface;
         
@@ -47,11 +47,11 @@ namespace myth::vulkan {
         MYL_NO_DISCARD backend(const renderer_configuration& config);
         ~backend();
 
-        MYL_NO_DISCARD auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<myth::shader> override;
-        auto destroy_shader(myth::shader* shader) -> void override;
+        MYL_NO_DISCARD auto create_shader(const std::unordered_map<shader_type, shader_binary_type>& shader_binaries, const shader_layout& layout, shader_primitive primitive) -> std::unique_ptr<mye::shader> override;
+        auto destroy_shader(mye::shader* shader) -> void override;
 
-        MYL_NO_DISCARD auto create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<myth::render_buffer> override;
-        auto destroy_render_buffer(myth::render_buffer* buffer) -> void override;
+        MYL_NO_DISCARD auto create_render_buffer(render_buffer_usage usage, myl::usize bytes) -> std::unique_ptr<mye::render_buffer> override;
+        auto destroy_render_buffer(mye::render_buffer* buffer) -> void override;
 
         auto set_clear_color(const myl::f32vec3& color) -> void override;
         auto set_vsync(bool value) -> void override;

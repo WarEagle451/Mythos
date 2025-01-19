@@ -5,8 +5,8 @@
 
 #   include <windows.h>
 
-namespace myth::win {
-    class window : public myth::window {
+namespace mye::win {
+    class window : public mye::window {
         HINSTANCE m_instance;
         HWND m_handle;
 

@@ -5,7 +5,7 @@
 
 #include <unordered_map>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD static auto get_queue_family_indices(VkPhysicalDevice physical_device) -> device_queue_indices {
         uint32_t queue_family_count{};
         vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &queue_family_count, VK_NULL_HANDLE);

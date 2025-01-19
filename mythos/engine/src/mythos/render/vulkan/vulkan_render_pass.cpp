@@ -1,7 +1,7 @@
 #include <mythos/render/vulkan/vulkan_render_pass.hpp>
 #include <mythos/render/vulkan/vulkan_utility.hpp>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     auto render_pass::create(render_pass* h, device& device, const create_info& ci, VkAllocationCallbacks* allocator) -> void {
         std::vector<VkAttachmentDescription> attachment_descriptions{
             VkAttachmentDescription { // Color attachment

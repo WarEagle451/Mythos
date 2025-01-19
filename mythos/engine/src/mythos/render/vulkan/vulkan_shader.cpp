@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 
-namespace myth::vulkan {
+namespace mye::vulkan {
     MYL_NO_DISCARD static constexpr auto shader_type_to_VkShaderStageFlagBits(shader_type type) -> VkShaderStageFlagBits {
         switch (type) {
             using enum shader_type;

@@ -10,7 +10,7 @@
 
 /// MYTODO: Application should be able to run headless
 
-namespace myth {
+namespace mye {
     myl::observer_ptr<application> application::s_instance = nullptr;
 
     MYL_NO_DISCARD constexpr auto application::get() -> application& {

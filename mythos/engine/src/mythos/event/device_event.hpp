@@ -2,7 +2,7 @@
 #include <mythos/input/device.hpp>
 #include <mythos/event/event.hpp>
 
-namespace myth::event {
+namespace mye::event {
     class device_button_pressed : public base {
         device* m_device;
         button_code m_code;

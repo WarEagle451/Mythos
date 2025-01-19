@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace myth {
+namespace mye {
     enum class shader_primitive {
         point,
         line,

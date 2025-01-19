@@ -2,7 +2,7 @@
 #include <mythos/event/event.hpp>
 #include <mythos/input/keyboard.hpp>
 
-namespace myth::event {
+namespace mye::event {
     class key_pressed : public base {
         keycode m_code;
         bool m_repeat;

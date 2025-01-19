@@ -7,7 +7,7 @@
 #include <array>
 #include <string>
 
-namespace myth {
+namespace mye {
     using native_device_handle_type = void*;
 
     struct device_usage {

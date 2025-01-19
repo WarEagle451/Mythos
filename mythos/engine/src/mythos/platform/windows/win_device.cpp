@@ -10,7 +10,7 @@
 #   include <hidsdi.h>
 #   include <hidpi.h>
 
-namespace myth {
+namespace mye {
     auto device::create(device* device) -> bool {
         /// MYTODO: The handle carried by device is a raw input handle,
         /// because of this any HIDD_ or HIDP_ function will fail as they require a different handle.

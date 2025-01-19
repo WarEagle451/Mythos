@@ -3,7 +3,7 @@
 
 #include <algorithm>
 
-namespace myth {
+namespace mye {
     layer_stack::~layer_stack() {
         clear();
     }

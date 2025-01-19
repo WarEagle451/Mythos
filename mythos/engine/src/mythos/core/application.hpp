@@ -8,7 +8,7 @@
 #include <myl/definitions.hpp>
 #include <myl/memory.hpp>
 
-namespace myth {
+namespace mye {
     struct application_information {
         const char* name = "Mythos Application";
         myl::u16 version_major = 0;
