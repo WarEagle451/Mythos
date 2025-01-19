@@ -21,7 +21,7 @@ namespace mye {
         : m_info{ specs.info } {
         if (specs.enable_trace_logging)
             log::get()->set_level(spdlog::level::trace);
-            
+
         MYTHOS_TRACE("Creating application...");
         MYTHOS_INFO("Version: {} ({})", MYTHOS_VERSION_STRING, MYTHOS_VERSION);
 

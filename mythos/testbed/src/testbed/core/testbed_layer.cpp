@@ -25,7 +25,7 @@ namespace testbed {
     }
 
     auto testbed_layer::on_attach() -> void {
-    
+        
     }
 
     auto testbed_layer::on_detach() -> void {
