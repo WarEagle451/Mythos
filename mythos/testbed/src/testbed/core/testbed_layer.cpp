@@ -52,14 +52,16 @@ namespace testbed {
     auto testbed_layer::render() -> void {
         mye::renderer::begin(m_camera.view_projection());
 
-        mye::renderer::draw_quad({ 0.f, 0.f, 5.f }, { 1, 1, 1, 1 });
-        mye::renderer::draw_quad({ -.5f, .5f, 5.f }, { 1, 0, 0, 1 });
-        mye::renderer::draw_quad({ .5f, .5f, 5.f }, { 0, 1, 0, 1 });
-        mye::renderer::draw_quad({ .5f, -.5f, 5.f }, { 0, 0, 1, 1 });
+        mye::renderer::draw_quad({ 0.f, 0.f, 4.f }, { 1, 1, 1, 1 });
+        //mye::renderer::draw_quad({ -.5f, .5f, 5.f }, { 1, 0, 0, 1 });
+        //mye::renderer::draw_quad({ .5f, .5f, 5.f }, { 0, 1, 0, 1 });
+        //mye::renderer::draw_quad({ .5f, -.5f, 5.f }, { 0, 0, 1, 1 });
         mye::renderer::draw_quad({ -.5f, -.5f, 5.f }, { 1, 1, 0, 1 });
         mye::renderer::flush_batch();
         mye::renderer::begin_batch();
-        mye::renderer::draw_quad({ 0, 0, 5.f }, myl::hsv_to_rgba(hsv_color));
+        mye::renderer::draw_quad({ 1, 1, 5.f }, myl::hsv_to_rgba(hsv_color));
+
+        /// MYBUG: For some reason the 2nd draw call's data is overwriten by the 1st's
 
         mye::renderer::end();
     }

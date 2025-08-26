@@ -570,13 +570,13 @@ namespace mye::win {
                         const bool hovered = WindowFromPoint(mouse_coords) == target->m_handle;
                         auto& mouse = input_data.mouse;
                         
-                        // Mouse movement
+                        // Mouse movement                        
                         if (mouse.lLastX != 0 || mouse.lLastY != 0) {
-                            myl::f32vec2 move_delta{ static_cast<myl::f32>(mouse.lLastX), static_cast<myl::f32>(mouse.lLastY) };
-                            if (mouse.usFlags & MOUSE_MOVE_RELATIVE)
+                            myl::f32vec2 move_delta{ static_cast<myl::f32>(mouse.lLastX), static_cast<myl::f32>(mouse.lLastY) };           
+                            if (mouse.usFlags == MOUSE_MOVE_RELATIVE)
                                 input::process_cursor_delta(move_delta);
-                            else if (mouse.usFlags & MOUSE_MOVE_ABSOLUTE)
-                                MYTHOS_DEBUG("Raw input has not implemented MOUSE_MOVE_ABSOLUTE");
+                            else
+                                MYTHOS_WARN("Mythos currently does not support non relative mouse movements");
 
                             if (hovered) {
                                 ScreenToClient(hwnd, &mouse_coords); // Translate to window coords

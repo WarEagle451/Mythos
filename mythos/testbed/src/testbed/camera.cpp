@@ -9,6 +9,8 @@
 
 #include <testbed/log.hpp>
 
+#include <testbed/log.hpp>
+
 namespace testbed {
     MYL_NO_DISCARD camera::camera(const myl::f32vec3& position, const myl::f32vec3& rotation, const myl::f32vec3& scale, myl::f32 aspect, myl::f32 fovy, myl::f32 z_near, myl::f32 z_far)
 		: m_position{ position }
@@ -33,6 +35,7 @@ namespace testbed {
 
     auto camera::on_update(mye::timestep ts) -> void {
 		if (!mye::input::registered_devices().empty()) {
+			/// MYHACK: The first device won't always be a mouse, have some sort of check
 			auto& device = mye::input::registered_devices().front();
 			// Movement
 			myl::f32vec3 movement(device.state.left_stick.x, 0.f, -device.state.left_stick.y);
@@ -66,15 +69,15 @@ namespace testbed {
 			if (mye::input::key_down(mye::key::left_shift)) movement.y -= 1.f;
 
 			if (movement != myl::f32vec3(0.f))
-				m_position += myl::normalize(movement) * .1f; // Magic number!
+				m_position += myl::normalize(movement) * .1f; // Magic number!			
 
 			// Rotate
 			if (mye::input::mouse_buttons_down(mye::mouse_button::left)) {
 				constexpr myl::f32 rotate_speed = 1.2f; // Magic number!
-				myl::f32vec2 mouse_delta = mye::input::cursor_delta() * .003f; // Magic Number!
-				///	myl::f32 yaw_sign = myl::sign(myl::up(rotation).y);
-				///m_rotation.x += mouse_delta.y * rotate_speed;
-				///m_rotation.y += yaw_sign * mouse_delta.x * rotate_speed;
+				myl::f32vec2 mouse_delta = mye::input::cursor_delta() * .02f; // Magic Number!
+				myl::f32 yaw_sign = myl::sign(myl::up(m_rotation).y);
+				m_rotation.x += mouse_delta.y * rotate_speed;
+				m_rotation.y += yaw_sign * mouse_delta.x * rotate_speed;
 			}
 		}
     }
